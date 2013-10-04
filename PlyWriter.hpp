@@ -24,7 +24,7 @@ class Geometry {
     
     virtual void get_face_repr( Face * &, int & ) = 0;
     
-    virtual std::string get_vertices_str( void ) = 0;
+    virtual std::string get_vertices_str( void );
     
     //~ virtual std::string get_triangles_str( int & vertex_id );
     
@@ -81,9 +81,9 @@ class Rectangle : public Face {
     
     coord_type * p0_, * p1_, * p2_, * p3_;
     
-    Triangle * tri_repr_;
-    
-    bool has_tri_repr_;
+    //~ Triangle * tri_repr_;
+    //~ 
+    //~ bool has_tri_repr_;
     
     
     
@@ -98,12 +98,14 @@ class Rectangle : public Face {
     
     ~Rectangle( void );
     
+    void operator=( Rectangle const rval );
+        
     int get_num_faces( void ) const;
     
     int get_num_vertices( void );
     
-    void get_triangle_representation( Triangle * & triangles,
-                                      int & num_triangles );
+    //~ void get_triangle_representation( Triangle * & triangles,
+                                      //~ int & num_triangles );
     
     std::string get_vertices_str( void );
     
@@ -168,7 +170,9 @@ class Scene {
     
     std::string get_vertices_str( void );
     
-    std::string get_triangles_str( void );
+    //~ std::string get_triangles_str( void );
+    
+    std::string get_faces_str( void );
 };
 
 

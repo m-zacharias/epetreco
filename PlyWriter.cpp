@@ -16,6 +16,32 @@
   //~ return ss.str();
 //~ }
 
+std::string Geometry::get_vertices_str( void ) {
+  #ifdef DEBUG
+  std::cout << "Geometry::get_vertices_str ..." << std::flush;
+  #endif
+  std::stringstream ss;
+  ss.str() = "";
+  
+  Face * faces = 0;
+  int num_faces;
+  
+  get_face_repr( faces, num_faces );
+  
+  for( int i=0; i<num_faces; i++ ) {
+    std::cout << "(i,num_faces=" << i << "," << num_faces << ")" << std::flush;
+    // !!! Can't dereference faces[i] because faces is a pointer to
+    // !!! (virtual) base class.  Overload operator[] or define an
+    // !!! get_index() function etc.
+    ss << faces[i].get_vertices_str();
+  }
+  
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
+  return ss.str();
+}
+
 std::string Geometry::get_faces_str( int & vertex_id ) {
   std::stringstream ss;
   ss.str() = "";
@@ -35,8 +61,14 @@ std::string Geometry::get_faces_str( int & vertex_id ) {
 
 
 void Face::get_face_repr( Face * & faces, int & num_faces ) {
+  #ifdef DEBUG
+  std::cout << "Face::get_face_repr ..." << std::flush;
+  #endif
   faces = this;
   num_faces = 1;
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
 }
 
 
@@ -128,7 +160,8 @@ std::string Triangle::get_faces_str( int & vertex_id ) {
 
 
 Rectangle::Rectangle( void )
-:tri_repr_(0), has_tri_repr_(false) {
+//~ : tri_repr_(0), has_tri_repr_(false) {
+{
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
   p2_ = new coord_type[3];
@@ -139,7 +172,8 @@ Rectangle::Rectangle( coord_type const * const p0,
            coord_type const * const p1,
            coord_type const * const p2,
            coord_type const * const p3 )
-: tri_repr_(0), has_tri_repr_(false) {
+//~ : tri_repr_(0), has_tri_repr_(false) {
+{
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
   p2_ = new coord_type[3];
@@ -158,31 +192,43 @@ Rectangle::~Rectangle( void ) {
   delete[] p1_;
   delete[] p2_;
   delete[] p3_;
-  delete[] tri_repr_;
+  //~ delete[] tri_repr_;
+}
+
+void Rectangle::operator=( Rectangle const rval ) {
+  for( int i=0; i<3; i++ ) {
+    p0_[i] = rval.p0_[i];
+    p1_[i] = rval.p1_[i];
+    p2_[i] = rval.p2_[i];
+    p3_[i] = rval.p3_[i];
+  }
 }
 
 int Rectangle::get_num_vertices( void ) {
-  return 6;
+  return 4;
 }
 
 int Rectangle::get_num_faces( void ) const {
   return 1;
 }
 
-void Rectangle::get_triangle_representation( Triangle * & triangles,
-                                             int & num_triangles ) {
-  if( !has_tri_repr_ ) {
-    tri_repr_ = new Triangle[2];
-    tri_repr_[0] = Triangle( p0_, p2_, p3_ );
-    tri_repr_[1] = Triangle( p2_, p0_, p1_ );
-    has_tri_repr_ = true;
-  }
-  
-  triangles = tri_repr_;
-  num_triangles = 2;
-}
+//~ void Rectangle::get_triangle_representation( Triangle * & triangles,
+                                             //~ int & num_triangles ) {
+  //~ if( !has_tri_repr_ ) {
+    //~ tri_repr_ = new Triangle[2];
+    //~ tri_repr_[0] = Triangle( p0_, p2_, p3_ );
+    //~ tri_repr_[1] = Triangle( p2_, p0_, p1_ );
+    //~ has_tri_repr_ = true;
+  //~ }
+  //~ 
+  //~ triangles = tri_repr_;
+  //~ num_triangles = 2;
+//~ }
 
 std::string Rectangle::get_vertices_str( void ) {
+  #ifdef DEBUG
+  std::cout << "Rectangle::get_vertices_str ..." << std::flush;
+  #endif
   std::stringstream ss;
   ss.str() = "";
   
@@ -194,6 +240,10 @@ std::string Rectangle::get_vertices_str( void ) {
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl
      << p3_[0] << " " << p3_[1] << " " << p3_[2]
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl;
+  
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
   return ss.str();
 }
 
@@ -297,6 +347,9 @@ int Box::get_num_vertices( void ) {
 //~ }
 
 void Box::get_face_repr( Face * & faces, int & num_faces ) {
+  #ifdef DEBUG
+  std::cout << "Box::get_face_repr ..." << std::flush;
+  #endif
   if( !has_rect_repr_ ) {
     rect_repr_ = new Rectangle[6];
     rect_repr_[0] = Rectangle( p0_, p3_, p7_, p4_ );
@@ -307,9 +360,13 @@ void Box::get_face_repr( Face * & faces, int & num_faces ) {
     rect_repr_[5] = Rectangle( p4_, p5_, p6_, p7_ );
     has_rect_repr_ = true;
   }
+  std::cout << "(" << rect_repr_[1].get_num_vertices() << ")" << std::flush;
   
-  faces = rect_repr_;
+  faces = static_cast<Face *>( rect_repr_ );
   num_faces = 6;
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
 }
 
 
@@ -346,15 +403,27 @@ int Scene::get_num_vertices( void ) const {
 }
 
 std::string Scene::get_vertices_str( void ) {
+  #ifdef DEBUG
+  std::cout << "Scene::get_vertices_str ..." << std::flush;
+  #endif
   std::stringstream ss;
   ss.str() = "";
   
+  #ifdef DEBUG
+  std::cout << std::endl << "    loop index_ ..." << std::flush;
+  #endif
   std::vector<Geometry *>::const_iterator it = index_.begin();
   while( it != index_.end() ) {
     ss << (*it)->get_vertices_str();
     it++;
   }
+  #ifdef DEBUG
+  std::cout << "    done" << std::endl;
+  #endif
   
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
   return ss.str();
 }
 
@@ -371,6 +440,26 @@ std::string Scene::get_vertices_str( void ) {
   //~ 
   //~ return ss.str();
 //~ }
+
+std::string Scene::get_faces_str( void ) {
+  #ifdef DEBUG
+  std::cout << "Scene::get_faces_str ..." << std::flush;
+  #endif
+  std::stringstream ss;
+  ss.str() = "";
+  
+  int vertex_id = 0;
+  std::vector<Geometry *>::const_iterator it = index_.begin();
+  while( it != index_.end() ) {
+    ss << (*it)->get_faces_str( vertex_id );
+    it++;
+  }
+  
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
+  return ss.str();
+}
 
 
 
@@ -404,11 +493,17 @@ PlyWriter::~PlyWriter( void ) {
 }
 
 void PlyWriter::write( Scene & scene ) {
+  #ifdef DEBUG
+  std::cout << std::endl << "    PlyWriter::write_header ..." << std::flush;
+  #endif
   write_header( scene );
+  #ifdef DEBUG
+  std::cout << " done" << std::endl;
+  #endif
   out_ << scene.get_vertices_str();
-  out_ << scene.get_triangles_str();
+  out_ << scene.get_faces_str();
   //~ std::cout << scene.get_vertices_str();
-  //~ std::cout << scene.get_triangles_str();
+  //~ std::cout << scene.get_faces_str();
 }
 
 void PlyWriter::close( void ) {

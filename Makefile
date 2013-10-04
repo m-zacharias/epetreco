@@ -1,5 +1,5 @@
 CPPC = g++
-CPPFLAGS = -Wall
+CPPFLAGS = -Wall -DDEBUG
 CPPO = -c
 
 all : main.out
