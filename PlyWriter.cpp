@@ -1,78 +1,5 @@
 #include "PlyWriter.hpp"
 
-//~ std::string Geometry::get_triangles_str( int & vertex_id ) {
-  //~ std::stringstream ss;
-  //~ ss.str() = "";
-  //~ 
-  //~ Triangle * triangles = 0;
-  //~ int num_triangles;
-  //~ 
-  //~ get_triangle_representation( triangles, num_triangles );
-  //~ 
-  //~ for( int i=0; i<num_triangles; i++ ) {
-    //~ ss << triangles[i].get_triangles_str( vertex_id );
-  //~ }
-  //~ 
-  //~ return ss.str();
-//~ }
-
-std::string Geometry::get_vertices_str( void ) {
-  #ifdef DEBUG
-  std::cout << "Geometry::get_vertices_str ..." << std::flush;
-  #endif
-  std::stringstream ss;
-  ss.str() = "";
-  
-  Face * faces = 0;
-  int num_faces;
-  
-  get_face_repr( faces, num_faces );
-  
-  for( int i=0; i<num_faces; i++ ) {
-    std::cout << "(i,num_faces=" << i << "," << num_faces << ")" << std::flush;
-    // !!! Can't dereference faces[i] because faces is a pointer to
-    // !!! (virtual) base class.  Overload operator[] or define an
-    // !!! get_index() function etc.
-    ss << faces[i].get_vertices_str();
-  }
-  
-  #ifdef DEBUG
-  std::cout << " done" << std::endl;
-  #endif
-  return ss.str();
-}
-
-std::string Geometry::get_faces_str( int & vertex_id ) {
-  std::stringstream ss;
-  ss.str() = "";
-  
-  Face * faces = 0;
-  int num_faces;
-  
-  get_face_repr( faces, num_faces );
-  
-  for( int i=0; i<num_faces; i++ ) {
-    ss << faces[i].get_faces_str( vertex_id );
-  }
-  
-  return ss.str();
-}
-
-
-
-void Face::get_face_repr( Face * & faces, int & num_faces ) {
-  #ifdef DEBUG
-  std::cout << "Face::get_face_repr ..." << std::flush;
-  #endif
-  faces = this;
-  num_faces = 1;
-  #ifdef DEBUG
-  std::cout << " done" << std::endl;
-  #endif
-}
-
-
-
 Triangle::Triangle( void ) {
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
@@ -127,12 +54,6 @@ int Triangle::get_num_vertices( void ) {
   return 3;
 }
 
-//~ void Triangle::get_triangle_representation( Triangle * & triangle,
-                                  //~ int & num_triangles ) {
-  //~ num_triangles = get_num_faces();
-  //~ triangle = this;
-//~ }
-
 std::string Triangle::get_vertices_str( void ) {
   std::stringstream ss;
   ss.str() = "";
@@ -145,7 +66,7 @@ std::string Triangle::get_vertices_str( void ) {
   return ss.str();
 }
 
-std::string Triangle::get_triangles_str( int & vertex_id ) {
+std::string Triangle::get_faces_str( int & vertex_id ) {
   std::stringstream ss;
   ss.str() = "";
   ss << "3 " << vertex_id << " " << vertex_id+1 << " " << vertex_id+2 << std::endl;
@@ -153,15 +74,9 @@ std::string Triangle::get_triangles_str( int & vertex_id ) {
   return ss.str();
 }
 
-std::string Triangle::get_faces_str( int & vertex_id ) {
-  return get_triangles_str( vertex_id );
-}
 
 
-
-Rectangle::Rectangle( void )
-//~ : tri_repr_(0), has_tri_repr_(false) {
-{
+Rectangle::Rectangle( void ) {
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
   p2_ = new coord_type[3];
@@ -171,9 +86,7 @@ Rectangle::Rectangle( void )
 Rectangle::Rectangle( coord_type const * const p0,
            coord_type const * const p1,
            coord_type const * const p2,
-           coord_type const * const p3 )
-//~ : tri_repr_(0), has_tri_repr_(false) {
-{
+           coord_type const * const p3 ) {
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
   p2_ = new coord_type[3];
@@ -192,7 +105,6 @@ Rectangle::~Rectangle( void ) {
   delete[] p1_;
   delete[] p2_;
   delete[] p3_;
-  //~ delete[] tri_repr_;
 }
 
 void Rectangle::operator=( Rectangle const rval ) {
@@ -211,19 +123,6 @@ int Rectangle::get_num_vertices( void ) {
 int Rectangle::get_num_faces( void ) const {
   return 1;
 }
-
-//~ void Rectangle::get_triangle_representation( Triangle * & triangles,
-                                             //~ int & num_triangles ) {
-  //~ if( !has_tri_repr_ ) {
-    //~ tri_repr_ = new Triangle[2];
-    //~ tri_repr_[0] = Triangle( p0_, p2_, p3_ );
-    //~ tri_repr_[1] = Triangle( p2_, p0_, p1_ );
-    //~ has_tri_repr_ = true;
-  //~ }
-  //~ 
-  //~ triangles = tri_repr_;
-  //~ num_triangles = 2;
-//~ }
 
 std::string Rectangle::get_vertices_str( void ) {
   #ifdef DEBUG
@@ -261,8 +160,7 @@ std::string Rectangle::get_faces_str( int & vertex_id ) {
 
 
 
-Box::Box( void )
-: rect_repr_(0), has_rect_repr_(false) {
+Box::Box( void ) {
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
   p2_ = new coord_type[3];
@@ -280,8 +178,7 @@ Box::Box( coord_type const * const p0,
      coord_type const * const p4,
      coord_type const * const p5,
      coord_type const * const p6,
-     coord_type const * const p7 )
-: rect_repr_(0), has_rect_repr_(false) {
+     coord_type const * const p7 ) {
   p0_ = new coord_type[3];
   p1_ = new coord_type[3];
   p2_ = new coord_type[3];
@@ -312,63 +209,43 @@ Box::~Box( void ) {
   delete[] p5_;
   delete[] p6_;
   delete[] p7_;
-  delete[] rect_repr_;
+}
+
+int Box::get_num_vertices( void ) {
+  return 24;
 }
 
 int Box::get_num_faces( void ) const {
   return 6;
 }
 
-int Box::get_num_vertices( void ) {
-  return 18;
-}
-
-//~ void Box::get_triangle_representation( Triangle * & triangles,
-                                       //~ int & num_triangles ) {
-  //~ if( !has_tri_repr_ ) {
-    //~ tri_repr_ = new Triangle[12];
-    //~ tri_repr_[0] = Triangle( p0_, p7_, p4_ );
-    //~ tri_repr_[1] = Triangle( p7_, p0_, p3_ );
-    //~ tri_repr_[2] = Triangle( p1_, p6_, p5_ );
-    //~ tri_repr_[3] = Triangle( p6_, p1_, p2_ );
-    //~ tri_repr_[4] = Triangle( p1_, p4_, p5_ );
-    //~ tri_repr_[5] = Triangle( p4_, p1_, p0_ );
-    //~ tri_repr_[6] = Triangle( p2_, p7_, p6_ );
-    //~ tri_repr_[7] = Triangle( p7_, p2_, p3_ );
-    //~ tri_repr_[8] = Triangle( p0_, p2_, p3_ );
-    //~ tri_repr_[9] = Triangle( p2_, p0_, p1_ );
-    //~ tri_repr_[10] = Triangle( p4_, p6_, p7_ );
-    //~ tri_repr_[11] = Triangle( p6_, p4_, p5_ );
-    //~ has_tri_repr_ = true;
-  //~ }
-  //~ 
-  //~ triangles = tri_repr_;
-  //~ num_triangles = 12;
-//~ }
-
-void Box::get_face_repr( Face * & faces, int & num_faces ) {
-  #ifdef DEBUG
-  std::cout << "Box::get_face_repr ..." << std::flush;
-  #endif
-  if( !has_rect_repr_ ) {
-    rect_repr_ = new Rectangle[6];
-    rect_repr_[0] = Rectangle( p0_, p3_, p7_, p4_ );
-    rect_repr_[1] = Rectangle( p1_, p2_, p6_, p5_ );
-    rect_repr_[2] = Rectangle( p1_, p0_, p4_, p5_ );
-    rect_repr_[3] = Rectangle( p2_, p3_, p7_, p6_ );
-    rect_repr_[4] = Rectangle( p0_, p1_, p2_, p3_ );
-    rect_repr_[5] = Rectangle( p4_, p5_, p6_, p7_ );
-    has_rect_repr_ = true;
-  }
-  std::cout << "(" << rect_repr_[1].get_num_vertices() << ")" << std::flush;
+std::string Box::get_vertices_str( void ) {
+  std::stringstream ss;
+  ss.str() = "";
   
-  faces = static_cast<Face *>( rect_repr_ );
-  num_faces = 6;
-  #ifdef DEBUG
-  std::cout << " done" << std::endl;
-  #endif
+  ss << Rectangle( p0_, p3_, p7_, p4_ ).get_vertices_str()
+     << Rectangle( p1_, p2_, p6_, p5_ ).get_vertices_str()
+     << Rectangle( p1_, p0_, p4_, p5_ ).get_vertices_str()
+     << Rectangle( p2_, p3_, p7_, p6_ ).get_vertices_str()
+     << Rectangle( p0_, p1_, p2_, p3_ ).get_vertices_str()
+     << Rectangle( p4_, p5_, p6_, p7_ ).get_vertices_str();
+  
+  return ss.str();
 }
 
+std::string Box::get_faces_str( int & vertex_id ) {
+  std::stringstream ss;
+  ss.str() = "";
+  
+  ss << Rectangle( p0_, p3_, p7_, p4_ ).get_faces_str( vertex_id )
+     << Rectangle( p1_, p2_, p6_, p5_ ).get_faces_str( vertex_id )
+     << Rectangle( p1_, p0_, p4_, p5_ ).get_faces_str( vertex_id )
+     << Rectangle( p2_, p3_, p7_, p6_ ).get_faces_str( vertex_id )
+     << Rectangle( p0_, p1_, p2_, p3_ ).get_faces_str( vertex_id )
+     << Rectangle( p4_, p5_, p6_, p7_ ).get_faces_str( vertex_id );
+  
+  return ss.str();
+}
 
 
 Scene::Scene( void )
@@ -426,20 +303,6 @@ std::string Scene::get_vertices_str( void ) {
   #endif
   return ss.str();
 }
-
-//~ std::string Scene::get_triangles_str( void ) {
-  //~ std::stringstream ss;
-  //~ ss.str() = "";
-  //~ 
-  //~ int vertex_id = 0;
-  //~ std::vector<Geometry *>::const_iterator it = index_.begin();
-  //~ while( it != index_.end() ) {
-    //~ ss << (*it)->get_triangles_str( vertex_id );
-    //~ it++;
-  //~ }
-  //~ 
-  //~ return ss.str();
-//~ }
 
 std::string Scene::get_faces_str( void ) {
   #ifdef DEBUG
