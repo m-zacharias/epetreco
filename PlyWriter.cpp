@@ -1,49 +1,41 @@
 #include "PlyWriter.hpp"
 
-Triangle::Triangle( void ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
+Vertex::Vertex( void ) {}
+
+Vertex::Vertex( coord_type const x,
+                coord_type const y,
+                coord_type const z )
+: x_(x), y_(y), z_(z) {}
+
+Vertex::Vertex( Vertex const & ori )
+: x_(ori.x_), y_(ori.y_), z_(ori.z_) {}
+
+Vertex::~Vertex( void ) {}
+
+void Vertex::operator=( Vertex const & ori ) {
+  x_ = ori.x_;
+  y_ = ori.y_;
+  z_ = ori.z_;
 }
 
-Triangle::Triangle( coord_type const * const p0,
-          coord_type const * const p1,
-          coord_type const * const p2 ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
-  
-  for( int i=0; i<3; i++ ) {
-    p0_[i] = p0[i];
-    p1_[i] = p1[i];
-    p2_[i] = p2[i];
-  }
-}
 
-Triangle::Triangle( Triangle const & ori ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
-  
-  for( int i=0; i<3; i++ ) {
-    p0_[i] = ori.p0_[i];
-    p1_[i] = ori.p1_[i];
-    p2_[i] = ori.p2_[i];
-  }
-}
 
-Triangle::~Triangle( void ) {
-  delete[] p0_;
-  delete[] p1_;
-  delete[] p2_;
-}
+Triangle::Triangle( void ) {}
+
+Triangle::Triangle( Vertex const & p0,
+                    Vertex const & p1,
+                    Vertex const & p2 ) 
+: p0_(p0), p1_(p1), p2_(p2) {}
+
+Triangle::Triangle( Triangle const & ori )
+: p0_(ori.p0_), p1_(ori.p1_), p2_(ori.p2_) {}
+
+Triangle::~Triangle( void ) {}
 
 void Triangle::operator=( Triangle const rval ) {
-  for( int i=0; i<3; i++ ) {
-    p0_[i] = rval.p0_[i];
-    p1_[i] = rval.p1_[i];
-    p2_[i] = rval.p2_[i];
-  }
+  p0_ = rval.p0_;
+  p1_ = rval.p1_;
+  p2_ = rval.p2_;
 }
 
 int Triangle::get_num_faces( void ) const {
@@ -57,11 +49,11 @@ int Triangle::get_num_vertices( void ) {
 std::string Triangle::get_vertices_str( void ) {
   std::stringstream ss;
   ss.str() = "";
-  ss << p0_[0] << " " << p0_[1] << " " << p0_[2] 
+  ss << p0_.x_ << " " << p0_.y_ << " " << p0_.z_ 
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl
-     << p1_[0] << " " << p1_[1] << " " << p1_[2]
+     << p1_.x_ << " " << p1_.y_ << " " << p1_.z_
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl
-     << p2_[0] << " " << p2_[1] << " " << p2_[2]
+     << p2_.x_ << " " << p2_.y_ << " " << p2_.z_
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl;
   return ss.str();
 }
@@ -76,44 +68,21 @@ std::string Triangle::get_faces_str( int & vertex_id ) {
 
 
 
-Rectangle::Rectangle( void ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
-  p3_ = new coord_type[3];
-}
+Rectangle::Rectangle( void ) {}
 
-Rectangle::Rectangle( coord_type const * const p0,
-           coord_type const * const p1,
-           coord_type const * const p2,
-           coord_type const * const p3 ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
-  p3_ = new coord_type[3];
-  
-  for( int i=0; i<3; i++ ) {
-    p0_[i] = p0[i];
-    p1_[i] = p1[i];
-    p2_[i] = p2[i];
-    p3_[i] = p3[i];
-  }
-}
+Rectangle::Rectangle( Vertex const & p0,
+                      Vertex const & p1,
+                      Vertex const & p2,
+                      Vertex const & p3 )
+: p0_(p0), p1_(p1), p2_(p2), p3_(p3) {}
 
-Rectangle::~Rectangle( void ) {
-  delete[] p0_;
-  delete[] p1_;
-  delete[] p2_;
-  delete[] p3_;
-}
+Rectangle::~Rectangle( void ) {}
 
 void Rectangle::operator=( Rectangle const rval ) {
-  for( int i=0; i<3; i++ ) {
-    p0_[i] = rval.p0_[i];
-    p1_[i] = rval.p1_[i];
-    p2_[i] = rval.p2_[i];
-    p3_[i] = rval.p3_[i];
-  }
+  p0_ = rval.p0_;
+  p1_ = rval.p1_;
+  p2_ = rval.p2_;
+  p3_ = rval.p3_;
 }
 
 int Rectangle::get_num_vertices( void ) {
@@ -131,13 +100,13 @@ std::string Rectangle::get_vertices_str( void ) {
   std::stringstream ss;
   ss.str() = "";
   
-  ss << p0_[0] << " " << p0_[1] << " " << p0_[2] 
+  ss << p0_.x_ << " " << p0_.y_ << " " << p0_.z_ 
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl
-     << p1_[0] << " " << p1_[1] << " " << p1_[2]
+     << p1_.x_ << " " << p1_.y_ << " " << p1_.z_
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl
-     << p2_[0] << " " << p2_[1] << " " << p2_[2]
+     << p2_.x_ << " " << p2_.y_ << " " << p2_.z_
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl
-     << p3_[0] << " " << p3_[1] << " " << p3_[2]
+     << p3_.x_ << " " << p3_.y_ << " " << p3_.z_
      << " " << 0 << " " << 0 << " " << 0 << " " << std::endl;
   
   #ifdef DEBUG
@@ -160,56 +129,24 @@ std::string Rectangle::get_faces_str( int & vertex_id ) {
 
 
 
-Box::Box( void ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
-  p3_ = new coord_type[3];
-  p4_ = new coord_type[3];
-  p5_ = new coord_type[3];
-  p6_ = new coord_type[3];
-  p7_ = new coord_type[3];
-}
+Box::Box( void ) {}
     
-Box::Box( coord_type const * const p0,
-     coord_type const * const p1,
-     coord_type const * const p2,
-     coord_type const * const p3,
-     coord_type const * const p4,
-     coord_type const * const p5,
-     coord_type const * const p6,
-     coord_type const * const p7 ) {
-  p0_ = new coord_type[3];
-  p1_ = new coord_type[3];
-  p2_ = new coord_type[3];
-  p3_ = new coord_type[3];
-  p4_ = new coord_type[3];
-  p5_ = new coord_type[3];
-  p6_ = new coord_type[3];
-  p7_ = new coord_type[3];
-  
-  for( int i=0; i<3; i++ ) {
-    p0_[i] = p0[i];
-    p1_[i] = p1[i];
-    p2_[i] = p2[i];
-    p3_[i] = p3[i];
-    p4_[i] = p4[i];
-    p5_[i] = p5[i];
-    p6_[i] = p6[i];
-    p7_[i] = p7[i];
-  }
-}
+Box::Box( Vertex const & p0,
+          Vertex const & p1,
+          Vertex const & p2,
+          Vertex const & p3,
+          Vertex const & p4,
+          Vertex const & p5,
+          Vertex const & p6,
+          Vertex const & p7 )
+: p0_(p0), p1_(p1), p2_(p2), p3_(p3),
+  p4_(p4), p5_(p5), p6_(p6), p7_(p7) {}
 
-Box::~Box( void ) {
-  delete[] p0_;
-  delete[] p1_;
-  delete[] p2_;
-  delete[] p3_;
-  delete[] p4_;
-  delete[] p5_;
-  delete[] p6_;
-  delete[] p7_;
-}
+Box::Box( Box const & ori )
+: p0_(ori.p0_), p1_(ori.p1_), p2_(ori.p2_), p3_(ori.p3_),
+  p4_(ori.p4_), p5_(ori.p5_), p6_(ori.p6_), p7_(ori.p7_) {}
+
+Box::~Box( void ) {}
 
 int Box::get_num_vertices( void ) {
   return 24;
@@ -246,6 +183,31 @@ std::string Box::get_faces_str( int & vertex_id ) {
   
   return ss.str();
 }
+
+
+
+Vertex Line::midpoint( Vertex const & a, Vertex const & b ) const {
+  return Vertex( 0.5*(a.x_+b.x_),
+                 0.5*(a.y_+b.y_),
+                 0.5*(a.z_+b.z_) );
+} 
+
+Line::Line( void ) {
+  #ifdef DEBUG
+  std::cout << "Line::Line() ..." << std::flush;
+  std::cout << " done" << std::endl;
+  #endif
+}
+
+Line::Line( Vertex const & p0,
+            Vertex const & p2 )
+: Triangle(p0, midpoint(p0,p2), p2) {}
+
+Line::Line( Line const & ori )
+: Triangle(ori) {}
+
+Line::~Line( void ) {}
+
 
 
 Scene::Scene( void )

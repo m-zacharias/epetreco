@@ -9,6 +9,24 @@
 
 typedef float coord_type;
 
+struct Vertex {
+  public:
+    
+    coord_type x_, y_, z_;
+    
+    Vertex( void );
+    
+    Vertex( coord_type const x,
+            coord_type const y,
+            coord_type const z );
+    
+    Vertex( Vertex const & );
+    
+    ~Vertex( void );
+    
+    void operator=( Vertex const & ori );
+};
+
 
 
 class Geometry {
@@ -26,17 +44,20 @@ class Geometry {
 
 
 class Triangle : public Geometry {
-  private:
+  //~ protected:
+  public:
     
-    coord_type * p0_, * p1_, * p2_;
+    Vertex p0_, p1_, p2_;
+    
+    
     
   public:
     
     Triangle( void );
     
-    Triangle( coord_type const * const p0,
-              coord_type const * const p1,
-              coord_type const * const p2 );
+    Triangle( Vertex const & p0,
+              Vertex const & p1,
+              Vertex const & p2 );
     
     Triangle( Triangle const & ori );
     
@@ -56,9 +77,9 @@ class Triangle : public Geometry {
 
 
 class Rectangle : public Geometry {
-  private:
+  protected:
     
-    coord_type * p0_, * p1_, * p2_, * p3_;
+    Vertex p0_, p1_, p2_, p3_;
     
     
     
@@ -66,10 +87,10 @@ class Rectangle : public Geometry {
   
     Rectangle( void );
     
-    Rectangle( coord_type const * const p0,
-               coord_type const * const p1,
-               coord_type const * const p2,
-               coord_type const * const p3 );
+    Rectangle( Vertex const & p0,
+               Vertex const & p1,
+               Vertex const & p2,
+               Vertex const & p3 );
     
     ~Rectangle( void );
     
@@ -87,9 +108,9 @@ class Rectangle : public Geometry {
 
 
 class Box : public Geometry {
-  private:
+  protected:
     
-    coord_type * p0_, * p1_, * p2_, * p3_, * p4_, * p5_, * p6_, * p7_;
+    Vertex p0_, p1_, p2_, p3_, p4_, p5_, p6_, p7_;
     
     
     
@@ -97,16 +118,20 @@ class Box : public Geometry {
     
     Box( void );
     
-    Box( coord_type const * const p0,
-         coord_type const * const p1,
-         coord_type const * const p2,
-         coord_type const * const p3,
-         coord_type const * const p4,
-         coord_type const * const p5,
-         coord_type const * const p6,
-         coord_type const * const p7 );
+    Box( Vertex const & p0,
+         Vertex const & p1,
+         Vertex const & p2,
+         Vertex const & p3,
+         Vertex const & p4,
+         Vertex const & p5,
+         Vertex const & p6,
+         Vertex const & p7 );
+    
+    Box( Box const & );
     
     ~Box( void );
+    
+    void operator=( Box const & rval );
     
     int get_num_vertices( void );
     
@@ -115,6 +140,27 @@ class Box : public Geometry {
     std::string get_vertices_str( void );
     
     std::string get_faces_str( int & vertex_id );
+};
+
+
+
+class Line : public Triangle {
+  private:
+    
+    Vertex midpoint( Vertex const & a, Vertex const & b ) const;
+    
+    
+    
+  public:
+  
+    Line( void );
+    
+    Line( Vertex const & p0,
+          Vertex const & p2 );
+    
+    Line( Line const & ori );
+    
+    ~Line( void );
 };
 
 
