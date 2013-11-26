@@ -1,0 +1,290 @@
+#ifndef SIDDON_HPP
+#define SIDDON_HPP
+
+#include <cmath>
+#include <algorithm> // for min, max
+//#include "CUDA_HandleError.hpp"
+
+typedef float coord_type;
+
+template<typename T>
+struct Vector {
+    T x_,
+      y_,
+      z_;
+
+    Vector( T const x,
+            T const y,
+            T const z )
+    : x_(x), y_(y), z_(z) {}
+
+    Vector( Vector const & ori )
+    : x_(ori.x_), y_(ori.y_), z_(ori.z_) {}
+
+    T & operator[]( int i ) {
+        if( i%3 == 0 ) {
+            return x_;
+        }
+        else if( i%3 ==1 ) {
+            return y_;
+        }
+        else {
+            return z_;
+        }
+    }
+};
+
+template<typename T>
+struct Ray {
+    Vector<T>   start_,
+                end_;
+
+    Ray( Vector<T> const start,
+         Vector<T> const end )
+    : start_(start), end_(end) {}
+
+    Ray( Ray const & ori )
+    : start_(ori.start_), end_(ori.end_) {}
+
+    Vector<T> get_start( void )
+    {
+        return start_;
+    }
+
+    Vector<T> get_end( void )
+    {
+        return end_;
+    }
+};
+
+//! Class template
+template<typename T>
+struct Grid {
+    Vector<T>   origin_,
+                difference_;
+    Vector<int> N_;
+
+    //! Constructor
+    Grid( Vector<T> const origin,
+          Vector<T> const difference,
+          Vector<int> const N )
+    : origin_(origin), difference_(difference), N_(N) {}
+    
+    //! Copy constructor
+    Grid( Grid const & ori )
+    : origin_(ori.origin_), difference_(ori.difference_), N_(ori.N_) {}
+
+    Vector<T> get_origin( void )
+    {
+        return origin_;
+    }
+
+    Vector<T> get_difference( void )
+    {
+        return difference_;
+    }
+
+    Vector<int> get_N( void )
+    {
+        return N_;
+    }
+};
+
+namespace Siddon {
+    typedef Vector<coord_type>  coordVector;
+    typedef Ray<coord_type>     coordRay;
+    typedef Grid<coord_type>    coordGrid;
+
+    bool intersects( int dim, coordRay ray, coordGrid grid )
+    {
+        return ray.get_end()[dim] - ray.get_start()[dim] != 0;
+    }
+
+    coord_type alpha_from_i( int i, int dim, coordRay ray, coordGrid grid )
+    {
+        return (       grid.get_origin()[dim]
+                 + i * grid.get_difference()[dim]
+                 -      ray.get_start()[dim] )
+               /
+               (        ray.get_end()[dim]
+                 -      ray.get_start()[dim] );
+    }
+    
+    coord_type phi_from_alpha( coord_type alpha, int dim, coordRay ray,
+                               coordGrid grid )
+    {
+        return (    ray.get_start()[dim]
+                 + alpha * (   ray.get_end()[dim]
+                             - ray.get_start()[dim] )
+                 - grid.get_origin()[dim] )
+               /
+               (   grid.get_difference()[dim] );
+    }
+
+//    coordVector get_alpha_dimmin( coordRay ray, coordGrid grid )
+//    {
+//        return coordVector( min( alpha_from_i(0,0,ray,grid),
+//                                 alpha_from_i(grid.get_N()[0],0,ray,grid) ),
+//
+//                            min( alpha_from_i(0,1,ray,grid),
+//                                 alpha_from_i(grid.get_N()[1],1,ray,grid) ),
+//     
+//                            min( alpha_from_i(0,2,ray,grid),
+//                                 alpha_from_i(grid.get_N()[2],2,ray,grid) ) );
+//    }
+
+    coord_type get_alpha_dimmin( int dim, coordRay ray, coordGrid grid )
+    {
+        return std::min(alpha_from_i(0,                dim,ray,grid),
+                        alpha_from_i(grid.get_N()[dim],dim,ray,grid));
+    }
+    
+//    coordVector get_alpha_dimmax( coordRay ray, coordGrid grid )
+//    {
+//        return Vector( max( alpha_from_i(0,0,ray,grid),
+//                            alpha_from_i(grid.get_N()[0],0,ray,grid) ),
+//
+//                       max( alpha_from_i(0,1,ray,grid),
+//                            alpha_from_i(grid.get_N()[1],1,ray,grid) ),
+//
+//                       max( alpha_from_i(0,2,ray,grid),
+//                            alpha_from_i(grid.get_N()[2],2,ray,grid) ) );
+//    }
+
+    coord_type get_alpha_dimmax( int dim, coordRay ray, coordGrid grid )
+    {
+        return std::max(alpha_from_i(0,                dim,ray,grid),
+                        alpha_from_i(grid.get_N()[dim],dim,ray,grid));
+    }
+
+    bool alpha_min_exists( coordRay ray, coordGrid grid )
+    {
+        return    intersects(0,ray,grid)
+               || intersects(1,ray,grid)
+               || intersects(2,ray,grid);
+    }
+
+//    coord_type get_alpha_min( coordVector const alpha_dimmin )
+//    {
+//        return max( max( alpha_dimmin[0],
+//                         alpha_dimmin[1] ),
+//                    alpha_dimmin[2] );
+//    }
+
+    // Correct results only for `alpha_min_exists(...) == true`!!!
+    coord_type get_alpha_min( coordRay ray, coordGrid grid )
+    {
+        coord_type temp;
+        coord_type temp_min;
+        bool       not_first = false;
+        for(int dim=0;dim<3;dim++)
+        {
+            if(intersects(dim,ray,grid))
+            {
+                temp = get_alpha_dimmin(dim,ray,grid);
+                if(not_first)
+                {
+                    temp_min = std::max(temp_min,temp);
+                } else
+                {
+                    temp_min = temp;
+                    not_first = true;
+                }
+            }
+        }
+        return temp_min;
+    }
+
+    bool alpha_max_exists( coordRay ray, coordGrid grid )
+    {
+        return    intersects(0,ray,grid)
+               || intersects(1,ray,grid)
+               || intersects(2,ray,grid);
+    }
+
+//   coord_type get_alpha_max( coordVector const alpha_dimmax )
+//   {
+//       return min( min( alpha_dimmax[0],
+//                        alpha_dimmax[1] ),
+//                   alpha_dimmax[2] );
+//   }
+
+    // Correct results only for `alpha_max_exists(...) == true`!!!
+    coord_type get_alpha_max( coordRay ray, coordGrid grid )
+    {
+        coord_type temp;
+        coord_type temp_max;
+        bool       not_first = false;
+        for(int dim=0;dim<3;dim++)
+        {
+            if(intersects(dim,ray,grid))
+            {
+                temp = get_alpha_dimmax(dim,ray,grid);
+                if(not_first)
+                {
+                    temp_max = std::min(temp_max,temp);
+                } else
+                {
+                    temp_max = temp;
+                    not_first = true;
+                }
+            }
+        }
+        return temp_max;
+    }
+
+    int get_i_dimmin( int dim, coordRay ray, coordGrid grid )
+    {
+        if(ray.get_start()[dim] < ray.get_end()[dim])
+        {
+            coord_type alpha_min =    get_alpha_min(ray,grid);
+            coord_type alpha_dimmin = get_alpha_dimmin(dim,ray,grid);
+            if(alpha_dimmin != alpha_min)
+            {
+                return ceil(phi_from_alpha(alpha_min,dim,ray,grid));
+            } else
+            {
+                return 1;
+            }
+        } else
+        {
+            coord_type alpha_max    = get_alpha_max(ray,grid);
+            coord_type alpha_dimmax = get_alpha_dimmax(dim,ray,grid);
+            if(alpha_dimmax != alpha_max)
+            {
+                return ceil(phi_from_alpha(alpha_max,dim,ray,grid));
+            } else
+            {
+                return 0;
+            }
+        }
+    }
+
+    int get_i_dimmax( int dim, coordRay ray, coordGrid grid )
+    {
+        if(ray.get_start()[dim] < ray.get_end()[dim])
+        {
+            coord_type alpha_max    = get_alpha_max(ray,grid);
+            coord_type alpha_dimmax = get_alpha_dimmax(dim,ray,grid);
+            if(alpha_dimmax != alpha_max)
+            {
+                return floor(phi_from_alpha(alpha_max,dim,ray,grid));
+            } else
+            {
+                return grid.get_N()[dim];
+            }
+        } else
+        {
+            coord_type alpha_min    = get_alpha_min(ray,grid);
+            coord_type alpha_dimmin = get_alpha_dimmin(dim,ray,grid);
+            if(alpha_dimmin != alpha_min)
+            {
+                return floor(phi_from_alpha(alpha_min,dim,ray,grid));
+            } else
+            {
+                return grid.get_N()[dim]-1;
+            }
+        }
+    }
+}
+#endif  // #ifndef SIDDON_HPP
