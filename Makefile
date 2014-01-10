@@ -2,13 +2,9 @@ CPPC = g++
 CPPFLAGS = -Wall
 CPPO = -c
 
-all : main.out
+all : test_Siddon.out
 
-main.out : main.cpp\
-        PlyWriter.o
-	$(CPPC) $(CPPFLAGS) $^ -o $@
-
-siddon_main.out : siddon_main.cpp\
+test_Siddon.out : test_Siddon.cpp\
         Siddon.hpp
 	$(CPPC) $(CPPFLAGS) $^ -o $@
 

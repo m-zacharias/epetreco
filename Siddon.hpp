@@ -74,17 +74,17 @@ struct Grid {
     Grid( Grid const & ori )
     : origin_(ori.origin_), difference_(ori.difference_), N_(ori.N_) {}
 
-    Vector<T> get_origin( void )
+    Vector<T> get_origin( void ) const
     {
         return origin_;
     }
 
-    Vector<T> get_difference( void )
+    Vector<T> get_difference( void ) const
     {
         return difference_;
     }
 
-    Vector<int> get_N( void )
+    Vector<int> get_N( void ) const
     {
         return N_;
     }
@@ -94,12 +94,14 @@ namespace Siddon {
     typedef Vector<coord_type>  coordVector;
     typedef Ray<coord_type>     coordRay;
     typedef Grid<coord_type>    coordGrid;
-
+    
+    /* Planes in direction dim intersected by ray? */
     bool intersects( int dim, coordRay ray, coordGrid grid )
     {
         return ray.get_end()[dim] - ray.get_start()[dim] != 0;
     }
-
+    
+    /* Parameter of i'th intersection in direction dim */
     coord_type alpha_from_i( int i, int dim, coordRay ray, coordGrid grid )
     {
         return (       grid.get_origin()[dim]
@@ -110,6 +112,7 @@ namespace Siddon {
                  -      ray.get_start()[dim] );
     }
     
+    /* Invert parameter to plane (!) index in direction dim */
     coord_type phi_from_alpha( coord_type alpha, int dim, coordRay ray,
                                coordGrid grid )
     {
@@ -120,7 +123,7 @@ namespace Siddon {
                /
                (   grid.get_difference()[dim] );
     }
-
+    
 //    coordVector get_alpha_dimmin( coordRay ray, coordGrid grid )
 //    {
 //        return coordVector( min( alpha_from_i(0,0,ray,grid),
@@ -133,6 +136,8 @@ namespace Siddon {
 //                                 alpha_from_i(grid.get_N()[2],2,ray,grid) ) );
 //    }
 
+    /* Get minimum intersection parameter of intersections with planes in
+     * direction dim */
     coord_type get_alpha_dimmin( int dim, coordRay ray, coordGrid grid )
     {
         return std::min(alpha_from_i(0,                dim,ray,grid),
@@ -150,13 +155,16 @@ namespace Siddon {
 //                       max( alpha_from_i(0,2,ray,grid),
 //                            alpha_from_i(grid.get_N()[2],2,ray,grid) ) );
 //    }
-
+    
+    /* Get maximum intersection parameter of intersections with planes in
+     * direction dim */
     coord_type get_alpha_dimmax( int dim, coordRay ray, coordGrid grid )
     {
         return std::max(alpha_from_i(0,                dim,ray,grid),
                         alpha_from_i(grid.get_N()[dim],dim,ray,grid));
     }
-
+    
+    /* Does ray intersect planes in any direction at all? */
     bool alpha_min_exists( coordRay ray, coordGrid grid )
     {
         return    intersects(0,ray,grid)
@@ -171,6 +179,9 @@ namespace Siddon {
 //                    alpha_dimmin[2] );
 //    }
 
+    /* Get minimum parameter of an intersection of the ray with a plane that is
+     * adjacent to a voxel which has a finite intersection length with that ray
+     */
     // Correct results only for `alpha_min_exists(...) == true`!!!
     coord_type get_alpha_min( coordRay ray, coordGrid grid )
     {
@@ -184,7 +195,7 @@ namespace Siddon {
                 temp = get_alpha_dimmin(dim,ray,grid);
                 if(not_first)
                 {
-                    temp_min = std::max(temp_min,temp);
+                    temp_min = std::max(temp_min,temp); // !
                 } else
                 {
                     temp_min = temp;
@@ -194,7 +205,8 @@ namespace Siddon {
         }
         return temp_min;
     }
-
+    
+    /* Does ray intersect planes in any direction at all? */
     bool alpha_max_exists( coordRay ray, coordGrid grid )
     {
         return    intersects(0,ray,grid)
@@ -209,6 +221,9 @@ namespace Siddon {
 //                   alpha_dimmax[2] );
 //   }
 
+    /* Get maximum parameter of an intersection of the ray with a plane that is
+     * adjacent to a voxel which has a finite intersection length with that ray
+     */
     // Correct results only for `alpha_max_exists(...) == true`!!!
     coord_type get_alpha_max( coordRay ray, coordGrid grid )
     {
@@ -222,7 +237,7 @@ namespace Siddon {
                 temp = get_alpha_dimmax(dim,ray,grid);
                 if(not_first)
                 {
-                    temp_max = std::min(temp_max,temp);
+                    temp_max = std::min(temp_max,temp); // !
                 } else
                 {
                     temp_max = temp;
@@ -232,7 +247,9 @@ namespace Siddon {
         }
         return temp_max;
     }
-
+    
+    /* Get index of plane in direction dim where iray enters first voxel on its
+     * way, i.e. the minimum plane index */
     int get_i_dimmin( int dim, coordRay ray, coordGrid grid )
     {
         if(ray.get_start()[dim] < ray.get_end()[dim])
@@ -259,7 +276,9 @@ namespace Siddon {
             }
         }
     }
-
+    
+    /* Get index of plane in direction dim where iray exits last voxel on its
+     * way, i.e. the maximum plane index */
     int get_i_dimmax( int dim, coordRay ray, coordGrid grid )
     {
         if(ray.get_start()[dim] < ray.get_end()[dim])
@@ -287,4 +306,5 @@ namespace Siddon {
         }
     }
 }
+
 #endif  // #ifndef SIDDON_HPP
