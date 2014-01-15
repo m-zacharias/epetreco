@@ -1,5 +1,6 @@
 CPPC = g++
-CPPFLAGS = -Wall
+#CPPFLAGS = -Wall
+CPPFLAGS = -Wall -DDEBUG
 CPPO = -c
 
 all : test_Siddon.out\
