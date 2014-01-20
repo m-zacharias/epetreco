@@ -44,6 +44,15 @@ test_PlyGrid.out : \
         PlyWriter.o
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
+test_PlyBox.out : \
+        test_PlyBox.cpp\
+        Vertex.o\
+        PlyGeometry.o\
+        CompositePlyGeometry.o\
+        PlyBox.o\
+        PlyWriter.o
+	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+
 
 
 PlyGeometry.o : \
@@ -60,6 +69,12 @@ CompositePlyGeometry.o : \
 PlyRectangle.o : \
         PlyRectangle.cpp\
         PlyRectangle.hpp\
+        PlyGeometry.hpp
+	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
+
+PlyBox.o : \
+        PlyBox.cpp\
+        PlyBox.hpp\
         PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
@@ -92,9 +107,11 @@ clean:
       ./test_PlyGeometry.out\
       ./test_PlyWriter.out\
       ./test_PlyGrid.out\
+      ./test_PlyBox.out\
       ./Vertex.o\
       ./PlyGeometry.o\
       ./CompositePlyGeometry.o\
       ./PlyRectangle.o\
+      ./PlyBox.o\
       ./PlyGrid.o\
       ./PlyWriter.o

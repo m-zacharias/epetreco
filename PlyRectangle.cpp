@@ -15,7 +15,9 @@ PlyRectangle::PlyRectangle( std::string const name,
   _p0(p0), _p1(p1), _p2(p2), _p3(p3)
 {
 #ifdef DEBUG
-  std::cout << "PlyRectangle::PlyRectangle(std::string const)" << std::endl;
+  std::cout << "PlyRectangle::PlyRectangle(std::string const, Vertex const,"
+            << "Vertex const, Vertex const, Vertex const)"
+            << std::endl;
 #endif
 }
 
