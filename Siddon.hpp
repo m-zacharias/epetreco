@@ -474,6 +474,142 @@ namespace Siddon {
         i++;
       }
     }
+
+    struct Intersection
+    {
+      public:
+        
+        int idx, idy, idz;
+
+        coord_type length;
+
+        Intersection() {}
+
+        Intersection( int idx_, int idy_, int idz_, coord_type length_ )
+        : idx(idx_), idy(idy_), idz(idz_), length(length_) {}
+    };
+
+    void calculate_intersection_lengths( Intersection * a, coordRay ray, coordGrid grid )
+    {
+      coord_type length =     ray.get_length();
+      coord_type alpha_min =  get_alpha_min(ray, grid);
+      coord_type alpha_max =  get_alpha_max(ray, grid);
+      int i_x_min =           get_i_dimmin(0, ray, grid);
+      int i_x_max =           get_i_dimmax(0, ray, grid);
+      int i_y_min =           get_i_dimmin(1, ray, grid);
+      int i_y_max =           get_i_dimmax(1, ray, grid);
+      int i_z_min =           get_i_dimmin(2, ray, grid);
+      int i_z_max =           get_i_dimmax(2, ray, grid);
+      
+      coord_type alpha_x;
+      if(ray.get_end()[0] > ray.get_start()[0]) {
+        alpha_x =             alpha_from_i(i_x_min, 0, ray, grid);
+      } else{
+        alpha_x =             alpha_from_i(i_x_max, 0, ray, grid);
+      }
+      coord_type alpha_y;
+      if(ray.get_end()[1] > ray.get_start()[1]) {
+        alpha_y =             alpha_from_i(i_y_min, 1, ray, grid);
+      } else {
+        alpha_y =             alpha_from_i(i_y_max, 1, ray, grid);
+      }
+      coord_type alpha_z;
+      if(ray.get_end()[2] > ray.get_start()[2]) {
+        alpha_z =             alpha_from_i(i_z_min, 2, ray, grid);
+      } else {
+        alpha_z =             alpha_from_i(i_z_max, 2, ray, grid);
+      }
+      
+      int i_x =               std::floor(phi_from_alpha(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), 0, ray, grid));
+      int i_y =               std::floor(phi_from_alpha(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), 1, ray, grid));
+      int i_z =               std::floor(phi_from_alpha(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), 2, ray, grid));
+      
+      coord_type alpha_curr = alpha_min;
+
+#ifdef DEBUG
+      std::cout << "length:      " << length     << std::endl;
+      std::cout << "alpha_min :  " << alpha_min  << std::endl;
+      std::cout << "alpha_max :  " << alpha_max  << std::endl;
+      std::cout << std::endl;
+      std::cout << "i_x_min :    " << i_x_min    << std::endl;
+      std::cout << "i_y_min :    " << i_y_min    << std::endl;
+      std::cout << "i_z_min :    " << i_z_min    << std::endl;
+      std::cout << std::endl;
+      std::cout << "alpha_x :    " << alpha_x    << std::endl;
+      std::cout << "alpha_y :    " << alpha_y    << std::endl;
+      std::cout << "alpha_z :    " << alpha_z    << std::endl;
+      std::cout << "alpha_curr : " << alpha_curr << std::endl;
+      std::cout << std::endl;
+#endif
+
+      // Iterate
+      int i = 0;
+      while(alpha_curr < alpha_max){
+        if(     alpha_x == min(alpha_x, alpha_y, alpha_z))
+        {
+#ifdef DEBUG
+          std::cout << "intersect x plane at alpha = " << alpha_x << std::endl;
+#endif
+          a[i].length = (alpha_x - alpha_curr)*length;
+          a[i].idx    = i_x;
+          a[i].idy    = i_y;
+          a[i].idz    = i_z;
+          update_i_dim(i_x, 0, ray, grid);
+          alpha_curr = alpha_x;
+          update_alpha_dim(alpha_x, 0, ray, grid);
+          
+          // If more than one plane are crossed at the same point:  Acknoledge
+          // only the first crossing, skip the others
+          if(alpha_curr == alpha_y)
+          {
+            update_i_dim(i_y, 1, ray, grid);
+            update_alpha_dim(alpha_y, 1, ray, grid);
+          }
+          if(alpha_curr == alpha_z)
+          {
+            update_i_dim(i_z, 2, ray, grid);
+            update_alpha_dim(alpha_z, 2, ray, grid);
+          }
+          // skip end
+        }
+        else if(alpha_y == min(alpha_x, alpha_y, alpha_z))
+        {
+#ifdef DEBUG
+          std::cout << "intersect y plane at alpha = " << alpha_y << std::endl;
+#endif
+          a[i].length = (alpha_y - alpha_curr)*length;
+          a[i].idx    = i_x;
+          a[i].idy    = i_y;
+          a[i].idz    = i_z;
+          update_i_dim(i_y, 1, ray, grid);
+          alpha_curr = alpha_y;
+          update_alpha_dim(alpha_y, 1, ray, grid);
+          
+          // If more than one plane are crossed at the same point:  Acknoledge
+          // only the first crossing, skip the others
+          if(alpha_curr == alpha_z)
+          {
+            update_i_dim(i_z, 2, ray, grid);
+            update_alpha_dim(alpha_z, 2, ray, grid);
+          }
+          // skip end
+        }
+        else
+        {
+#ifdef DEBUG
+          std::cout << "intersect z plane at alpha = " << alpha_z << std::endl;
+#endif
+          a[i].length = (alpha_z - alpha_curr)*length;
+          a[i].idx    = i_x;
+          a[i].idy    = i_y;
+          a[i].idz    = i_z;
+          update_i_dim(i_z, 2, ray, grid);
+          alpha_curr = alpha_z;
+          update_alpha_dim(alpha_z, 2, ray, grid);
+        }
+        i++;
+      }
+    }
 }
 
 #endif  // #ifndef SIDDON_HPP

@@ -6,7 +6,9 @@ INC = -I./FoundationClasses/
 
 all : \
         test_Siddon.out\
+        test2_Siddon.out\
         test_PlyGeometry.out\
+        test_PlyBox.out\
         test_PlyWriter.out\
         test_PlyGrid.out
 
@@ -14,6 +16,11 @@ all : \
 
 test_Siddon.out : \
         test_Siddon.cpp\
+        Siddon.hpp
+	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
+
+test2_Siddon.out : \
+        test2_Siddon.cpp\
         Siddon.hpp
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
@@ -53,6 +60,14 @@ test_PlyBox.out : \
         PlyWriter.o
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
+test_PlyLine.out : \
+        test_PlyLine.cpp\
+        PlyLine.o\
+        Vertex.o\
+        PlyGeometry.o\
+        PlyWriter.o
+	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+
 
 
 PlyGeometry.o : \
@@ -75,6 +90,12 @@ PlyRectangle.o : \
 PlyBox.o : \
         PlyBox.cpp\
         PlyBox.hpp\
+        PlyGeometry.hpp
+	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
+
+PlyLine.o : \
+        PlyLine.cpp\
+        PlyLine.hpp\
         PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
@@ -104,14 +125,17 @@ Vertex.o : \
 clean:
 	rm\
       ./test_Siddon.out\
+      ./test2_Siddon.out\
       ./test_PlyGeometry.out\
       ./test_PlyWriter.out\
       ./test_PlyGrid.out\
       ./test_PlyBox.out\
+      ./test_PlyLine.out\
       ./Vertex.o\
       ./PlyGeometry.o\
       ./CompositePlyGeometry.o\
       ./PlyRectangle.o\
       ./PlyBox.o\
+      ./PlyLine.o\
       ./PlyGrid.o\
       ./PlyWriter.o
