@@ -38,9 +38,6 @@ class PlyLine : public PlyGeometry
     /* Get number of faces, intermediate call */
     virtual std::string facesStr( int & );
 
-
-  private:
-    
     Vertex _p0, _p1;
 };
 

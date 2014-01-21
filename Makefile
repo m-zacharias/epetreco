@@ -6,7 +6,7 @@ INC = -I./FoundationClasses/
 
 all : \
         test_Siddon.out\
-        test2_Siddon.out\
+        test_02_Siddon.out\
         test_PlyGeometry.out\
         test_PlyBox.out\
         test_PlyWriter.out\
@@ -19,14 +19,19 @@ test_Siddon.out : \
         Siddon.hpp
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
-test2_Siddon.out : \
-        test2_Siddon.cpp\
-        Siddon.hpp
+test_02_Siddon.out : \
+        test_02_Siddon.cpp\
+        Siddon.hpp\
+        PlyGeometry.o\
+        PlyRectangle.o\
+        PlyLine.o\
+        PlyGrid.o\
+        CompositePlyGeometry.o\
+        PlyWriter.o
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
 test_PlyGeometry.out : \
         test_PlyGeometry.cpp\
-        Vertex.o\
         PlyGeometry.o\
         PlyRectangle.o\
         CompositePlyGeometry.o
@@ -34,7 +39,6 @@ test_PlyGeometry.out : \
 
 test_PlyWriter.out : \
         test_PlyWriter.cpp\
-        Vertex.o\
         PlyGeometry.o\
         PlyRectangle.o\
         CompositePlyGeometry.o\
@@ -43,7 +47,6 @@ test_PlyWriter.out : \
 
 test_PlyGrid.out : \
         test_PlyGrid.cpp\
-        Vertex.o\
         PlyGeometry.o\
         PlyRectangle.o\
         CompositePlyGeometry.o\
@@ -53,7 +56,6 @@ test_PlyGrid.out : \
 
 test_PlyBox.out : \
         test_PlyBox.cpp\
-        Vertex.o\
         PlyGeometry.o\
         CompositePlyGeometry.o\
         PlyBox.o\
@@ -63,7 +65,6 @@ test_PlyBox.out : \
 test_PlyLine.out : \
         test_PlyLine.cpp\
         PlyLine.o\
-        Vertex.o\
         PlyGeometry.o\
         PlyWriter.o
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
@@ -112,10 +113,10 @@ PlyWriter.o : \
         PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
-Vertex.o : \
-        Vertex.cpp\
-        Vertex.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
+#Vertex.o : \
+#        Vertex.cpp\
+#        Vertex.hpp
+#	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 #Siddon.o : Siddon.hpp
 #	$(CPPC) $(CPPFLAGS) $(CPPO) $< -o $@
@@ -125,13 +126,12 @@ Vertex.o : \
 clean:
 	rm\
       ./test_Siddon.out\
-      ./test2_Siddon.out\
+      ./test_02_Siddon.out\
       ./test_PlyGeometry.out\
       ./test_PlyWriter.out\
       ./test_PlyGrid.out\
       ./test_PlyBox.out\
       ./test_PlyLine.out\
-      ./Vertex.o\
       ./PlyGeometry.o\
       ./CompositePlyGeometry.o\
       ./PlyRectangle.o\

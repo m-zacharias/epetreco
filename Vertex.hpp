@@ -1,19 +1,10 @@
 #ifndef VERTEX_HPP
 #define VERTEX_HPP
 
+#include "Vector.hpp"
+
 typedef double coord_type;
 
-struct Vertex
-{
-  public:
-    
-    Vertex( coord_type, coord_type, coord_type );
-    Vertex( Vertex const & );
-
-    void operator=( Vertex const & );
-    
-    coord_type x, y, z;    
-};
+typedef Vector<coord_type> Vertex;
 
 #endif  // #define VERTEX_HPP
-
