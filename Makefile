@@ -4,7 +4,13 @@ CPPFLAGS = -Wall
 CPPO = -c
 INC = -I./FoundationClasses/
 
+CUC = nvcc
+CUCCFLAGS =
+CUCINC = -I$(CUDA_ROOT)/include
+CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
+
 all : \
+        cublasExampleMatrixVectorMult.out\
         test_Siddon.out\
         test_02_Siddon.out\
         test_PlyGeometry.out\
@@ -13,6 +19,10 @@ all : \
         test_PlyGrid.out
 
 
+
+cublasExampleMatrixVectorMult.out :\
+        cublasExampleMatrixVectorMult.cu
+	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
 test_Siddon.out : \
         test_Siddon.cpp\
