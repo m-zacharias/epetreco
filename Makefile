@@ -15,7 +15,8 @@ all : \
         test_PlyGeometry.out\
         test_PlyBox.out\
         test_PlyWriter.out\
-        test_PlyGrid.out
+        test_PlyGrid.out\
+        test_CudaTransform.out
 #        cublasExampleMatrixVectorMult.out\
 
 
@@ -23,6 +24,20 @@ all : \
 cublasExampleMatrixVectorMult.out :\
         cublasExampleMatrixVectorMult.cu
 	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
+
+test_CudaTransform.out :\
+        test_CudaTransform.cu\
+        CudaMatrix.hpp\
+        CudaMatrix.tpp\
+        CudaVector.hpp\
+        CudaVector.tpp\
+        CudaTransform.hpp\
+        CudaTransform.tpp\
+        conversion.hpp\
+        cublas_gemv.hpp\
+        cublas_gemv.tpp
+	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $< -o $@
+
 
 test_Siddon.out : \
         test_Siddon.cpp\
@@ -143,6 +158,7 @@ clean:
       ./test_PlyBox.out\
       ./test_PlyLine.out\
       ./cublasExampleMatrixVectorMult.out\
+      ./test_CudaTransform.out\
       ./PlyGeometry.o\
       ./CompositePlyGeometry.o\
       ./PlyRectangle.o\

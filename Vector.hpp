@@ -1,12 +1,12 @@
-#ifndef MATRIX_HPP
-#define MATRIX_HPP
+#ifndef VECTOR_HPP
+#define VECTOR_HPP
 
 /**
- * @brief Interface to a matrix type. Each plugin has to implement a
+ * @brief Interface to a vector type. Each plugin has to implement a
  * specific concretisation.
  */
 template<class T>
-class Matrix
+class Vector
 {
   public:
     
@@ -15,12 +15,7 @@ class Matrix
     /**
      * @brief Gets the number of elements in x direction ("width").
      */
-    virtual int get_nx( void ) = 0;
-    
-    /**
-     * @brief Gets the number of elements in y direction ("height").
-     */
-    virtual int get_ny( void ) = 0;
+    virtual int get_n( void ) = 0;
     
     /**
      * @brief Returns a void pointer to the raw data.
@@ -33,7 +28,7 @@ class Matrix
      * @param idx Index of the element in x direction
      * @param idy Index of the element in y direction
      */
-    virtual T get( int idx, int idy ) = 0;
+    virtual T get( int id ) = 0;
     
     /**
      * @brief Sets the value of a specific element of this Matrix.
@@ -42,11 +37,12 @@ class Matrix
      * @param idy Index of the element in y direction
      * @param val New value of the element
      */
-    virtual void set( int idx, int idy, T val ) = 0;
+    virtual void set( int id, T val ) = 0;
     
     /**
      * @brief Returns a pointer to a clone of this Matrix.
      */
-    virtual Matrix * clone( void ) = 0;
+    virtual Vector * clone( void ) = 0;
 };
-#endif  // #define MATRIX_HPP
+
+#endif  // #define VECTOR_HPP
