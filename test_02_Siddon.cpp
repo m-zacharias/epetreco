@@ -42,7 +42,7 @@ class CGrid : public Grid<coord_type>, public PlyGrid
     
     CGrid( std::string const name,
            Vertex const origin,
-           Vector<coord_type> const diff,
+           TemplateVertex<coord_type> const diff,
            int const Nx, int const Ny, int const Nz )
     : PlyGrid(name,origin,Nx,Ny,Nz,diff.x,diff.y,diff.z),
       _origin(origin), _diff(diff),

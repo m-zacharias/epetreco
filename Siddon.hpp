@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <algorithm> // for min, max
-#include "Vector.hpp"
+#include "Vertex.hpp"
 
 #ifdef DEBUG
 #include <iostream>
@@ -20,9 +20,9 @@ struct Ray
     
     typedef T coord_type;
 
-    virtual Vector<T> start() const = 0;
+    virtual TemplateVertex<T> start() const = 0;
 
-    virtual Vector<T> end() const = 0;
+    virtual TemplateVertex<T> end() const = 0;
 
     virtual T length() const = 0;
 };
@@ -37,9 +37,9 @@ struct Grid
     
     typedef T coord_type;    
 
-    virtual Vector<T> origin() const = 0;
+    virtual TemplateVertex<T> origin() const = 0;
 
-    virtual Vector<T> diff( void ) const = 0;
+    virtual TemplateVertex<T> diff( void ) const = 0;
 
     virtual int Nx() const = 0;
 

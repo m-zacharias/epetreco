@@ -10,13 +10,13 @@ CUCINC = -I$(CUDA_ROOT)/include
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
 all : \
-        cublasExampleMatrixVectorMult.out\
         test_Siddon.out\
         test_02_Siddon.out\
         test_PlyGeometry.out\
         test_PlyBox.out\
         test_PlyWriter.out\
         test_PlyGrid.out
+#        cublasExampleMatrixVectorMult.out\
 
 
 
@@ -142,6 +142,7 @@ clean:
       ./test_PlyGrid.out\
       ./test_PlyBox.out\
       ./test_PlyLine.out\
+      ./cublasExampleMatrixVectorMult.out\
       ./PlyGeometry.o\
       ./CompositePlyGeometry.o\
       ./PlyRectangle.o\
