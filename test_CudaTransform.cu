@@ -25,7 +25,7 @@ int main()
     y.set(idy, 0.);
   }
   
-  trafo.gemv(CudaTransform<TE,TI>::base_class::BLAS_OP_N, NY, NX, &alpha, &A, NY, &x, 1, &beta, &y, 1);
+  trafo.gemv(BLAS_OP_N, NY, NX, &alpha, &A, NY, &x, 1, &beta, &y, 1);
 
   for(int idy=0; idy<NY; idy++) {
     std::cout << y.get(idy) << " ";

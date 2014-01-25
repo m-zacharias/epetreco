@@ -3,14 +3,29 @@
 
 #include "Vector.hpp"
 
-template<class TE, class TI>
-class CudaVector : public Vector<TE>
+
+
+template<typename TE, typename TI>
+struct CudaVectorTraits
 {
   public:
     
-    typedef TI internal_elem_t;
+    typedef TE                elem_t;
+    typedef TE                external_elem_t;
+    typedef TI                internal_elem_t;
+};
+
+
+
+template<class TE, class TI>
+class CudaVector : public Vector<CudaVector<TE,TI>, CudaVectorTraits<TE,TI> >
+{
+  public:
     
-    
+    typedef typename CudaVectorTraits<TE, TI>::elem_t          elem_t;
+    typedef typename CudaVectorTraits<TE, TI>::external_elem_t external_elem_t;
+    typedef typename CudaVectorTraits<TE, TI>::internal_elem_t internal_elem_t;
+
     CudaVector( int n );
 
     ~CudaVector();
@@ -24,7 +39,7 @@ class CudaVector : public Vector<TE>
     
     void set( int id, TE val );
     
-    Vector<TE> * clone();
+    CudaVector<TE, TI> * clone();
     
     void set_devi_data_changed();
     

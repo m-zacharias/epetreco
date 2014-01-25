@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-template<class TE, class TI>
+template<typename TE, typename TI>
 CudaTransform<TE,TI>::CudaTransform()
 {
   _cublasStatus = cublasCreate( &_cublasHandle );
@@ -17,15 +17,15 @@ CudaTransform<TE,TI>::CudaTransform()
   }
 }
 
-template<class TE, class TI>
+template<typename TE, typename TI>
 CudaTransform<TE,TI>::~CudaTransform()
 {
   cublasDestroy(_cublasHandle);
 }
 
-template<class TE, class TI>
+template<typename TE, typename TI>
 void CudaTransform<TE,TI>::gemv
-                          ( typename base_class::blasOperation_t trans, int M, int N,
+                          ( Operation_t trans, int M, int N,
                             Scalar_t * alpha, Matrix_t * A, int ldA,
                             Vector_t * x, int incx,
                             Scalar_t * beta, Vector_t * y, int incy )
@@ -33,19 +33,19 @@ void CudaTransform<TE,TI>::gemv
   TI ialpha = convert2internal(*alpha);
   TI ibeta = convert2internal(*beta);
   
-  if     (trans==base_class::BLAS_OP_N) {
+  if     (trans==BLAS_OP_N) {
     _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_N, M, N,
                                     &ialpha, static_cast<TI*>(A->data()), ldA,
                                     static_cast<TI*>(x->data()), incx,
                                     &ibeta, static_cast<TI*>(y->data()), incy );
   }
-  else if(trans==base_class::BLAS_OP_T) {
+  else if(trans==BLAS_OP_T) {
     _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_T, M, N,
                                     &ialpha, static_cast<TI*>(A->data()), ldA,
                                     static_cast<TI*>(x->data()), incx,
                                     &ibeta, static_cast<TI*>(y->data()), incy );
   }
-  else if(trans==base_class::BLAS_OP_C) {
+  else if(trans==BLAS_OP_C) {
     _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_C, M, N,
                                     &ialpha, static_cast<TI*>(A->data()), ldA,
                                     static_cast<TI*>(x->data()), incx,
@@ -60,7 +60,7 @@ void CudaTransform<TE,TI>::gemv
   }
 }
 
-//template<class TE, class TI>
+//template<typename TE, typename TI>
 // CudaTransform<TE,TI>::
 //{
 //}

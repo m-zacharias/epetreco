@@ -9,7 +9,7 @@
 template<class TE, class TI>
 void CudaMatrix<TE,TI>::update_devi_data()
 {
-  cublasStatus_t status = cublasSetMatrix(ny_, nx_, sizeof(TI),
+  cublasStatus_t status = cublasSetMatrix(ny_, nx_, sizeof(internal_elem_t),
                                           raw_host_, ny_, raw_devi_, ny_);
   if(status != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data upload failed." << std::endl;
@@ -21,7 +21,7 @@ void CudaMatrix<TE,TI>::update_devi_data()
 template<class TE, class TI>
 void CudaMatrix<TE,TI>::update_host_data()
 {
-  cublasStatus_t status = cublasGetMatrix(ny_, nx_, sizeof(TI),
+  cublasStatus_t status = cublasGetMatrix(ny_, nx_, sizeof(internal_elem_t),
                                           raw_devi_, ny_, raw_host_, ny_ );
   if(status != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data download failed." << std::endl;
@@ -34,8 +34,8 @@ template<class TE, class TI>
 CudaMatrix<TE,TI>::CudaMatrix( int nx, int ny )
 : nx_(nx), ny_(ny)
 {
-  raw_host_ = new TI[nx*ny];
-  cudaError_t status = cudaMalloc( (void**)&raw_devi_, nx_*ny_*sizeof(TI) );
+  raw_host_ = new internal_elem_t[nx*ny];
+  cudaError_t status = cudaMalloc( (void**)&raw_devi_, nx_*ny_*sizeof(internal_elem_t) );
   
   if( status != cudaSuccess ) {
     std::cerr << "Device memory allocation failed: "
@@ -76,7 +76,7 @@ void * CudaMatrix<TE,TI>::data()
 }
 
 template<class TE, class TI>
-TE CudaMatrix<TE,TI>::get( int idx, int idy )
+CudaMatrix<TE,TI>::elem_t CudaMatrix<TE,TI>::get( int idx, int idy )
 {
   if( devi_data_changed_ )
     update_host_data();
@@ -85,7 +85,7 @@ TE CudaMatrix<TE,TI>::get( int idx, int idy )
 }
 
 template<class TE, class TI>
-void CudaMatrix<TE,TI>::set( int idx, int idy, TE val )
+void CudaMatrix<TE,TI>::set( int idx, int idy, elem_t val )
 {
   if( devi_data_changed_ )
     update_host_data();
@@ -95,13 +95,13 @@ void CudaMatrix<TE,TI>::set( int idx, int idy, TE val )
 }
 
 template<class TE, class TI>
-Matrix<TE> * CudaMatrix<TE,TI>::clone()
+CudaMatrix<TE,TI> * CudaMatrix<TE,TI>::clone()
 {
   if( host_data_changed_ )
     update_devi_data();
   
   CudaMatrix<TE,TI> * clone = new CudaMatrix<TE,TI>( nx_, ny_ );
-  cudaMemcpy( clone->data(), raw_devi_, nx_*ny_*sizeof(TI), cudaMemcpyDeviceToDevice );
+  cudaMemcpy( clone->data(), raw_devi_, nx_*ny_*sizeof(internal_elem_t), cudaMemcpyDeviceToDevice );
   
   return clone;
 }

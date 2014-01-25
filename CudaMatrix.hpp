@@ -3,13 +3,28 @@
 
 #include "Matrix.hpp"
 
-template<class TE, class TI>
-class CudaMatrix : public Matrix<TE>
+
+
+template<typename TE, typename TI>
+struct CudaMatrixTraits
 {
   public:
     
-    typedef TI internal_elem_t;
+    typedef TE                elem_t;
+    typedef TE                external_elem_t;
+    typedef TI                internal_elem_t;
+};
+
+
+
+template<class TE, class TI>
+class CudaMatrix : public Matrix<CudaMatrix<TE,TI>, CudaMatrixTraits<TE,TI> >
+{
+  public:
     
+    typedef typename CudaMatrixTraits<TE, TI>::elem_t          elem_t;
+    typedef typename CudaMatrixTraits<TE, TI>::external_elem_t external_elem_t;
+    typedef typename CudaMatrixTraits<TE, TI>::internal_elem_t internal_elem_t;
 
     CudaMatrix( int nx, int ny );
     
@@ -22,11 +37,11 @@ class CudaMatrix : public Matrix<TE>
     
     void * data();
     
-    TE get( int idx, int idy );
+    elem_t get( int idx, int idy );
     
-    void set( int idx, int idy, TE val );
+    void set( int idx, int idy, elem_t val );
     
-    Matrix<TE> * clone();
+    CudaMatrix<TE,TI> * clone();
     
 
     void set_devi_data_changed();
@@ -39,9 +54,9 @@ class CudaMatrix : public Matrix<TE>
     void update_host_data();
     
 
-    TI * raw_host_;
+    internal_elem_t * raw_host_;
     
-    TI * raw_devi_;
+    internal_elem_t * raw_devi_;
     
     bool devi_data_changed_;
     

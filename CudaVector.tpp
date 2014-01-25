@@ -11,7 +11,7 @@
 template<class TE, class TI>
 void CudaVector<TE,TI>::update_devi_data()
 {
-  cublasStatus_t cublasStatus = cublasSetVector(n_, sizeof(TI), raw_host_, 1,
+  cublasStatus_t cublasStatus = cublasSetVector(n_, sizeof(internal_elem_t), raw_host_, 1,
                                                 raw_devi_, 1);
   if(cublasStatus != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data upload failed." << std::endl;
@@ -23,7 +23,7 @@ void CudaVector<TE,TI>::update_devi_data()
 template<class TE, class TI>
 void CudaVector<TE,TI>::update_host_data()
 {
-  cublasStatus_t cublasStatus = cublasGetVector(n_, sizeof(TI), raw_devi_, 1,
+  cublasStatus_t cublasStatus = cublasGetVector(n_, sizeof(internal_elem_t), raw_devi_, 1,
                                                 raw_host_, 1);
   if(cublasStatus != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data download failed." << std::endl;
@@ -36,9 +36,9 @@ template<class TE, class TI>
 CudaVector<TE,TI>::CudaVector( int n )
 : n_(n)
 {
-  raw_host_ = new TI[n];
+  raw_host_ = new internal_elem_t[n];
 
-  cudaError_t cudaError = cudaMalloc((void**)&raw_devi_, n*sizeof(TI));
+  cudaError_t cudaError = cudaMalloc((void**)&raw_devi_, n*sizeof(internal_elem_t));
   if(cudaError != cudaSuccess) {
     std::cerr << "Device memory allocation failed: "
               << cudaGetErrorString(cudaError) <<std::endl;
@@ -90,13 +90,13 @@ void CudaVector<TE,TI>::set( int id, TE val )
 }
 
 template<class TE, class TI>
-Vector<TE> * CudaVector<TE,TI>::clone()
+CudaVector<TE,TI> * CudaVector<TE,TI>::clone()
 {
   if(host_data_changed_)
     update_devi_data();
 
   CudaVector<TE,TI> * clone = new CudaVector<TE,TI>(n_);
-  cudaMemcpy(clone->data(), raw_devi_, n_*sizeof(TI), cudaMemcpyDeviceToDevice);
+  cudaMemcpy(clone->data(), raw_devi_, n_*sizeof(internal_elem_t), cudaMemcpyDeviceToDevice);
 
   return clone;
 }

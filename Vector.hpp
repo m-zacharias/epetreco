@@ -5,22 +5,28 @@
  * @brief Interface to a vector type. Each plugin has to implement a
  * specific concretisation.
  */
-template<class T>
+template<class ConcreteVector, typename ConcreteVectorTraits>
 class Vector
 {
   public:
     
-    typedef T external_elem_t;
+    typedef typename ConcreteVectorTraits::elem_t elem_t;
 
     /**
      * @brief Gets the number of elements in x direction ("width").
      */
-    virtual int get_n( void ) = 0;
+    int get_n( void )
+    {
+      return static_cast<ConcreteVector *>(this)->get_n();
+    }
     
     /**
      * @brief Returns a void pointer to the raw data.
      */
-    virtual void * data( void ) = 0;
+    void * data( void )
+    {
+      return static_cast<ConcreteVector *>(this)->data();
+    }
     
     /**
      * @brief Gets the value of a specific element of this Matrix.
@@ -28,7 +34,10 @@ class Vector
      * @param idx Index of the element in x direction
      * @param idy Index of the element in y direction
      */
-    virtual T get( int id ) = 0;
+    elem_t get( int id )
+    {
+      return static_cast<ConcreteVector *>(this)->get(id);
+    }
     
     /**
      * @brief Sets the value of a specific element of this Matrix.
@@ -37,12 +46,18 @@ class Vector
      * @param idy Index of the element in y direction
      * @param val New value of the element
      */
-    virtual void set( int id, T val ) = 0;
+    void set( int id, elem_t val )
+    {
+      static_cast<ConcreteVector *>(this)->set(id, val);
+    }
     
     /**
      * @brief Returns a pointer to a clone of this Matrix.
      */
-    virtual Vector * clone( void ) = 0;
+    ConcreteVector * clone( void )
+    {
+      return static_cast<ConcreteVector *>(this)->clone();
+    }
 };
 
 #endif  // #define VECTOR_HPP

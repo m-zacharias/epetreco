@@ -1,33 +1,24 @@
 #ifndef TRANSFORM_HPP
 #define TRANSFORM_HPP
 
-#include "Matrix.hpp"
-#include "Vector.hpp"
+enum BlasOperation
+{
+  BLAS_OP_N,
+  BLAS_OP_T,
+  BLAS_OP_C,
+};
 
-
-template<class Scalar>
+template<typename ConcreteTransform, typename ConcreteTransformTraits>
 class Transform
 {
   public:
     
-    typedef Scalar           Scalar_t;
-    typedef Matrix<Scalar_t> Matrix_t;
-    typedef Vector<Scalar_t> Vector_t;
-    
-    /**
-     * @brief Enumeration type, for specifying type of operation mode in BLAS
-     *  operations that have different operation modes:
-     *  BLAS_OP_N : non-transposed
-     *  BLAS_OP_T : transposed
-     *  BLAS_OP_C : transposed + complex conjugated
-     */
-    enum blasOperation_t
-    {
-      BLAS_OP_N,
-      BLAS_OP_T,
-      BLAS_OP_C
-    };
-    
+    typedef typename ConcreteTransformTraits::Scalar_t Scalar_t;
+    typedef typename ConcreteTransformTraits::Matrix_t Matrix_t;
+    typedef typename ConcreteTransformTraits::Vector_t Vector_t;
+
+    typedef BlasOperation                              Operation_t;
+
     /**
      * @brief BLAS gemv - Matrix-Vector product with a general matrix, i.e.:
      *  y = alpha*A  *x + beta*y or
@@ -49,11 +40,14 @@ class Transform
      * @param y Pointer to the summand/output vector
      * @param incy Increment/spacing of the summand/output vector in memory
      */
-    virtual void gemv( blasOperation_t trans,
-      int M, int N,
-      Scalar_t * alpha, Matrix<Scalar_t> * A, int ldA,
-      Vector<Scalar_t> * x, int incx,
-      Scalar_t * beta, Vector<Scalar_t> * y, int incy ) = 0;
+    void gemv( Operation_t trans, int M, int N,
+               Scalar_t * alpha, Matrix_t * A, int ldA,
+               Vector_t * x, int incx,
+               Scalar_t * beta, Vector_t * y, int incy )
+    {
+      static_cast<ConcreteTransform *>(this)->\
+      gemv( trans, M, N, alpha, A, ldA, x, incx, beta, y, incy );
+    }
 };
 
 #endif  // #define TRANSFORM_HPP
