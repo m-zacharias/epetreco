@@ -559,7 +559,8 @@ namespace Siddon{
   /* #########################################################################
    * ### Get total number of grid planes crossed by the ray.  Actual number of
    * ### intersections might be smaller.  This is the case, if one or more
-   * ### intersections cross more than one plane at the same point.    
+   * ### intersections cross more than one plane at the same point (i.e.
+   * ### crossing at an edge or at a corner.)
    * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  int get_N_crossed_planes( Ray<T> ray, Grid<T> grid )
@@ -787,18 +788,23 @@ namespace Siddon{
   template<class Ray, class Grid>
   void calculate_intersection_lengths( Intersection<typename Ray::coord_type> * a, Ray ray, Grid grid )
   {
-    typename Ray::coord_type length =     ray.length();
-    typename Ray::coord_type alpha_min =  get_alpha_min<Ray,Grid>(ray, grid);
-    typename Ray::coord_type alpha_max =  get_alpha_max<Ray,Grid>(ray, grid);
+    // #################################
+    // INITIALISATION
+    // #################################
+    typename Ray::coord_type length =     ray.length();                         // length of ray (cartesian)
+    typename Ray::coord_type alpha_min =  get_alpha_min<Ray,Grid>(ray, grid);   // param of first intersected plane
+    typename Ray::coord_type alpha_max =  get_alpha_max<Ray,Grid>(ray, grid);   // param of last intersected plane
     
-    int i_x_min =                         get_i_dimmin__x<Ray,Grid>(ray, grid);
-    int i_y_min =                         get_i_dimmin__y<Ray,Grid>(ray, grid);
-    int i_z_min =                         get_i_dimmin__z<Ray,Grid>(ray, grid);
+    int i_x_min =                         get_i_dimmin__x<Ray,Grid>(ray, grid); // min/max indices of planes - following that rather complicated case differentiation
+    int i_y_min =                         get_i_dimmin__y<Ray,Grid>(ray, grid); // -||-
+    int i_z_min =                         get_i_dimmin__z<Ray,Grid>(ray, grid); // -||-
     
-    int i_x_max =                         get_i_dimmax__x<Ray,Grid>(ray, grid);
-    int i_y_max =                         get_i_dimmax__y<Ray,Grid>(ray, grid);
-    int i_z_max =                         get_i_dimmax__z<Ray,Grid>(ray, grid);
+    int i_x_max =                         get_i_dimmax__x<Ray,Grid>(ray, grid); // -||-
+    int i_y_max =                         get_i_dimmax__y<Ray,Grid>(ray, grid); // -||-
+    int i_z_max =                         get_i_dimmax__z<Ray,Grid>(ray, grid); // -||-
+
     
+    // Get initial alpha params for each dimension
     typename Ray::coord_type alpha_x;
     if(ray.end().x > ray.start().x) {
       alpha_x =                           alpha_from_i__x<Ray,Grid>(i_x_min, ray, grid);
@@ -823,10 +829,14 @@ namespace Siddon{
       alpha_z =                           alpha_from_i__z<Ray,Grid>(i_z_max, ray, grid);
     }
     
+
+    // Get index of first voxel crossed by the ray
     int i_x =                             std::floor(phi_from_alpha__x<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), ray, grid));
     int i_y =                             std::floor(phi_from_alpha__y<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), ray, grid));
     int i_z =                             std::floor(phi_from_alpha__z<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), ray, grid));
     
+
+    // Initialise current position to the first plane crossed
     typename Ray::coord_type alpha_curr = alpha_min;
 
 #ifdef DEBUG
@@ -844,69 +854,88 @@ namespace Siddon{
     std::cout << "alpha_curr : " << alpha_curr << std::endl;
     std::cout << std::endl;
 #endif
+    // #################################
 
-    // Iterate
+
+
+    // #################################
+    // ITERATIONS
+    // #################################
     int i = 0;
     while(alpha_curr < alpha_max){
+      
+      
+      // X PLANE AHEAD
       if(     alpha_x == min(alpha_x, alpha_y, alpha_z)) {
 #ifdef DEBUG
         std::cout << "intersect x plane at alpha = " << alpha_x << std::endl;
 #endif
-        a[i].length = (alpha_x - alpha_curr)*length;
-        a[i].idx    = i_x;
-        a[i].idy    = i_y;
-        a[i].idz    = i_z;
-        update_i__x<Ray,Grid>(i_x, ray, grid);
-        alpha_curr = alpha_x;
-        update_alpha__x<Ray,Grid>(alpha_x, ray, grid);
+        a[i].idx    = i_x;                            // save current voxel x id
+        a[i].idy    = i_y;                            // save current voxel y id
+        a[i].idz    = i_z;                            // save current voxel z id
+        a[i].length = (alpha_x - alpha_curr)*length;  // calc+save current intersection length
+
+        alpha_curr = alpha_x;                         // update current position
+        update_alpha__x<Ray,Grid>(alpha_x, ray, grid);// update "next x plane to be crossed"
+        update_i__x<Ray,Grid>(i_x, ray, grid);        // update voxel x id
         
-        // If more than one plane are crossed at the same point:  Acknowledge
-        // only the first crossing, skip the others
-        if(alpha_curr == alpha_y)
-        {
-          update_i__y<Ray,Grid>(i_y, ray, grid);
-          update_alpha__y<Ray,Grid>(alpha_y, ray, grid);
-        }
-        if(alpha_curr == alpha_z)
-        {
-          update_i__z<Ray,Grid>(i_z, ray, grid);
-          update_alpha__z<Ray,Grid>(alpha_z, ray, grid);
-        }
-        // end skip
+//        // If more than one plane are crossed at the same point:  Acknowledge
+//        // only the first crossing, skip the others
+//        if(alpha_curr == alpha_y)
+//        {
+//          update_i__y<Ray,Grid>(i_y, ray, grid);
+//          update_alpha__y<Ray,Grid>(alpha_y, ray, grid);
+//        }
+//        if(alpha_curr == alpha_z)
+//        {
+//          update_i__z<Ray,Grid>(i_z, ray, grid);
+//          update_alpha__z<Ray,Grid>(alpha_z, ray, grid);
+//        }
+//        // end skip
       }
+
+
+      // Y PLANE AHEAD
       else if(alpha_y == min(alpha_x, alpha_y, alpha_z)) {
 #ifdef DEBUG
         std::cout << "intersect y plane at alpha = " << alpha_y << std::endl;
 #endif
-        a[i].length = (alpha_y - alpha_curr)*length;
-        a[i].idx    = i_x;
-        a[i].idy    = i_y;
-        a[i].idz    = i_z;
-        update_i__y<Ray,Grid>(i_y, ray, grid);
-        alpha_curr = alpha_y;
-        update_alpha__y<Ray,Grid>(alpha_y, ray, grid);
+        a[i].idx    = i_x;                            // save current voxel x id
+        a[i].idy    = i_y;                            // save current voxel y id
+        a[i].idz    = i_z;                            // save current voxel z id
+        a[i].length = (alpha_y - alpha_curr)*length;  // calc+save current intersection length
         
-        // If more than one plane are crossed at the same point:  Acknowledge
-        // only the first crossing, skip the others
-        if(alpha_curr == alpha_z)
-        {
-          update_i__z<Ray,Grid>(i_z, ray, grid);
-          update_alpha__z<Ray,Grid>(alpha_z, ray, grid);
-        }
-        // skip end
+        alpha_curr = alpha_y;                         // update current position
+        update_alpha__y<Ray,Grid>(alpha_y, ray, grid);// update "next y plane to be crossed"
+        update_i__y<Ray,Grid>(i_y, ray, grid);        // update voxel y id
+        
+//        // If more than one plane are crossed at the same point:  Acknowledge
+//        // only the first crossing, skip the others
+//        if(alpha_curr == alpha_z)
+//        {
+//          update_i__z<Ray,Grid>(i_z, ray, grid);
+//          update_alpha__z<Ray,Grid>(alpha_z, ray, grid);
+//        }
+//        // skip end
       }
+
+
+      // Z PLANE AHEAD
       else {
 #ifdef DEBUG
         std::cout << "intersect z plane at alpha = " << alpha_z << std::endl;
 #endif
-        a[i].length = (alpha_z - alpha_curr)*length;
         a[i].idx    = i_x;
         a[i].idy    = i_y;
         a[i].idz    = i_z;
-        update_i__z<Ray,Grid>(i_z, ray, grid);
-        alpha_curr = alpha_z;
-        update_alpha__z<Ray,Grid>(alpha_z, ray, grid);
+        a[i].length = (alpha_z - alpha_curr)*length;  // calc+save current intersection length
+
+        alpha_curr = alpha_z;                         // update current position
+        update_alpha__z<Ray,Grid>(alpha_z, ray, grid);// update "next z plane to be crossed"
+        update_i__z<Ray,Grid>(i_z, ray, grid);        // update voxel z id
       }
+
+
       i++;
     }
   }
