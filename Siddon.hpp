@@ -60,7 +60,9 @@ T min( T a, T b, T c )
 
 
 namespace Siddon{
-  /* Planes in direction x/y/z intersected by ray? */
+  /* #########################################################################
+   * ### Planes in direction x/y/z intersected by ray?
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  bool intersects__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -84,7 +86,9 @@ namespace Siddon{
   }
  
   
-  /* Parameter of i'th intersection in direction x/y/z */
+  /* #########################################################################
+   * ### Parameter of i'th intersection in direction x/y/z
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T alpha_from_i__x( int i, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -123,7 +127,9 @@ namespace Siddon{
   }
  
   
-  /* Invert parameter to plane (!) index in direction x/y/z */
+  /* #########################################################################
+   * ### Invert parameter to plane (!) index in direction x/y/z
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T phi_from_alpha__x( T alpha, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -162,8 +168,10 @@ namespace Siddon{
   }
 
 
-  /* Get minimum intersection parameter of intersections with planes in
-   * direction x/y/z */
+  /* #########################################################################
+   * ### Get minimum intersection parameter of intersections with planes in
+   * ### direction x/y/z
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmin__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -190,8 +198,10 @@ namespace Siddon{
   }
   
   
-  /* Get maximum intersection parameter of intersections with planes in
-   * direction x/y/z */
+  /* #########################################################################
+   * ### Get maximum intersection parameter of intersections with planes in
+   * ### direction x/y/z
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmax__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -218,7 +228,9 @@ namespace Siddon{
   }
   
 
-  /* Does ray intersect planes in any direction at all? */
+  /* #########################################################################
+   * ### Does ray intersect planes in any direction at all?
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  bool alpha_min_exists( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -237,9 +249,11 @@ namespace Siddon{
 //  }
 
   
-  /* Get parameter of entry point, i.e. get minimum parameter of an
-   * intersection of the ray with a plane that is adjacent to a voxel which
-   * has a finite intersection length with that ray. */
+  /* #########################################################################
+   * ### Get parameter of entry point, i.e. get minimum parameter of an
+   * ### intersection of the ray with a plane that is adjacent to a voxel which
+   * ### has a finite intersection length with that ray.
+   * #########################################################################*/
   // Correct results only for `alpha_min_exists(...) == true`!!!
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_min( Ray<T> ray, Grid<T> grid )
@@ -286,7 +300,9 @@ namespace Siddon{
   }
  
   
-  /* Does ray intersect planes in any direction at all? */
+  /* #########################################################################
+   * ### Does ray intersect planes in any direction at all?
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  bool alpha_max_exists( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -304,9 +320,11 @@ namespace Siddon{
 //                 alpha_dimmax[2] );
 // }
 
-  /* Get parameter of exit point, i.e. get maximum parameter of an
-   * intersection of the ray with a plane that is adjacent to a voxel which
-   * has a finite intersection length with that ray */
+  /* #########################################################################
+   * ### Get parameter of exit point, i.e. get maximum parameter of an
+   * ### intersection of the ray with a plane that is adjacent to a voxel which
+   * ### has a finite intersection length with that ray
+   * #########################################################################*/
   // Correct results only for `alpha_max_exists(...) == true`!!!
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_max( Ray<T> ray, Grid<T> grid )
@@ -356,9 +374,11 @@ namespace Siddon{
   }
   
 
-  /* Get minimum of these two plane indices in direction x/y/z:
-   *  - of first intersected plane after the ray entered voxel space
-   *  - of last intersected plane including the outer plane of voxel space */
+  /* #########################################################################
+   * ### Get minimum of these two plane indices in direction x/y/z:
+   * ### - of first intersected plane after the ray entered voxel space
+   * ### - of last intersected plane including the outer plane of voxel space
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  int get_i_dimmin__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -445,9 +465,11 @@ namespace Siddon{
   }
  
   
-  /* Get maximum of these two plane indices in direction dim:
-   *  - of first intersected plane after the ray entered voxel space
-   *  - of last intersected plane including the outer plane of voxel space */
+  /* #########################################################################
+   * ### Get maximum of these two plane indices in direction dim:
+   * ###  - of first intersected plane after the ray entered voxel space
+   * ###  - of last intersected plane including the outer plane of voxel space
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  int get_i_dimmax__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -534,9 +556,11 @@ namespace Siddon{
   }
   
 
-  /* Get total number of grid planes crossed by the ray.  Actual number of
-   * intersections might be smaller.  This is the case, if one or more
-   * intersections cross more than one plane at the same point. */    
+  /* #########################################################################
+   * ### Get total number of grid planes crossed by the ray.  Actual number of
+   * ### intersections might be smaller.  This is the case, if one or more
+   * ### intersections cross more than one plane at the same point.    
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  int get_N_crossed_planes( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -557,8 +581,10 @@ namespace Siddon{
   }
  
   
-  /* Helper function for implementation of improved Siddon algorithm by Jacobs
-   * et alii. */
+  /* #########################################################################
+   * ### Helper function for implementation of improved Siddon algorithm by
+   * ### Jacobs et alii.
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void update_alpha__x( T & alpha_x, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -582,8 +608,10 @@ namespace Siddon{
   }
 
 
-  /* Helper function for implementation of improved Siddon algorithm by Jacobs
-   * et alii. */
+  /* #########################################################################
+   * ### Helper function for implementation of improved Siddon algorithm by
+   * ### Jacobs et alii.
+   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void update_i__x( int & i_x, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
@@ -625,7 +653,9 @@ namespace Siddon{
   }
 
   
-//  /* Implementation of the improved Siddon algorithm by Jacobs et alii. */
+//  /* #########################################################################
+//   * ### Implementation of the improved Siddon algorithm by Jacobs et alii.
+//   * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void calculate_intersection_lengths( T * a, Ray<T> ray, Grid<T> grid )
 //  {
