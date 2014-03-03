@@ -44,7 +44,7 @@ class CGrid : public Grid<coord_type>, public PlyGrid
            Vertex const origin,
            TemplateVertex<coord_type> const diff,
            int const Nx, int const Ny, int const Nz )
-    : PlyGrid(name,origin,Nx,Ny,Nz,diff.x,diff.y,diff.z),
+    : PlyGrid(name,origin,Nx+1,Ny+1,Nz+1,diff.x,diff.y,diff.z),
       _origin(origin), _diff(diff),
       _Nx(Nx), _Ny(Ny), _Nz(Nz) {}
       
@@ -89,14 +89,14 @@ int main( void )
 {
     // Make Objects
     CRay ray1(  "ray1",
-                Vertex(-0.5, 0.5, 0.5),
-                Vertex( 1.5, 0.5, 0.5)
+                Vertex(-0.5, 0.1, 0.1),
+                Vertex( 5.5, 0.9, 0.9)
          );
 
     CGrid grid( "grid",
                 Vertex(0.,0.,0.),
                 Vertex(1.,1.,1.),
-                2,2,2
+                5,1,1
           );
     
     // Prepare intersection array
@@ -120,12 +120,16 @@ int main( void )
     
     // Write Visualisation
     PlyWriter grid_writer("test2_grid_output.ply");
+    std::cout << "grid_writer.write() ..." << std::endl;
     grid_writer.write(grid);
+    std::cout << "grid_writer.close() ..." << std::endl;
     grid_writer.close();
+    std::cout << "grid_writer success" << std::endl;
 
     PlyWriter ray1_writer("test2_ray1_output.ply");
     ray1_writer.write(ray1);
     ray1_writer.close();
+    std::cout << "PlyWriter success" << std::endl;
 
     return 0;
 }

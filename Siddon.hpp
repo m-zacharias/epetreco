@@ -59,6 +59,54 @@ T min( T a, T b, T c )
 
 
 
+/* Conditional minimum of three numbers */
+template<typename T>
+T min( T a, T b, T c, bool ab, bool bb, bool cb )
+{
+  if( !ab ) {
+    if( !bb ) {
+      if( !cb ) {
+        throw -1;
+      }
+      else {
+        return c;
+      }
+    }
+    else {
+      if( !cb ) {
+        return b;
+      }
+      else {
+        return std::min(b, c);
+      }
+    }
+  }
+  else {
+    if( !bb ) {
+      if( !cb ) {
+        return a;
+      }
+      else {
+        return std::min(a, c);
+      }
+    }
+    else {
+      if( !cb ) {
+        return std::min(a, b);
+      }
+      else {
+        return std::min(std::min(a, b), c);
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
 namespace Siddon{
   /* #########################################################################
    * ### Planes in direction x/y/z intersected by ray?
@@ -791,6 +839,13 @@ namespace Siddon{
     // #################################
     // INITIALISATION
     // #################################
+#ifdef DEBUG
+    std::cout << "calculate_intersection_lengths<> : start initialisation" << std::endl;
+#endif
+    bool _intersects__x = intersects__x<Ray, Grid>( ray, grid );                // any planes in x direction intersected?
+    bool _intersects__y = intersects__y<Ray, Grid>( ray, grid );                // any planes in y direction intersected?
+    bool _intersects__z = intersects__z<Ray, Grid>( ray, grid );                // any planes in z direction intersected?
+
     typename Ray::coord_type length =     ray.length();                         // length of ray (cartesian)
     typename Ray::coord_type alpha_min =  get_alpha_min<Ray,Grid>(ray, grid);   // param of first intersected plane
     typename Ray::coord_type alpha_max =  get_alpha_max<Ray,Grid>(ray, grid);   // param of last intersected plane
@@ -831,28 +886,33 @@ namespace Siddon{
     
 
     // Get index of first voxel crossed by the ray
-    int i_x =                             std::floor(phi_from_alpha__x<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), ray, grid));
-    int i_y =                             std::floor(phi_from_alpha__y<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), ray, grid));
-    int i_z =                             std::floor(phi_from_alpha__z<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z)+alpha_min)/2.), ray, grid));
+    int i_x =                             std::floor(phi_from_alpha__x<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z, _intersects__x, _intersects__y, _intersects__z)+alpha_min)/2.), ray, grid));
+    int i_y =                             std::floor(phi_from_alpha__y<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z, _intersects__x, _intersects__y, _intersects__z)+alpha_min)/2.), ray, grid));
+    int i_z =                             std::floor(phi_from_alpha__z<Ray,Grid>(((min(alpha_x, alpha_y, alpha_z, _intersects__x, _intersects__y, _intersects__z)+alpha_min)/2.), ray, grid));
     
 
     // Initialise current position to the first plane crossed
     typename Ray::coord_type alpha_curr = alpha_min;
 
 #ifdef DEBUG
-    std::cout << "length:      " << length     << std::endl;
-    std::cout << "alpha_min :  " << alpha_min  << std::endl;
-    std::cout << "alpha_max :  " << alpha_max  << std::endl;
+    std::cout << "    length:      " << length     << std::endl;
+    std::cout << "    alpha_min :  " << alpha_min  << std::endl;
+    std::cout << "    alpha_max :  " << alpha_max  << std::endl;
     std::cout << std::endl;
-    std::cout << "i_x_min :    " << i_x_min    << std::endl;
-    std::cout << "i_y_min :    " << i_y_min    << std::endl;
-    std::cout << "i_z_min :    " << i_z_min    << std::endl;
+    std::cout << "    i_x_min :    " << i_x_min    << std::endl;
+    std::cout << "    i_y_min :    " << i_y_min    << std::endl;
+    std::cout << "    i_z_min :    " << i_z_min    << std::endl;
     std::cout << std::endl;
-    std::cout << "alpha_x :    " << alpha_x    << std::endl;
-    std::cout << "alpha_y :    " << alpha_y    << std::endl;
-    std::cout << "alpha_z :    " << alpha_z    << std::endl;
-    std::cout << "alpha_curr : " << alpha_curr << std::endl;
+    std::cout << "    i_x_max :    " << i_x_max    << std::endl;
+    std::cout << "    i_y_max :    " << i_y_max    << std::endl;
+    std::cout << "    i_z_max :    " << i_z_max    << std::endl;
     std::cout << std::endl;
+    std::cout << "    alpha_x :    " << alpha_x    << std::endl;
+    std::cout << "    alpha_y :    " << alpha_y    << std::endl;
+    std::cout << "    alpha_z :    " << alpha_z    << std::endl;
+    std::cout << "    alpha_curr : " << alpha_curr << std::endl;
+    std::cout << std::endl;
+    std::cout << "calculate_intersection_lengths<> : initialisation done" << std::endl;
 #endif
     // #################################
 
@@ -861,14 +921,21 @@ namespace Siddon{
     // #################################
     // ITERATIONS
     // #################################
+#ifdef DEBUG
+    std::cout << "calculate_intersection_lengths<> : start iterations" << std::endl;
+#endif
     int i = 0;
-    while(alpha_curr < alpha_max){
+//    while(i<1) {
+    while(alpha_curr < alpha_max) {
+#ifdef DEBUG
+      std::cout << "    iteration " << i << std::endl;
+#endif
       
       
       // X PLANE AHEAD
-      if(     alpha_x == min(alpha_x, alpha_y, alpha_z)) {
+      if(     alpha_x == min(alpha_x, alpha_y, alpha_z, _intersects__x, _intersects__y, _intersects__z)) {
 #ifdef DEBUG
-        std::cout << "intersect x plane at alpha = " << alpha_x << std::endl;
+        std::cout << "    intersect x plane at alpha = " << alpha_x << std::endl;
 #endif
         a[i].idx    = i_x;                            // save current voxel x id
         a[i].idy    = i_y;                            // save current voxel y id
@@ -896,9 +963,9 @@ namespace Siddon{
 
 
       // Y PLANE AHEAD
-      else if(alpha_y == min(alpha_x, alpha_y, alpha_z)) {
+      else if(alpha_y == min(alpha_x, alpha_y, alpha_z, _intersects__x, _intersects__y, _intersects__z)) {
 #ifdef DEBUG
-        std::cout << "intersect y plane at alpha = " << alpha_y << std::endl;
+        std::cout << "    intersect y plane at alpha = " << alpha_y << std::endl;
 #endif
         a[i].idx    = i_x;                            // save current voxel x id
         a[i].idy    = i_y;                            // save current voxel y id
@@ -921,9 +988,9 @@ namespace Siddon{
 
 
       // Z PLANE AHEAD
-      else {
+      else if(alpha_z == min(alpha_x, alpha_y, alpha_z, _intersects__x, _intersects__y, _intersects__z)) {
 #ifdef DEBUG
-        std::cout << "intersect z plane at alpha = " << alpha_z << std::endl;
+        std::cout << "    intersect z plane at alpha = " << alpha_z << std::endl;
 #endif
         a[i].idx    = i_x;
         a[i].idy    = i_y;
@@ -933,6 +1000,12 @@ namespace Siddon{
         alpha_curr = alpha_z;                         // update current position
         update_alpha__z<Ray,Grid>(alpha_z, ray, grid);// update "next z plane to be crossed"
         update_i__z<Ray,Grid>(i_z, ray, grid);        // update voxel z id
+      }
+
+
+      // None of the above => should not happen within "while" => error
+      else {
+        throw -1;
       }
 
 

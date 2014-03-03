@@ -1,6 +1,6 @@
 CPPC = g++
-CPPFLAGS = -Wall
-#CPPFLAGS = -Wall -DDEBUG
+#CPPFLAGS = -Wall
+CPPFLAGS = -Wall -DDEBUG
 CPPO = -c
 INC = -I./FoundationClasses/
 
