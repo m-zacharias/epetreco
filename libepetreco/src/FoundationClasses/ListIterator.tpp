@@ -4,7 +4,7 @@
 
 #include "ListIterator.hpp"
 
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
 #include <iostream>
 #include <typeinfo>
 #endif
@@ -13,7 +13,7 @@ template<class Item>
 ListIterator<Item>::ListIterator( List<Item> * list )
 : _list(list)
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "ListIterator<Item=" << typeid(Item).name()
             << ">::ListIterator()"  << std::endl;
 #endif
@@ -22,7 +22,7 @@ ListIterator<Item>::ListIterator( List<Item> * list )
 template<class Item>
 void ListIterator<Item>::first()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "ListIterator<Item=" << typeid(Item).name()
             << ">::first()"         << std::endl;
 #endif
@@ -32,7 +32,7 @@ void ListIterator<Item>::first()
 template<class Item>
 void ListIterator<Item>::next()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "ListIterator<Item=" << typeid(Item).name()
             << ">::next()"          << std::endl;
 #endif
@@ -42,7 +42,7 @@ void ListIterator<Item>::next()
 template<class Item>
 bool ListIterator<Item>::isDone() const
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "ListIterator<Item=" << typeid(Item).name()
             << ">::isDone()"        << std::endl;
 #endif
@@ -52,7 +52,7 @@ bool ListIterator<Item>::isDone() const
 template<class Item>
 Item & ListIterator<Item>::currentItem()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "ListIterator<Item=" << typeid(Item).name()
             << ">::currentItem()"   << std::endl;
 #endif

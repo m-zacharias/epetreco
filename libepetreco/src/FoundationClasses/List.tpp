@@ -1,6 +1,6 @@
 #include "List.hpp"
 
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
 #include <iostream>
 #include <typeinfo>
 #endif
@@ -9,7 +9,7 @@ template<class Item>
 List<Item>::List( long size )
 : std::list<Item>(size)
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name() << ">::List(long)" << std::endl;
 #endif
 }
@@ -18,7 +18,7 @@ template<class Item>
 List<Item>::List( List & list )
 : std::list<Item>(list)
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name() << ">::List(List&)" << std::endl;
 #endif
 }
@@ -26,7 +26,7 @@ List<Item>::List( List & list )
 template<class Item>
 List<Item>::~List() 
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name() << ">::~List()" << std::endl;
 #endif
 }
@@ -34,7 +34,7 @@ List<Item>::~List()
 template<class Item>
 List<Item> & List<Item>::operator=( List<Item> const & list )
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::operator=(List<Item=" << typeid(Item).name() 
             << "> const &)" << std::endl;
@@ -46,7 +46,7 @@ List<Item> & List<Item>::operator=( List<Item> const & list )
 template<class Item>
 long List<Item>::count() const
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::count() const" << std::endl;
 #endif
@@ -56,7 +56,7 @@ long List<Item>::count() const
 template<class Item>
 Item & List<Item>::get( long index )
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::get(long)" << std::endl;
 #endif
@@ -72,7 +72,7 @@ Item & List<Item>::get( long index )
 template<class Item>
 Item & List<Item>::first()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::first()" << std::endl;
 #endif
@@ -82,7 +82,7 @@ Item & List<Item>::first()
 template<class Item>
 Item & List<Item>::last()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::last()" << std::endl;
 #endif
@@ -92,7 +92,7 @@ Item & List<Item>::last()
 template<class Item>
 bool List<Item>::includes( Item const & item) const
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::includes(" << typeid(Item).name()
             << " const &) const" << std::endl;
@@ -110,7 +110,7 @@ bool List<Item>::includes( Item const & item) const
 template<class Item>
 void List<Item>::append( Item const & item )
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::append(" << typeid(Item).name()
             << " const &)" << std::endl;
@@ -121,7 +121,7 @@ void List<Item>::append( Item const & item )
 template<class Item>
 void List<Item>::prepend( Item const & item )
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::prepend(" << typeid(Item).name()
             << " const &)" << std::endl;
@@ -133,7 +133,7 @@ void List<Item>::prepend( Item const & item )
 template<class Item>
 void List<Item>::removeLast()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::removeLast()" << std::endl;
 #endif
@@ -143,7 +143,7 @@ void List<Item>::removeLast()
 template<class Item>
 void List<Item>::removeFirst()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::removeFirst()" << std::endl;
 #endif
@@ -153,7 +153,7 @@ void List<Item>::removeFirst()
 template<class Item>
 void List<Item>::removeAll()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::removeAll()" << std::endl;
 #endif
@@ -164,7 +164,7 @@ void List<Item>::removeAll()
 template<class Item>
 Item & List<Item>::top()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::top()" << std::endl;
 #endif
@@ -174,7 +174,7 @@ Item & List<Item>::top()
 template<class Item>
 void List<Item>::push( Item const & item )
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::push(" << typeid(Item).name()
             << " const &)" << std::endl;
@@ -185,7 +185,7 @@ void List<Item>::push( Item const & item )
 template<class Item>
 Item List<Item>::pop()
 {
-#ifdef DEBUG
+#ifdef DEBUG_FOUNDATIONCLASSES
   std::cout << "List<Item=" << typeid(Item).name()
             << ">::pop()" << std::endl;
 #endif
