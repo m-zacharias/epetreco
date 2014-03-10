@@ -917,8 +917,14 @@ namespace Siddon{
       }
 
 
+#ifdef DEBUG
+      std::cout << std::endl;
+#endif
       i++;
-    }
+    } 
+#ifdef DEBUG
+    std::cout << "calculate_intersection_lengths<> : iterations done" << std::endl;
+#endif
   }
 }
 

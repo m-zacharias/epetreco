@@ -63,9 +63,10 @@ test_Siddon.out : \
         $(SRC)/Siddon.hpp
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
-test_02_Siddon.out : \
-        $(SRC)/test_02_Siddon.cpp \
+test_%_Siddon.out : \
+        $(SRC)/test_%_Siddon.cpp \
         $(SRC)/Siddon.hpp \
+        $(SRC)/Siddon_helper.hpp \
         libepetreco.a
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
@@ -121,6 +122,7 @@ clean:
 	rm \
       ./test_Siddon.out \
       ./test_02_Siddon.out \
+      ./test_03_Siddon.out \
       ./test_PlyGeometry.out \
       ./test_PlyWriter.out \
       ./test_PlyGrid.out \
@@ -128,4 +130,5 @@ clean:
       ./test_PlyLine.out \
       ./cublasExampleMatrixVectorMult.out \
       ./test_CudaTransform.out \
-      ./libepetreco.a
+      ./libepetreco.a \
+      ./*.ply
