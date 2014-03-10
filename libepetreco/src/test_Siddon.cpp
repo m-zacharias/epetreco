@@ -1,27 +1,31 @@
 #include "Siddon.hpp"
-#include "Vertex.hpp"
+#include "Ray.hpp"
+#include "Grid.hpp"
+#include "TemplateVertex.hpp"
 #include <iostream>
 #include <cmath>
 
+typedef double CoordType;
 
-class coordRay : public Ray<coord_type>
+
+struct CoordRayTraits
+{
+  typedef TemplateVertex<CoordType> Vertex_t;
+};
+
+
+class CoordRay : public Ray<CoordRay, CoordRayTraits>
 {
   public:
     
-    coordRay( Vertex const start, Vertex const end )
+    CoordRay( Vertex_t const start, Vertex_t const end )
     : _start(start), _end(end) {}
     
-    virtual Vertex start() const
-    {
-      return _start;
-    }
+    Vertex_t start() const { return _start; }
 
-    virtual Vertex end() const
-    {
-      return _end;
-    }
+    Vertex_t end() const { return _end; }
 
-    virtual coord_type length() const
+    typename Vertex_t::Coord_t length() const
     {
       return std::sqrt(
                         (_end.x-_start.x)*(_end.x-_start.x) +
@@ -33,47 +37,39 @@ class coordRay : public Ray<coord_type>
 
   protected:
     
-    Vertex _start, _end;
+    Vertex_t _start, _end;
 };
 
-class coordGrid : public Grid<coord_type>
+
+struct CoordGridTraits
+{
+  typedef TemplateVertex<CoordType> Vertex_t;
+};
+
+
+class CoordGrid : public Grid<CoordGrid, CoordGridTraits>
 {
   public:
     
-    coordGrid( Vertex const origin,
-               Vertex const diff,
+    CoordGrid( Vertex_t const origin,
+               Vertex_t const diff,
                int Nx, int Ny, int Nz )
     : _origin(origin), _diff(diff), _Nx(Nx), _Ny(Ny), _Nz(Nz) {}
 
-    Vertex origin() const
-    {
-      return _origin;
-    }
+    Vertex_t origin() const { return _origin; }
 
-    Vertex diff() const
-    {
-      return _diff;
-    }
+    Vertex_t diff() const { return _diff; }
 
-    int Nx() const
-    {
-      return _Nx;
-    }
+    int Nx() const { return _Nx; }
 
-    int Ny() const
-    {
-      return _Ny;
-    }
+    int Ny() const { return _Ny; }
 
-    int Nz() const
-    {
-      return _Nz;
-    }
+    int Nz() const { return _Nz; }
 
 
   protected:
     
-    Vertex _origin, _diff;
+    Vertex_t _origin, _diff;
 
     int _Nx, _Ny, _Nz;
 };
@@ -82,21 +78,21 @@ class coordGrid : public Grid<coord_type>
 using namespace Siddon;
 
 int main( void ) {
-    coordRay  ray(  Vertex(2.5,2.5,2.5),
-                    Vertex(1.5,1.5,1.5)
+    CoordRay  ray(  CoordRay::Vertex_t(2.5,2.5,2.5),
+                    CoordRay::Vertex_t(1.5,1.5,1.5)
               );
 
-    coordGrid grid( Vertex(1.,1.,1.),
-                    Vertex(1.,1.,1.),
+    CoordGrid grid( CoordGrid::Vertex_t(1.,1.,1.),
+                    CoordGrid::Vertex_t(1.,1.,1.),
                     3,3,3
               );
 
-    std::cout << "alpha_xmin: " << get_alpha_dimmin__x< coordRay,coordGrid> (ray,grid) << std::endl
-              << "alpha_min: "  << get_alpha_min<       coordRay,coordGrid> (ray,grid) << std::endl
-              << "i_xmin: "     << get_i_dimmin__x<     coordRay,coordGrid> (ray,grid) << std::endl;
-    std::cout << "alpha_xmax: " << get_alpha_dimmax__x< coordRay,coordGrid> (ray,grid) << std::endl
-              << "alpha_max: "  << get_alpha_max<       coordRay,coordGrid> (ray,grid) << std::endl
-              << "i_xmax: "     << get_i_dimmax__x<     coordRay,coordGrid> (ray,grid) << std::endl;
+    std::cout << "alpha_xmin: " << get_alpha_dimmin__x< CoordRay,CoordGrid> (ray,grid) << std::endl
+              << "alpha_min: "  << get_alpha_min<       CoordRay,CoordGrid> (ray,grid) << std::endl
+              << "i_xmin: "     << get_i_dimmin__x<     CoordRay,CoordGrid> (ray,grid) << std::endl;
+    std::cout << "alpha_xmax: " << get_alpha_dimmax__x< CoordRay,CoordGrid> (ray,grid) << std::endl
+              << "alpha_max: "  << get_alpha_max<       CoordRay,CoordGrid> (ray,grid) << std::endl
+              << "i_xmax: "     << get_i_dimmax__x<     CoordRay,CoordGrid> (ray,grid) << std::endl;
 
     return 0;
 }

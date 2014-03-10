@@ -1,4 +1,4 @@
-#include "Vertex.hpp"
+#include "TemplateVertex.hpp"
 
 template<class T>
 TemplateVertex<T>::TemplateVertex( T const x_, T const y_, T const z_ )

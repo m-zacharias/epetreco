@@ -1,6 +1,7 @@
 #include "PlyGeometry.hpp"
 #include "CompositePlyGeometry.hpp"
 #include "PlyRectangle.hpp"
+#include "TemplateVertex.hpp"
 
 #include <iostream>
 #include <string>
@@ -18,14 +19,19 @@ class Scene : public CompositePlyGeometry
     }
 };
 
+
+typedef double                    CoordType;
+typedef TemplateVertex<CoordType> VertexType;
+
+
+
 int main( void )
 {
-  PlyRectangle rect( std::string("rect"),
-                     Vertex(0.,0.,0.),
-                     Vertex(0.,1.,0.),
-                     Vertex(1.,1.,0.),
-                     Vertex(1.,0.,0.)
-                   );
+  PlyRectangle<VertexType> rect( std::string("rect"),
+                                 VertexType(0.,0.,0.),
+                                 VertexType(0.,1.,0.),
+                                 VertexType(1.,1.,0.),
+                                 VertexType(1.,0.,0.) );
   
   Scene scene( std::string("scene") );
 

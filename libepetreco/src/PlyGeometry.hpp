@@ -5,7 +5,7 @@
 
 #include "Iterator.hpp"
 #include "List.hpp"
-#include "Vertex.hpp"
+// #include "Vertex.hpp"
 #include <string>
 
 class CompositePlyGeometry;

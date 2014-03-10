@@ -2,15 +2,17 @@
 
 #include <sstream>
 
-#ifdef DEBUG
+#ifdef DEBUG_PLY
 #include <iostream>
 #endif
 
-PlyBox::PlyBox( std::string const name,
+
+template<typename Vertex>
+PlyBox<Vertex>::PlyBox( std::string const name,
                 Vertex const o,
-                coord_type const dx,
-                coord_type const dy,
-                coord_type const dz )
+                typename Vertex::Coord_t const dx,
+                typename Vertex::Coord_t const dy,
+                typename Vertex::Coord_t const dz )
 : PlyGeometry(name),
   _p0(o),
   _p1(Vertex(o.x+dx, o.y,    o.z)),
@@ -21,40 +23,48 @@ PlyBox::PlyBox( std::string const name,
   _p6(Vertex(o.x+dx, o.y+dy, o.z+dz)),
   _p7(Vertex(o.x,    o.y+dy, o.z+dz))
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::PlyBox(std::string const, Vertex const,"
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::PlyBox(std::string const, Vertex const,"
             << "coord_type const, coord_type const, coord_type const)"
             << std::endl;
 #endif
 }
 
-PlyBox::~PlyBox()
+
+template<typename Vertex>
+PlyBox<Vertex>::~PlyBox()
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::~PlyBox()" << std::endl;
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::~PlyBox()" << std::endl;
 #endif
 }
 
-int PlyBox::numVertices()
+
+template<typename Vertex>
+int PlyBox<Vertex>::numVertices()
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::numVertices()" << std::endl;
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::numVertices()" << std::endl;
 #endif
   return 8;
 }
 
-int PlyBox::numFaces()
+
+template<typename Vertex>
+int PlyBox<Vertex>::numFaces()
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::numFaces()" << std::endl;
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::numFaces()" << std::endl;
 #endif
   return 6;
 }
 
-std::string PlyBox::verticesStr()
+
+template<typename Vertex>
+std::string PlyBox<Vertex>::verticesStr()
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::verticesStr()" << std::endl;
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::verticesStr()" << std::endl;
 #endif
   std::stringstream ss;
   ss.str() = "";
@@ -70,10 +80,12 @@ std::string PlyBox::verticesStr()
   return ss.str();
 }
 
-std::string PlyBox::facesStr()
+
+template<typename Vertex>
+std::string PlyBox<Vertex>::facesStr()
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::facesStr()" << std::endl;
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::facesStr()" << std::endl;
 #endif
   std::stringstream ss;
   ss.str() = "";
@@ -87,10 +99,12 @@ std::string PlyBox::facesStr()
   return ss.str();
 }
 
-std::string PlyBox::facesStr( int & v )
+
+template<typename Vertex>
+std::string PlyBox<Vertex>::facesStr( int & v )
 {
-#ifdef DEBUG
-  std::cout << "PlyBox::facesStr(int &)" << std::endl;
+#ifdef DEBUG_PLY
+  std::cout << "PlyBox<Vertex>::facesStr(int &)" << std::endl;
 #endif
   std::stringstream ss;
   ss.str() = "";
@@ -105,42 +119,59 @@ std::string PlyBox::facesStr( int & v )
   return ss.str();
 }
 
-Vertex & PlyBox::p0()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p0()
 {
   return _p0;
 }
 
-Vertex & PlyBox::p1()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p1()
 {
   return _p1;
 }
 
-Vertex & PlyBox::p2()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p2()
 {
   return _p2;
 }
 
-Vertex & PlyBox::p3()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p3()
 {
   return _p3;
 }
 
-Vertex & PlyBox::p4()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p4()
 {
   return _p4;
 }
 
-Vertex & PlyBox::p5()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p5()
 {
   return _p5;
 }
 
-Vertex & PlyBox::p6()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p6()
 {
   return _p6;
 }
 
-Vertex & PlyBox::p7()
+
+template<typename Vertex>
+Vertex & PlyBox<Vertex>::p7()
 {
   return _p7;
 }
+

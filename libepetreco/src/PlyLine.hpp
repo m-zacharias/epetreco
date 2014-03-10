@@ -4,6 +4,7 @@
 #include "PlyGeometry.hpp"
 
 /* A Leaf class */
+template<typename Vertex>
 class PlyLine : public PlyGeometry
 {
   public:
@@ -40,5 +41,6 @@ class PlyLine : public PlyGeometry
 
     Vertex _p0, _p1;
 };
+#include "PlyLine.tpp"
 
 #endif  // #define PLYLINE_HPP

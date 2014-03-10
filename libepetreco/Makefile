@@ -26,10 +26,6 @@ all : \
 
 libepetreco.a : \
         PlyGeometry.o \
-        PlyRectangle.o \
-        PlyBox.o \
-        PlyLine.o \
-        PlyGrid.o \
         CompositePlyGeometry.o \
         PlyWriter.o
 	rm -f $@
@@ -37,10 +33,6 @@ libepetreco.a : \
 
 .INTERMEDIATE : \
         PlyGeometry.o \
-        PlyRectangle.o \
-        PlyBox.o \
-        PlyLine.o \
-        PlyGrid.o \
         CompositePlyGeometry.o \
         PlyWriter.o
         
@@ -115,41 +107,10 @@ CompositePlyGeometry.o : \
         $(SRC)/PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
-PlyRectangle.o : \
-        $(SRC)/PlyRectangle.cpp \
-        $(SRC)/PlyRectangle.hpp \
-        $(SRC)/PlyGeometry.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
-
-PlyBox.o : \
-        $(SRC)/PlyBox.cpp\
-        $(SRC)/PlyBox.hpp\
-        $(SRC)/PlyGeometry.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
-
-PlyLine.o : \
-        $(SRC)/PlyLine.cpp\
-        $(SRC)/PlyLine.hpp\
-        $(SRC)/PlyGeometry.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
-
-PlyGrid.o : \
-        $(SRC)/PlyGrid.cpp\
-        $(SRC)/PlyGrid.hpp\
-        $(SRC)/PlyGeometry.hpp\
-        $(SRC)/PlyRectangle.hpp\
-        $(SRC)/CompositePlyGeometry.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
-
 PlyWriter.o : \
         $(SRC)/PlyWriter.cpp\
         $(SRC)/PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
-
-#Vertex.o : \
-#        Vertex.cpp\
-#        Vertex.hpp
-#	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 #Siddon.o : Siddon.hpp
 #	$(CPPC) $(CPPFLAGS) $(CPPO) $< -o $@

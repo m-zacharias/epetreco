@@ -1,10 +1,12 @@
-#ifndef VERTEX_HPP
-#define VERTEX_HPP
+#ifndef TEMPLATEVERTEX_HPP
+#define TEMPLATEVERTEX_HPP
 
 template<typename T>
 struct TemplateVertex {
 
   public:
+
+    typedef T Coord_t;
     
     /* Parametric Constructor */
     TemplateVertex( T const x_, T const y_, T const z_ );
@@ -19,9 +21,9 @@ struct TemplateVertex {
 
     T x, y, z;
 };
-#include "Vertex.tpp"
+#include "TemplateVertex.tpp"
 
-typedef double coord_type;
-typedef TemplateVertex<coord_type> Vertex;
+// typedef double coord_type;
+// typedef TemplateVertex<coord_type> Vertex;
 
-#endif  // #define VERTEX_HPP
+#endif  // #define TEMPLATEVERTEX_HPP

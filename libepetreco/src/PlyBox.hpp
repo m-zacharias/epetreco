@@ -4,13 +4,17 @@
 #include "PlyGeometry.hpp"
 
 /* A Leaf class */
+template<typename Vertex>
 class PlyBox : public PlyGeometry
 {
   public:
     
     /* Constructor */
-    PlyBox( std::string const, Vertex const, coord_type const, coord_type const,
-            coord_type const );
+    PlyBox(
+          std::string const, Vertex const,
+          typename Vertex::Coord_t const,
+          typename Vertex::Coord_t const,
+          typename Vertex::Coord_t const );
     
     /* Destructor */
     virtual ~PlyBox();
@@ -56,5 +60,6 @@ class PlyBox : public PlyGeometry
     
     Vertex _p0, _p1, _p2, _p3, _p4, _p5, _p6, _p7;
 };
+#include "PlyBox.tpp"
 
 #endif  // #define PLYBOX_HPP

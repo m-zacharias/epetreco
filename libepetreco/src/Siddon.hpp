@@ -2,108 +2,16 @@
 #define SIDDON_HPP
 
 #include <cmath>
-#include <algorithm> // for min, max
-#include "Vertex.hpp"
+#include "Siddon_helper.hpp" // for special min
+// #include "Ray.hpp"
+// #include "Grid.hpp"
+// #include "Vertex.hpp"
 
 #ifdef DEBUG
 #include <iostream>
 #endif
 
 #include <iostream> // debugging **********************
-
-
-/* Abstract Ray class */
-template<typename T>
-struct Ray
-{  
-  public:
-    
-    typedef T coord_type;
-
-    virtual TemplateVertex<T> start() const = 0;
-
-    virtual TemplateVertex<T> end() const = 0;
-
-    virtual T length() const = 0;
-};
-
-
-
-/* Abstract Grid class */
-template<typename T>
-struct Grid
-{
-  public:
-    
-    typedef T coord_type;    
-
-    virtual TemplateVertex<T> origin() const = 0;
-
-    virtual TemplateVertex<T> diff( void ) const = 0;
-
-    virtual int Nx() const = 0;
-
-    virtual int Ny() const = 0;
-
-    virtual int Nz() const = 0;
-};
-
-
-
-/* Minimum of three numbers */
-template<typename T>
-T min( T a, T b, T c )
-{
-  return std::min(std::min(a, b), c);
-}
-
-
-
-/* Conditional minimum of three numbers */
-template<typename T>
-T min( T a, T b, T c, bool ab, bool bb, bool cb )
-{
-  if( !ab ) {
-    if( !bb ) {
-      if( !cb ) {
-        throw -1;
-      }
-      else {
-        return c;
-      }
-    }
-    else {
-      if( !cb ) {
-        return b;
-      }
-      else {
-        return std::min(b, c);
-      }
-    }
-  }
-  else {
-    if( !bb ) {
-      if( !cb ) {
-        return a;
-      }
-      else {
-        return std::min(a, c);
-      }
-    }
-    else {
-      if( !cb ) {
-        return std::min(a, b);
-      }
-      else {
-        return std::min(std::min(a, b), c);
-      }
-    }
-  }
-}
-
-
-
-
 
 
 
@@ -140,7 +48,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T alpha_from_i__x( int i, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type alpha_from_i__x( int i, Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t alpha_from_i__x( int i, Ray ray, Grid grid )
   {
       return (       grid.origin().x
                + i * grid.diff().x
@@ -152,7 +60,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T alpha_from_i__y( int i, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type alpha_from_i__y( int i, Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t alpha_from_i__y( int i, Ray ray, Grid grid )
   {
       return (       grid.origin().y
                + i * grid.diff().y
@@ -164,7 +72,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T alpha_from_i__z( int i, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type alpha_from_i__z( int i, Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t alpha_from_i__z( int i, Ray ray, Grid grid )
   {
       return (       grid.origin().z
                + i * grid.diff().z
@@ -176,12 +84,12 @@ namespace Siddon{
  
   
   /* #########################################################################
-   * ### Invert parameter to plane (!) index in direction x/y/z
+   * ### Invert parameter to continuous (!) plane (!) "index" in direction x/y/z
    * #########################################################################*/
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T phi_from_alpha__x( T alpha, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type phi_from_alpha__x( typename Ray::coord_type alpha, Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t phi_from_alpha__x( typename Ray::Vertex_t::Coord_t alpha, Ray ray, Grid grid )
   {
       return (   ray.start().x
                + alpha * (   ray.end().x
@@ -193,7 +101,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T phi_from_alpha__y( T alpha, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type phi_from_alpha__y( typename Ray::coord_type alpha, Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t phi_from_alpha__y( typename Ray::Vertex_t::Coord_t alpha, Ray ray, Grid grid )
   {
       return (   ray.start().y
                + alpha * (   ray.end().y
@@ -205,7 +113,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T phi_from_alpha__z( T alpha, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type phi_from_alpha__z( typename Ray::coord_type alpha, Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t phi_from_alpha__z( typename Ray::Vertex_t::Coord_t alpha, Ray ray, Grid grid )
   {
       return (   ray.start().z
                + alpha * (   ray.end().z
@@ -223,7 +131,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmin__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_dimmin__x( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_dimmin__x( Ray ray, Grid grid )
   {
       return std::min(alpha_from_i__x<Ray,Grid>(0,         ray, grid),
                       alpha_from_i__x<Ray,Grid>(grid.Nx(), ray, grid));
@@ -231,7 +139,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmin__y( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_dimmin__y( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_dimmin__y( Ray ray, Grid grid )
   {
       return std::min(alpha_from_i__y<Ray,Grid>(0,         ray, grid),
                       alpha_from_i__y<Ray,Grid>(grid.Ny(), ray, grid));
@@ -239,7 +147,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmin__z( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_dimmin__z( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_dimmin__z( Ray ray, Grid grid )
   {
       return std::min(alpha_from_i__z<Ray,Grid>(0,         ray, grid),
                       alpha_from_i__z<Ray,Grid>(grid.Nz(), ray, grid));
@@ -253,7 +161,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmax__x( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_dimmax__x( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_dimmax__x( Ray ray, Grid grid )
   {
       return std::max(alpha_from_i__x<Ray,Grid>(0,         ray, grid),
                       alpha_from_i__x<Ray,Grid>(grid.Nx(), ray, grid));
@@ -261,7 +169,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmax__y( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_dimmax__y( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_dimmax__y( Ray ray, Grid grid )
   {
       return std::max(alpha_from_i__y<Ray,Grid>(0,         ray, grid),
                       alpha_from_i__y<Ray,Grid>(grid.Ny(), ray, grid));
@@ -269,7 +177,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_dimmax__z( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_dimmax__z( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_dimmax__z( Ray ray, Grid grid )
   {
       return std::max(alpha_from_i__z<Ray,Grid>(0,         ray, grid),
                       alpha_from_i__z<Ray,Grid>(grid.Nz(), ray, grid));
@@ -306,10 +214,10 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_min( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_min( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_min( Ray ray, Grid grid )
   {
-    typename Ray::coord_type temp;
-    typename Ray::coord_type temp_min;
+    typename Ray::Vertex_t::Coord_t temp;
+    typename Ray::Vertex_t::Coord_t temp_min;
     bool       not_first = false;
 
     if(intersects__x<Ray,Grid>(ray, grid)) {
@@ -377,10 +285,10 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  T get_alpha_max( Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  typename Ray::coord_type get_alpha_max( Ray ray, Grid grid )
+  typename Ray::Vertex_t::Coord_t get_alpha_max( Ray ray, Grid grid )
   {
-      typename Ray::coord_type temp;
-      typename Ray::coord_type temp_max;
+      typename Ray::Vertex_t::Coord_t temp;
+      typename Ray::Vertex_t::Coord_t temp_max;
       bool       not_first = false;
       
       if(intersects__x<Ray,Grid>(ray, grid)) {
@@ -433,8 +341,8 @@ namespace Siddon{
   int get_i_dimmin__x( Ray ray, Grid grid )
   {
       if(ray.start().x < ray.end().x) {
-        typename Ray::coord_type alpha_min =    get_alpha_min<Ray,Grid>      (ray, grid);
-        typename Ray::coord_type alpha_dimmin = get_alpha_dimmin__x<Ray,Grid>(ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_min =    get_alpha_min<Ray,Grid>      (ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_dimmin = get_alpha_dimmin__x<Ray,Grid>(ray, grid);
         
         if(alpha_dimmin != alpha_min) {
           return ceil(phi_from_alpha__x<Ray,Grid>(alpha_min, ray, grid));
@@ -444,8 +352,8 @@ namespace Siddon{
         }
       }
       else {
-        typename Ray::coord_type alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
-        typename Ray::coord_type alpha_dimmax = get_alpha_dimmax__x<Ray,Grid>(ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_dimmax = get_alpha_dimmax__x<Ray,Grid>(ray, grid);
         
         if(alpha_dimmax != alpha_max) {
           return ceil(phi_from_alpha__x<Ray,Grid>(alpha_max, ray, grid));
@@ -461,8 +369,8 @@ namespace Siddon{
   int get_i_dimmin__y( Ray ray, Grid grid )
   {
       if(ray.start().y < ray.end().y) {
-        typename Ray::coord_type alpha_min =    get_alpha_min<Ray,Grid>      (ray, grid);
-        typename Ray::coord_type alpha_dimmin = get_alpha_dimmin__y<Ray,Grid>(ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_min =    get_alpha_min<Ray,Grid>      (ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_dimmin = get_alpha_dimmin__y<Ray,Grid>(ray, grid);
         
         if(alpha_dimmin != alpha_min) {
           return ceil(phi_from_alpha__y<Ray,Grid>(alpha_min, ray, grid));
@@ -472,8 +380,8 @@ namespace Siddon{
         }
       }
       else {
-        typename Ray::coord_type alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
-        typename Ray::coord_type alpha_dimmax = get_alpha_dimmax__y<Ray,Grid>(ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_dimmax = get_alpha_dimmax__y<Ray,Grid>(ray, grid);
         
         if(alpha_dimmax != alpha_max) {
           return ceil(phi_from_alpha__y<Ray,Grid>(alpha_max, ray, grid));
@@ -489,8 +397,8 @@ namespace Siddon{
   int get_i_dimmin__z( Ray ray, Grid grid )
   {
       if(ray.start().z < ray.end().z) {
-        typename Ray::coord_type alpha_min =    get_alpha_min<Ray,Grid>      (ray, grid);
-        typename Ray::coord_type alpha_dimmin = get_alpha_dimmin__z<Ray,Grid>(ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_min =    get_alpha_min<Ray,Grid>      (ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_dimmin = get_alpha_dimmin__z<Ray,Grid>(ray, grid);
         
         if(alpha_dimmin != alpha_min) {
           return ceil(phi_from_alpha__z<Ray,Grid>(alpha_min, ray, grid));
@@ -500,8 +408,8 @@ namespace Siddon{
         }
       }
       else {
-        typename Ray::coord_type alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
-        typename Ray::coord_type alpha_dimmax = get_alpha_dimmax__z<Ray,Grid>(ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
+        typename Ray::Vertex_t::Coord_t alpha_dimmax = get_alpha_dimmax__z<Ray,Grid>(ray, grid);
         
         if(alpha_dimmax != alpha_max) {
           return ceil(phi_from_alpha__z<Ray,Grid>(alpha_max, ray, grid));
@@ -524,8 +432,8 @@ namespace Siddon{
   int get_i_dimmax__x( Ray ray, Grid grid )
   {
     if(ray.start().x < ray.end().x) {
-      typename Ray::coord_type alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
-      typename Ray::coord_type alpha_dimmax = get_alpha_dimmax__x<Ray,Grid>(ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_dimmax = get_alpha_dimmax__x<Ray,Grid>(ray, grid);
       
       if(alpha_dimmax != alpha_max) {
         return floor(phi_from_alpha__x<Ray,Grid>(alpha_max, ray, grid));
@@ -535,8 +443,8 @@ namespace Siddon{
       }
     }
     else {
-      typename Ray::coord_type alpha_min    = get_alpha_min<Ray,Grid>      (ray, grid);
-      typename Ray::coord_type alpha_dimmin = get_alpha_dimmin__x<Ray,Grid>(ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_min    = get_alpha_min<Ray,Grid>      (ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_dimmin = get_alpha_dimmin__x<Ray,Grid>(ray, grid);
       
       if(alpha_dimmin != alpha_min) {
         return floor(phi_from_alpha__x<Ray,Grid>(alpha_min, ray, grid));
@@ -552,8 +460,8 @@ namespace Siddon{
   int get_i_dimmax__y( Ray ray, Grid grid )
   {
     if(ray.start().y < ray.end().y) {
-      typename Ray::coord_type alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
-      typename Ray::coord_type alpha_dimmax = get_alpha_dimmax__y<Ray,Grid>(ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_dimmax = get_alpha_dimmax__y<Ray,Grid>(ray, grid);
       
       if(alpha_dimmax != alpha_max) {
         return floor(phi_from_alpha__y<Ray,Grid>(alpha_max, ray, grid));
@@ -563,8 +471,8 @@ namespace Siddon{
       }
     }
     else {
-      typename Ray::coord_type alpha_min    = get_alpha_min<Ray,Grid>      (ray, grid);
-      typename Ray::coord_type alpha_dimmin = get_alpha_dimmin__y<Ray,Grid>(ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_min    = get_alpha_min<Ray,Grid>      (ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_dimmin = get_alpha_dimmin__y<Ray,Grid>(ray, grid);
       
       if(alpha_dimmin != alpha_min) {
         return floor(phi_from_alpha__y<Ray,Grid>(alpha_min, ray, grid));
@@ -580,8 +488,8 @@ namespace Siddon{
   int get_i_dimmax__z( Ray ray, Grid grid )
   {
     if(ray.start().z < ray.end().z) {
-      typename Ray::coord_type alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
-      typename Ray::coord_type alpha_dimmax = get_alpha_dimmax__z<Ray,Grid>(ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_max    = get_alpha_max<Ray,Grid>      (ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_dimmax = get_alpha_dimmax__z<Ray,Grid>(ray, grid);
       
       if(alpha_dimmax != alpha_max) {
         return floor(phi_from_alpha__z<Ray,Grid>(alpha_max, ray, grid));
@@ -591,8 +499,8 @@ namespace Siddon{
       }
     }
     else {
-      typename Ray::coord_type alpha_min    = get_alpha_min<Ray,Grid>      (ray, grid);
-      typename Ray::coord_type alpha_dimmin = get_alpha_dimmin__z<Ray,Grid>(ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_min    = get_alpha_min<Ray,Grid>      (ray, grid);
+      typename Ray::Vertex_t::Coord_t alpha_dimmin = get_alpha_dimmin__z<Ray,Grid>(ray, grid);
       
       if(alpha_dimmin != alpha_min) {
         return floor(phi_from_alpha__z<Ray,Grid>(alpha_min, ray, grid));
@@ -637,21 +545,21 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void update_alpha__x( T & alpha_x, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  void update_alpha__x( typename Ray::coord_type & alpha_x, Ray ray, Grid grid )
+  void update_alpha__x( typename Ray::Vertex_t::Coord_t & alpha_x, Ray ray, Grid grid )
   {
     alpha_x += grid.diff().x / std::abs(ray.end().x - ray.start().x);
   }
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void update_alpha__x( T & alpha_y, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  void update_alpha__y( typename Ray::coord_type & alpha_y, Ray ray, Grid grid )
+  void update_alpha__y( typename Ray::Vertex_t::Coord_t & alpha_y, Ray ray, Grid grid )
   {
     alpha_y += grid.diff().y / std::abs(ray.end().y - ray.start().y);
   }
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void update_alpha__x( T & alpha_z, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  void update_alpha__z( typename Ray::coord_type & alpha_z, Ray ray, Grid grid )
+  void update_alpha__z( typename Ray::Vertex_t::Coord_t & alpha_z, Ray ray, Grid grid )
   {
     alpha_z += grid.diff().z / std::abs(ray.end().z - ray.start().z);
   }
@@ -834,7 +742,7 @@ namespace Siddon{
 //  template<class T, template<class> class Ray, template<class> class Grid>
 //  void calculate_intersection_lengths( Intersection<T> * a, Ray<T> ray, Grid<T> grid )
   template<class Ray, class Grid>
-  void calculate_intersection_lengths( Intersection<typename Ray::coord_type> * a, Ray ray, Grid grid )
+  void calculate_intersection_lengths( Intersection<typename Ray::Vertex_t::Coord_t> * a, Ray ray, Grid grid )
   {
     // #################################
     // INITIALISATION
@@ -846,9 +754,9 @@ namespace Siddon{
     bool _intersects__y = intersects__y<Ray, Grid>( ray, grid );                // any planes in y direction intersected?
     bool _intersects__z = intersects__z<Ray, Grid>( ray, grid );                // any planes in z direction intersected?
 
-    typename Ray::coord_type length =     ray.length();                         // length of ray (cartesian)
-    typename Ray::coord_type alpha_min =  get_alpha_min<Ray,Grid>(ray, grid);   // param of first intersected plane
-    typename Ray::coord_type alpha_max =  get_alpha_max<Ray,Grid>(ray, grid);   // param of last intersected plane
+    typename Ray::Vertex_t::Coord_t length =     ray.length();                         // length of ray (cartesian)
+    typename Ray::Vertex_t::Coord_t alpha_min =  get_alpha_min<Ray,Grid>(ray, grid);   // param of first intersected plane
+    typename Ray::Vertex_t::Coord_t alpha_max =  get_alpha_max<Ray,Grid>(ray, grid);   // param of last intersected plane
     
     int i_x_min =                         get_i_dimmin__x<Ray,Grid>(ray, grid); // min/max indices of planes - following that rather complicated case differentiation
     int i_y_min =                         get_i_dimmin__y<Ray,Grid>(ray, grid); // -||-
@@ -860,7 +768,7 @@ namespace Siddon{
 
     
     // Get initial alpha params for each dimension
-    typename Ray::coord_type alpha_x;
+    typename Ray::Vertex_t::Coord_t alpha_x;
     if(ray.end().x > ray.start().x) {
       alpha_x =                           alpha_from_i__x<Ray,Grid>(i_x_min, ray, grid);
     }
@@ -868,7 +776,7 @@ namespace Siddon{
       alpha_x =                           alpha_from_i__x<Ray,Grid>(i_x_max, ray, grid);
     }
     
-    typename Ray::coord_type alpha_y;
+    typename Ray::Vertex_t::Coord_t alpha_y;
     if(ray.end().y > ray.start().y) {
       alpha_y =                           alpha_from_i__y<Ray,Grid>(i_y_min, ray, grid);
     }
@@ -876,7 +784,7 @@ namespace Siddon{
       alpha_y =                           alpha_from_i__y<Ray,Grid>(i_y_max, ray, grid);
     }
     
-    typename Ray::coord_type alpha_z;
+    typename Ray::Vertex_t::Coord_t alpha_z;
     if(ray.end().z > ray.start().z) {
       alpha_z =                           alpha_from_i__z<Ray,Grid>(i_z_min, ray, grid);
     }
@@ -892,7 +800,7 @@ namespace Siddon{
     
 
     // Initialise current position to the first plane crossed
-    typename Ray::coord_type alpha_curr = alpha_min;
+    typename Ray::Vertex_t::Coord_t alpha_curr = alpha_min;
 
 #ifdef DEBUG
     std::cout << "    length:      " << length     << std::endl;

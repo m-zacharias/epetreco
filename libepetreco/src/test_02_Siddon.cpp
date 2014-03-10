@@ -1,5 +1,7 @@
 #include "Siddon.hpp"
-#include "Vertex.hpp" // typedef coord_type
+#include "Ray.hpp"
+#include "Grid.hpp"
+#include "TemplateVertex.hpp"
 #include "PlyGrid.hpp"
 #include "PlyLine.hpp"
 #include "PlyWriter.hpp"
@@ -7,25 +9,28 @@
 #include <string>
 #include <cmath>
 
-class CRay : public Ray<coord_type>, public PlyLine
+typedef double CoordType;
+
+
+struct CRayTraits
+{
+  typedef TemplateVertex<CoordType> Vertex_t;
+};
+
+
+class CRay : public Ray<CRay, CRayTraits>, public PlyLine<CRayTraits::Vertex_t>
 {
   public:
     
     CRay( std::string const name,
-            Vertex const p0, Vertex const p1 )
-    : PlyLine(name,p0,p1) {}
+          Vertex_t const p0, Vertex_t const p1 )
+    : PlyLine<Vertex_t>(name,p0,p1) {}
     
-    virtual Vertex start() const
-    {
-      return PlyLine::_p0;
-    }
+    virtual Vertex_t start() const { return PlyLine<Vertex_t>::_p0; }
     
-    virtual Vertex end() const
-    {
-      return PlyLine::_p1;
-    }
+    virtual Vertex_t end() const { return PlyLine<Vertex_t>::_p1; }
     
-    virtual coord_type length() const
+    virtual Vertex_t::Coord_t length() const
     {
       return std::sqrt( (_p1.x-_p0.x)*(_p1.x-_p0.x) +
                         (_p1.y-_p0.y)*(_p1.y-_p0.y) +
@@ -35,48 +40,38 @@ class CRay : public Ray<coord_type>, public PlyLine
 };
 
 
+struct CGridTraits
+{
+  typedef TemplateVertex<CoordType> Vertex_t;
+};
 
-class CGrid : public Grid<coord_type>, public PlyGrid
+
+class CGrid : public Grid<CGrid, CGridTraits>, public PlyGrid<CGridTraits::Vertex_t>
 {
   public:
     
     CGrid( std::string const name,
-           Vertex const origin,
-           TemplateVertex<coord_type> const diff,
+           Vertex_t const origin,
+           Vertex_t const diff,
            int const Nx, int const Ny, int const Nz )
-    : PlyGrid(name,origin,Nx+1,Ny+1,Nz+1,diff.x,diff.y,diff.z),
+    : PlyGrid<Vertex_t>(name,origin,Nx+1,Ny+1,Nz+1,diff.x,diff.y,diff.z),
       _origin(origin), _diff(diff),
       _Nx(Nx), _Ny(Ny), _Nz(Nz) {}
       
-    virtual Vertex origin() const
-    {
-      return _origin;
-    }
+    virtual Vertex_t origin() const { return _origin; }
 
-    virtual Vertex diff( void ) const
-    {
-      return _diff;
-    }
+    virtual Vertex_t diff( void ) const { return _diff; }
 
-    virtual int Nx() const
-    {
-      return _Nx;
-    }
+    virtual int Nx() const { return _Nx; }
 
-    virtual int Ny() const
-    {
-      return _Ny;
-    }
+    virtual int Ny() const { return _Ny; }
 
-    virtual int Nz() const
-    {
-      return _Nz;
-    }
+    virtual int Nz() const { return _Nz; }
 
 
   private:
     
-    Vertex _origin, _diff;
+    Vertex_t _origin, _diff;
 
     int _Nx, _Ny, _Nz;
 };
@@ -89,19 +84,19 @@ int main( void )
 {
     // Make Objects
     CRay ray1(  "ray1",
-                Vertex(-0.5, 0.1, 0.1),
-                Vertex( 5.5, 0.9, 0.9)
+                CRay::Vertex_t(-0.5, 0.1, 0.1),
+                CRay::Vertex_t( 5.5, 0.9, 0.9)
          );
 
     CGrid grid( "grid",
-                Vertex(0.,0.,0.),
-                Vertex(1.,1.,1.),
+                CRay::Vertex_t(0.,0.,0.),
+                CRay::Vertex_t(1.,1.,1.),
                 5,1,1
           );
     
     // Prepare intersection array
     int N_crossed = get_N_crossed_planes<CRay,CGrid>(ray1, grid);
-    Intersection<coord_type> a[N_crossed];
+    Intersection<CoordType> a[N_crossed];
 
     for(int i=0; i<N_crossed; i++) {
       a[i].length = 0;

@@ -4,12 +4,15 @@
 #include "PlyGeometry.hpp"
 
 /* A Leaf class */
+template<typename Vertex>
 class PlyRectangle : public PlyGeometry
 {
   public:
     
     /* Constructor */
-    PlyRectangle( std::string const, Vertex const, Vertex const, Vertex const, Vertex const );
+    PlyRectangle(
+          std::string const, Vertex const, Vertex const,
+          Vertex const, Vertex const );
     
     /* Destructor */
     virtual ~PlyRectangle();
@@ -47,5 +50,6 @@ class PlyRectangle : public PlyGeometry
     
     Vertex _p0, _p1, _p2, _p3;
 };
+#include "PlyRectangle.tpp"
 
 #endif  // #define PLYRECTANGLE_HPP

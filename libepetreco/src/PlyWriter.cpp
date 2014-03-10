@@ -2,14 +2,14 @@
 
 #include "Iterator.hpp"
 
-#ifdef DEBUG
+#ifdef DEBUG_PLY
 #include <iostream>
 #endif
 
 PlyWriter::PlyWriter( std::string const fn )
 : _file(fn.c_str())
 {
-#ifdef DEBUG
+#ifdef DEBUG_PLY
   std::cout << "PlyWriter::PlyWriter(std::string const)" << std::endl;
 #endif
 }
@@ -17,7 +17,7 @@ PlyWriter::PlyWriter( std::string const fn )
 
 void PlyWriter::write( PlyGeometry & pg )
 {
-#ifdef DEBUG
+#ifdef DEBUG_PLY
   std::cout << "PlyWriter::write(PlyGeometry &)" << std::endl;
 #endif
   _file\
@@ -28,7 +28,7 @@ void PlyWriter::write( PlyGeometry & pg )
 
 void PlyWriter::close()
 {
-#ifdef DEBUG
+#ifdef DEBUG_PLY
   std::cout << "PlyWriter::close()" << std::endl;
 #endif
   _file.close();
@@ -36,7 +36,7 @@ void PlyWriter::close()
 
 std::string PlyWriter::header( PlyGeometry & pg )
 {
-#ifdef DEBUG
+#ifdef DEBUG_PLY
   std::cout << "PlyWriter::header(PlyGeometry const&)" << std::endl;
 #endif
   std::stringstream ss("");
