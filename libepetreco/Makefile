@@ -1,10 +1,11 @@
 SRC = ./src
+PLY = $(SRC)/Ply
 
 CPPC = g++
 #CPPFLAGS = -Wall
 CPPFLAGS = -Wall -DDEBUG
 CPPO = -c
-INC = -I$(SRC)/FoundationClasses/
+INC = -I$(SRC)/FoundationClasses/ -I$(PLY) -I$(SRC)
 
 CUC = nvcc
 CUCCFLAGS =
@@ -70,47 +71,57 @@ test_%_Siddon.out : \
         libepetreco.a
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
-test_PlyGeometry.out : \
-        $(SRC)/test_PlyGeometry.cpp \
+#test_PlyGeometry.out : \
+#        $(SRC)/test_PlyGeometry.cpp \
+#        libepetreco.a
+#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+#
+#test_PlyWriter.out : \
+#        $(SRC)/test_PlyWriter.cpp \
+#        libepetreco.a
+#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+#
+#test_PlyGrid.out : \
+#        $(SRC)/test_PlyGrid.cpp \
+#        libepetreco.a
+#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+#
+#test_PlyBox.out : \
+#        $(SRC)/test_PlyBox.cpp \
+#        libepetreco.a
+#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+#
+#test_PlyLine.out : \
+#        $(SRC)/test_PlyLine.cpp \
+#        libepetreco.a
+#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+
+test_Ply%.out : \
+        $(PLY)/test_Ply%.cpp \
         libepetreco.a
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
-test_PlyWriter.out : \
-        $(SRC)/test_PlyWriter.cpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
-test_PlyGrid.out : \
-        $(SRC)/test_PlyGrid.cpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
-test_PlyBox.out : \
-        $(SRC)/test_PlyBox.cpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
-test_PlyLine.out : \
-        $(SRC)/test_PlyLine.cpp \
+bigtest.out : \
+        $(SRC)/bigtest.cpp \
         libepetreco.a
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
 
 
 PlyGeometry.o : \
-        $(SRC)/PlyGeometry.cpp \
-        $(SRC)/PlyGeometry.hpp
+        $(PLY)/PlyGeometry.cpp \
+        $(PLY)/PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 CompositePlyGeometry.o : \
-        $(SRC)/CompositePlyGeometry.cpp \
-        $(SRC)/CompositePlyGeometry.hpp \
-        $(SRC)/PlyGeometry.hpp
+        $(PLY)/CompositePlyGeometry.cpp \
+        $(PLY)/CompositePlyGeometry.hpp \
+        $(PLY)/PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 PlyWriter.o : \
-        $(SRC)/PlyWriter.cpp\
-        $(SRC)/PlyWriter.hpp
+        $(PLY)/PlyWriter.cpp\
+        $(PLY)/PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 #Siddon.o : Siddon.hpp
