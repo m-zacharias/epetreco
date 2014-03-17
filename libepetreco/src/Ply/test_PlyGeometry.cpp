@@ -13,10 +13,10 @@ class Scene : public CompositePlyGeometry
     Scene( std::string const name )
     : CompositePlyGeometry(name) {}
 
-    int count()
-    {
-      return this->_geometryList.count();
-    }
+    int count() {return this->_geometryList.size();}
+
+    Iterator_t begin() {return this->_geometryList.begin();}
+    Iterator_t end() {return this->_geometryList.end();}
 };
 
 
@@ -40,10 +40,10 @@ int main( void )
   scene.add(&rect);
   std::cout << "count: " << scene.count() << std::endl;
 
-  Iterator<PlyGeometry*>* it = scene.createIterator();
+  PlyGeometry::Iterator_t it = scene.createIterator();
   std::cout << "starting iterations..." << std::endl;
-  for(it->first(); !it->isDone(); it->next()) {
-    std::cout << it->currentItem()->name() << std::endl << std::flush;
+  for(it=scene.begin(); it!=scene.end(); it++) {
+    std::cout << (*it)->name() << std::endl << std::flush;
   }
 
   std::cout << scene.verticesStr() << scene.facesStr() << std::endl;

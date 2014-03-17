@@ -18,12 +18,16 @@ int CompositePlyGeometry::numVertices()
 #endif
   int total = 0;
 
-  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
-  for(it->first(); !it->isDone(); it->next()) {
-    total += it->currentItem()->numVertices();
-  }
+//  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
+//  for(it->first(); !it->isDone(); it->next()) {
+//    total += it->currentItem()->numVertices();
+//  }
+//
+//  delete it;
+  Iterator_t it = createIterator();
+  for(it=_geometryList.begin(); it!=_geometryList.end(); it++)
+    total += (*it)->numVertices();
 
-  delete it;
   return total;
 }
 
@@ -34,12 +38,16 @@ int CompositePlyGeometry::numFaces()
 #endif
   int total = 0;
 
-  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
-  for(it->first(); !it->isDone(); it->next()) {
-    total += it->currentItem()->numFaces();
-  }
-
-  delete it;
+//  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
+//  for(it->first(); !it->isDone(); it->next()) {
+//    total += it->currentItem()->numFaces();
+//  }
+//
+//  delete it;
+  Iterator_t it = createIterator();
+  for(it=_geometryList.begin(); it!=_geometryList.end(); it++)
+    total += (*it)->numFaces();
+  
   return total;
 }
 
@@ -50,12 +58,16 @@ std::string CompositePlyGeometry::verticesStr()
 #endif
   std::string str("");
 
-  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
-  for(it->first(); !it->isDone(); it->next()) {
-    str += it->currentItem()->verticesStr();
-  }
+//  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
+//  for(it->first(); !it->isDone(); it->next()) {
+//    str += it->currentItem()->verticesStr();
+//  }
+//
+//  delete it;
+  Iterator_t it = createIterator();
+  for(it=_geometryList.begin(); it!=_geometryList.end(); it++)
+    str += (*it)->verticesStr();
 
-  delete it;
   return str;
 }
 
@@ -67,12 +79,16 @@ std::string CompositePlyGeometry::facesStr()
   int vertexId = 0;
   std::string str("");
   
-  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
-  for(it->first(); !it->isDone(); it->next()) {
-    str += it->currentItem()->facesStr(vertexId);
-  }
+//  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
+//  for(it->first(); !it->isDone(); it->next()) {
+//    str += it->currentItem()->facesStr(vertexId);
+//  }
+//
+//  delete it;
+  Iterator_t it = createIterator();
+  for(it=_geometryList.begin(); it!=_geometryList.end(); it++)
+    str += (*it)->facesStr(vertexId);
 
-  delete it;
   return str;
 }
 
@@ -83,12 +99,16 @@ std::string CompositePlyGeometry::facesStr( int & vertexId )
 #endif
   std::string str("");
 
-  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
-  for(it->first(); !it->isDone(); it->next()) {
-    str += it->currentItem()->facesStr(vertexId);
-  }
+//  Iterator<PlyGeometry *> * it = CompositePlyGeometry::createIterator();
+//  for(it->first(); !it->isDone(); it->next()) {
+//    str += it->currentItem()->facesStr(vertexId);
+//  }
+//
+//  delete it;
+  Iterator_t it = createIterator();
+  for(it=_geometryList.begin(); it!=_geometryList.end(); it++)
+    str += (*it)->facesStr(vertexId);
 
-  delete it;
   return str;
 }
 
@@ -98,7 +118,8 @@ void CompositePlyGeometry::add( PlyGeometry * g_ptr )
 #ifdef DEBUG
   std::cout << "CompositePlyGeometry::add()" << std::endl;
 #endif
-  _geometryList.append( g_ptr );
+  //_geometryList.append( g_ptr );
+  _geometryList.push_back(g_ptr);
 }
 
 void CompositePlyGeometry::remove( PlyGeometry * g_ptr )
@@ -106,16 +127,23 @@ void CompositePlyGeometry::remove( PlyGeometry * g_ptr )
 #ifdef DEBUG
   std::cout << "CompositePlyGeometry::remove()" << std::endl;
 #endif
-  _geometryList.remove( g_ptr );
+  //_geometryList.remove( g_ptr );
+  Iterator_t it;
+  for(it=_geometryList.begin(); it!=_geometryList.end(); it++)
+  {
+    if((*it)==g_ptr)
+      _geometryList.erase(it);
+  }
 }
 
-#include "ListIterator.hpp"
-Iterator<PlyGeometry *> * CompositePlyGeometry::createIterator()
+CompositePlyGeometry::Iterator_t CompositePlyGeometry::createIterator()
 {
 #ifdef DEBUG
   std::cout << "CompositePlyGeometry::createIterator()" << std::endl;
 #endif
-  return new ListIterator<PlyGeometry *>(&_geometryList);
+  //return new ListIterator<PlyGeometry *>(&_geometryList);
+  std::list<PlyGeometry *>::iterator it;
+  return it;
 }
 
 

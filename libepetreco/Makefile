@@ -5,7 +5,8 @@ CPPC = g++
 #CPPFLAGS = -Wall
 CPPFLAGS = -Wall -DDEBUG
 CPPO = -c
-INC = -I$(SRC)/FoundationClasses/ -I$(PLY) -I$(SRC)
+#INC = -I$(SRC)/FoundationClasses/ -I$(PLY) -I$(SRC)
+INC = -I$(PLY) -I$(SRC)
 
 CUC = nvcc
 CUCCFLAGS =

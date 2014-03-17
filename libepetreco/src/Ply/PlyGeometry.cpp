@@ -1,8 +1,5 @@
 #include "PlyGeometry.hpp"
 
-#include "Iterator.hpp"
-#include "ListIterator.hpp"
-#include "List.hpp"
 
 #ifdef DEBUG_PLY
 #include <iostream>
@@ -82,14 +79,12 @@ void PlyGeometry::remove( PlyGeometry * g_ptr )
 }
 
 
-Iterator<PlyGeometry *> * PlyGeometry::createIterator()
+PlyGeometry::Iterator_t PlyGeometry::createIterator()
 {
 #ifdef DEBUG_PLY
   std::cout << "PlyGeometry::createIterator()" << std::endl;
 #endif
-//  Iterator<PlyGeometry *> * NullIterator = 0;
-//  return NullIterator;
-  return 0;
+  return Iterator_t(0);
 }
 
 

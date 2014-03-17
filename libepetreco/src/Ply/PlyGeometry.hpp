@@ -3,9 +3,7 @@
 #ifndef PLYGEOMETRY_HPP
 #define PLYGEOMETRY_HPP
 
-#include "Iterator.hpp"
-#include "List.hpp"
-// #include "Vertex.hpp"
+#include <list>
 #include <string>
 
 class CompositePlyGeometry;
@@ -14,6 +12,8 @@ class CompositePlyGeometry;
 class PlyGeometry
 {
   public:
+    
+    typedef std::list<PlyGeometry *>::iterator Iterator_t;
     
     friend class CompositePlyGeometry;
     
@@ -45,8 +45,9 @@ class PlyGeometry
     virtual void remove( PlyGeometry * );
     
     /* Get an iterator that iterates over the components */
-    virtual Iterator<PlyGeometry *> * createIterator();
-    
+    //virtual Iterator<PlyGeometry *> * createIterator();
+    virtual Iterator_t createIterator();
+
    
   protected:
     

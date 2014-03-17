@@ -1,7 +1,5 @@
 #include "PlyWriter.hpp"
 
-#include "Iterator.hpp"
-
 #ifdef DEBUG_PLY
 #include <iostream>
 #endif

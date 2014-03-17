@@ -1,7 +1,6 @@
 #include "PlyRectangle.hpp"
 #include "CompositePlyGeometry.hpp"
 #include "PlyWriter.hpp"
-#include "Iterator.hpp"
 #include "TemplateVertex.hpp"
 
 #include <iostream>
@@ -13,6 +12,9 @@ class Scene : public CompositePlyGeometry
     
     Scene( std::string const name )
     : CompositePlyGeometry(name) {}
+
+    Iterator_t begin() {return this->_geometryList.begin();}
+    Iterator_t end() {return this->_geometryList.end();}
 };
 
 
@@ -60,9 +62,9 @@ int main()
   combined.add(&scene1);
   combined.add(&scene2);
 
-  Iterator<PlyGeometry *> * it = combined.createIterator();
-  for(it->first(); !it->isDone(); it->next()) {
-    std::cout << it->currentItem()->name() << std::endl;
+  Scene::Iterator_t it = combined.createIterator();
+  for(it=combined.begin(); it!=combined.end(); it++) {
+    std::cout << (*it)->name() << std::endl;
   }
 
   PlyWriter writer("test_PlyWriter_output.ply");

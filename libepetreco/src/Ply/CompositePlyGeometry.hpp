@@ -4,7 +4,7 @@
 #define COMPOSITEPLYGEOMETRY_HPP
 
 #include "PlyGeometry.hpp"
-#include "List.hpp"
+#include <list>
 
 /* The Composite class */
 class CompositePlyGeometry : public PlyGeometry
@@ -28,7 +28,8 @@ class CompositePlyGeometry : public PlyGeometry
 
     virtual void remove( PlyGeometry * );
 
-    virtual Iterator<PlyGeometry *> * createIterator();
+    //virtual Iterator<PlyGeometry *> * createIterator();
+    virtual Iterator_t createIterator();
     
     
   protected:
@@ -40,7 +41,8 @@ class CompositePlyGeometry : public PlyGeometry
 
 //  private:
     
-    List<PlyGeometry *> _geometryList;
+    //List<PlyGeometry *> _geometryList;
+    std::list<PlyGeometry *> _geometryList;
 };
 
 #endif  // #define COMPOSITEPLYGEOMETRY_HPP
