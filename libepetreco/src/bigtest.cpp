@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <iostream>
+#include <iomanip>
 
 #define PI 3.1415927
 
@@ -97,15 +99,62 @@ class MyChannel
 
     bool _updateRayMemSize( int nrays )
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::_updateRayMemSize(int)" << std::endl;
+#endif
       // Any changes needed?
       if(nrays==_nrays)
         return false;
       
-      delete[] _rays;
+      if(_rays)
+        delete[] _rays;
       _rays = new MyRay[nrays];
       _nrays = nrays;
 
       return true;
+    }
+
+   /** 
+    * @brief Write the transformation matrix: {random(0.,1.)**3} ->
+    * {random point within detector segment} into mem_trafo.
+    *
+    * The transformation consists of 4 consecutive steps:
+    * - translate by (-0.5,-0.5,-0.5) (accounts for segment position==center of
+    *   segment box)
+    * - scale by (edgelength_x,edgelength_y,edgelength_z)
+    * - translate by detector segment basic position
+    * - rotate by angle of channel
+    * 
+    * This can, in homogeneous coordinates, be perceived as:
+    *   (R_phi * T_segpos * S_edgelengths * T_{-.5}) * (random_{(0..1)^3},1)
+    * 
+    * Which can be expressed as:
+    *   B_transform                                  * (random_{(0..1)^3},1)
+    * 
+    * B_transform is referred to as transformation matrix.
+    */
+    void _trafo(
+          Coord_t * const mem_trafo, Coord_t * const edges,
+          Coord_t * const pos, Coord_t const sin, Coord_t const cos )
+    {
+#ifdef DEBUG
+      std::cout << "MyChannel::_trafo(Coord_t * const, Coord_t * const, Coord_t"
+                << " * const, Coord_t, Coord_t)" << std::endl;
+#endif
+      mem_trafo[0][0] = edges[0]*cos;
+      mem_trafo[0][1] = 0.;
+      mem_trafo[0][2] = edges[2]*sin;
+      mem_trafo[0][3] = cos*(pos[0]-.5*edges[0])\
+                       +sin*(pos[2]-.5*edges[2]);
+      mem_trafo[1][0] = 0.;
+      mem_trafo[1][1] = edges[1];
+      mem_trafo[1][2] = 0.;
+      mem_trafo[1][3] = pos[1]-.5*edges[1];
+      mem_trafo[2][0] =-edges[0]*sin;
+      mem_trafo[2][1] = 0.;
+      mem_trafo[2][2] = edges[2]*cos;
+      mem_trafo[2][3] =-sin*(pos[0]-.5*edges[0])\
+                       +cos*(pos[2]-.5*edges[2]);
     }
 
 
@@ -117,6 +166,9 @@ class MyChannel
      */
     void getPos0( Coord_t * mem_pos0 )
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::getPos0(Coord_t*)" << std::endl;
+#endif
       mem_pos0[0] = _pos0[0]; // x [mm]
       mem_pos0[1] = _pos0[1]; // y [mm]
       mem_pos0[2] = _pos0[2]; // z [mm]
@@ -128,6 +180,9 @@ class MyChannel
      */
     void getPos1( Coord_t * mem_pos1 )
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::getPos1(Coord_t*)" << std::endl;
+#endif
       mem_pos1[0] = _pos1[0];
       mem_pos1[1] = _pos1[1];
       mem_pos1[2] = _pos1[2];
@@ -138,6 +193,9 @@ class MyChannel
      */
     int getAngle()
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::getAngle()" << std::endl;
+#endif
       return _angle;
     }
     
@@ -146,6 +204,9 @@ class MyChannel
      */
     void getEdges( Coord_t * mem_edges )
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::getEdges(Coord_t*)" << std::endl;
+#endif
       mem_edges[0] = 20.;  // x [mm]
       mem_edges[1] = 4.;   // y [mm]
       mem_edges[2] = 4.;   // z [mm]
@@ -154,24 +215,12 @@ class MyChannel
     /**
      * Write a number of randomly chosen rays representing the channel into
      * mem_rays.
-     * 
-     * Ray start points are randomly picked from the volume of detector 0
-     * segment, ray end points are randomly picked from the volume of detector 1
-     * segment.  Randomly picking a point from a detector segment volume:
-     * - for x,y,z each pick a random float type number in (0,1)
-     * - translate by (-0.5,-0.5,-0.5) (accounts for segment position==center of
-     *   segment box)
-     * - scale by (edgelength_x,edgelength_y,edgelength_z)
-     * - translate by detector segment basic position
-     * - rotate by angle of channel
-     * This can, in homogeneous coordinates, be perceived as:
-     *   (R_phi * T_segpos * S_edgelengths * T_{-.5}) * (random_{(0..1)^3},1)
-     * Which can be expressed as:
-     *   B_transform                                  * (random_{(0..1)^3},1)
-     * B_transform is referred to as transformation matrix.
      */
     void setRays( int nrays )
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::setRays(int)" << std::endl;
+#endif
       if(!_updateRayMemSize(nrays))
         return;
 
@@ -183,39 +232,14 @@ class MyChannel
       getPos1(pos1);
       getEdges(edges);
       Coord_t angle = (Coord_t)(getAngle())/180.*PI;
+      Coord_t cos = std::cos(angle);
+      Coord_t sin = std::sin(angle);
 
       // Generate transformation matrices for det0, det1
-      // (see method description for explanation).
       Coord_t trafo0[3][4];
-      trafo0[0][0] = edges[0]*std::cos(angle)*(1.-.5*pos0[0]);
-      trafo0[0][1] = 0.;
-      trafo0[0][2] = edges[2]*std::sin(angle)*(1.-.5*pos0[2]);
-      trafo0[0][3] = std::cos(angle)*(pos0[0]-.5*edges[0])\
-                    +std::sin(angle)*(pos0[2]-.5*edges[2]);
-      trafo0[1][0] = 0.;
-      trafo0[1][1] = edges[1]*(1.-.5*pos0[1]);
-      trafo0[1][2] = 0.;
-      trafo0[1][3] = pos0[1]-.5*edges[1];
-      trafo0[2][0] =-edges[0]*std::sin(angle)*(1.-.5*pos0[0]);
-      trafo0[2][1] = 0.;
-      trafo0[2][2] = edges[2]*std::cos(angle)*(1.-.5*pos0[2]);
-      trafo0[2][3] =-std::sin(angle)*(pos0[0]-.5*edges[0])\
-                    +std::cos(angle)*(pos0[2]-.5*edges[2]);
       Coord_t trafo1[3][4];
-      trafo1[0][0] = edges[0]*std::cos(angle)*(1.-.5*pos1[0]);
-      trafo1[0][1] = 0.;
-      trafo1[0][2] = edges[2]*std::sin(angle)*(1.-.5*pos1[2]);
-      trafo1[0][3] = std::cos(angle)*(pos1[0]-.5*edges[0])\
-                    +std::sin(angle)*(pos1[2]-.5*edges[2]);
-      trafo1[1][0] = 0.;
-      trafo1[1][1] = edges[1]*(1.-.5*pos1[1]);
-      trafo1[1][2] = 0.;
-      trafo1[1][3] = pos1[1]-.5*edges[1];
-      trafo1[2][0] =-edges[0]*std::sin(angle)*(1.-.5*pos1[0]);
-      trafo1[2][1] = 0.;
-      trafo1[2][2] = edges[2]*std::cos(angle)*(1.-.5*pos1[2]);
-      trafo1[2][3] =-std::sin(angle)*(pos1[0]-.5*edges[0])\
-                    +std::cos(angle)*(pos1[2]-.5*edges[2]);
+      _trafo(trafo0, edges, pos0, sin, cos);
+      _trafo(trafo1, edges, pos1, sin, cos);
 
       // Iterate over rays
       for(int ray_id=0; ray_id<nrays; ray_id++)
@@ -241,8 +265,8 @@ class MyChannel
 
           for(int j=0; j<4; j++)
           {
-            start[i] += trafo0[i][j] + s[j];
-            end[i]   += trafo1[i][j] + e[j];
+            start[i] += trafo0[i][j] * s[j];
+            end[i]   += trafo1[i][j] * e[j];
           }
         }
 
@@ -254,7 +278,29 @@ class MyChannel
 
     PlyRepr getPlyRepr()
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::getPlyRepr" << std::endl;
+#endif
       PlyRepr g;
+
+// TODO: Add boxes representing the two detector segments.  Problem: There
+//       is no way to rotate PlyBoxes at the moment.      
+//      // Get positions, edges, angle of det0, det1 segments
+//      Coord_t pos0[3];
+//      Coord_t pos1[3];
+//      Coord_t edges[3];
+//      getPos0(pos0);
+//      getPos1(pos1);
+//      getEdges(edges);
+//      Coord_t angle = (Coord_t)(getAngle())/180.*PI;
+//      Coord_t cos = std::cos(angle);
+//      Coord_t sin = std::sin(angle);
+//
+//      // Get transformation matrices
+//      Coord_t trafo0[3][4];
+//      Coord_t trafo1[3][4];
+//      _trafo(trafo0, edges, pos0, sin, cos);
+//      _trafo(trafo1, edges, pos1, sin, cos);
 
       for(int i=0; i<_nrays; i++)
       {
@@ -266,8 +312,11 @@ class MyChannel
 
     // Constructor
     MyChannel( int angle, Coord_t * pos0, Coord_t * pos1 )
-    : _angle(angle), _nrays(0)
+    : _angle(angle), _nrays(0), _rays(0)
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::MyChannel(int,Coord_t*,Coord_t*)" << std::endl;
+#endif
       for(int i=0; i<3; i++)
       {
         _pos0[i] = pos0[i];
@@ -277,12 +326,20 @@ class MyChannel
 
     // Default Constructor
     MyChannel( void )
-    : _nrays(0) {}
+    : _nrays(0), _rays(0)
+    {
+#ifdef DEBUG
+      std::cout << "MyChannel::MyChannel()" << std::endl;
+#endif
+    }
 
     // Copy Constructor
     MyChannel( MyChannel const & ori )
-    : _angle(ori._angle)
+    : _angle(ori._angle), _nrays(0), _rays(0)
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::MyChannel(MyChannel const &)" << std::endl;
+#endif
       for(int i=0; i<3; i++)
       {
         _pos0[0] = ori._pos0[i];
@@ -299,6 +356,9 @@ class MyChannel
     // Copy Assignment
     void operator=( MyChannel const & ori )
     {
+#ifdef DEBUG
+      std::cout << "MyChannel::operator=(MyChannel const &)" << std::endl;
+#endif
       _angle = ori._angle;
       
       for(int i=0; i<3; i++)
@@ -353,7 +413,7 @@ class MySetup
     {
       float_t pos0_[3];
       float_t pos1_[3];
-      int d_index[3];
+      int d_index[5];
       dimensionalChannelIndex(i, d_index);
       pos0(d_index, pos0_);
       pos1(d_index, pos1_);
@@ -382,11 +442,22 @@ class MySetup
 
 int main()
 {
+  std::cout << "MySetup     aSetup;" << std::endl;
   MySetup     aSetup;
+
+  std::cout << "MyChannel   aChannel = aSetup.getChannel(0);" << std::endl;
   MyChannel   aChannel = aSetup.getChannel(0);
+
+  std::cout << "aChannel.setRays(10);" << std::endl;
   aChannel.setRays(10);
+
+  std::cout << "PlyRepr     aPlyRepr = aChannel.getPlyRepr();" << std::endl;
   PlyRepr     aPlyRepr = aChannel.getPlyRepr();
+
+  std::cout << "PlyWriter   writer(\"bigtest.ply\");" << std::endl;
   PlyWriter   writer("bigtest.ply");
+
+  std::cout << "writer.write(aPlyRepr);" << std::endl;
   writer.write(aPlyRepr);
 
   return 0;

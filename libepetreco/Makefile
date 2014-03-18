@@ -2,14 +2,14 @@ SRC = ./src
 PLY = $(SRC)/Ply
 
 CPPC = g++
-#CPPFLAGS = -Wall
-CPPFLAGS = -Wall -DDEBUG
+CPPCFLAGS = -Wall
+#CPPCFLAGS = -Wall -DDEBUG
 CPPO = -c
-#INC = -I$(SRC)/FoundationClasses/ -I$(PLY) -I$(SRC)
-INC = -I$(PLY) -I$(SRC)
+INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
+LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
 
 CUC = nvcc
-CUCCFLAGS =
+CUCFLAGS =
 CUCINC = -I$(CUDA_ROOT)/include
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
@@ -24,6 +24,7 @@ all : \
         test_PlyGrid.out \
         test_PlyLine.out \
         test_CudaTransform.out \
+        test_H5Reader.out \
         cublasExampleMatrixVectorMult.out
 
 libepetreco.a : \
@@ -72,31 +73,6 @@ test_%_Siddon.out : \
         libepetreco.a
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
-#test_PlyGeometry.out : \
-#        $(SRC)/test_PlyGeometry.cpp \
-#        libepetreco.a
-#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-#
-#test_PlyWriter.out : \
-#        $(SRC)/test_PlyWriter.cpp \
-#        libepetreco.a
-#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-#
-#test_PlyGrid.out : \
-#        $(SRC)/test_PlyGrid.cpp \
-#        libepetreco.a
-#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-#
-#test_PlyBox.out : \
-#        $(SRC)/test_PlyBox.cpp \
-#        libepetreco.a
-#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-#
-#test_PlyLine.out : \
-#        $(SRC)/test_PlyLine.cpp \
-#        libepetreco.a
-#	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
 test_Ply%.out : \
         $(PLY)/test_Ply%.cpp \
         libepetreco.a
@@ -107,6 +83,10 @@ bigtest.out : \
         libepetreco.a
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
+test_H5Reader.out : \
+        $(SRC)/test_H5Reader.cpp \
+        $(SRC)/H5Reader.hpp
+	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
 
 
 PlyGeometry.o : \
@@ -142,5 +122,6 @@ clean:
       ./test_PlyLine.out \
       ./cublasExampleMatrixVectorMult.out \
       ./test_CudaTransform.out \
+      ./test_H5Reader.out \
       ./libepetreco.a \
       ./*.ply
