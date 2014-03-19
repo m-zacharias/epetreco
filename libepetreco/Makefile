@@ -25,6 +25,7 @@ all : \
         test_PlyLine.out \
         test_CudaTransform.out \
         test_H5Reader.out \
+        test_H5DensityWriter.out \
         cublasExampleMatrixVectorMult.out
 
 libepetreco.a : \
@@ -88,6 +89,11 @@ test_H5Reader.out : \
         $(SRC)/H5Reader.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
 
+test_H5DensityWriter.out : \
+        $(SRC)/test_H5DensityWriter.cpp \
+        $(SRC)/H5DensityWriter.hpp
+	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
+
 
 PlyGeometry.o : \
         $(PLY)/PlyGeometry.cpp \
@@ -123,5 +129,7 @@ clean:
       ./cublasExampleMatrixVectorMult.out \
       ./test_CudaTransform.out \
       ./test_H5Reader.out \
+      ./test_H5DensityWriter.out \
       ./libepetreco.a \
-      ./*.ply
+      ./*.ply \
+      ./*.h5
