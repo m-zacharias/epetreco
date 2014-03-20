@@ -1,5 +1,5 @@
-#ifndef TESTGRID_HPP
-#define TESTGRID_HPP
+#ifndef DEVELGRID_HPP
+#define DEVELGRID_HPP
 
 #include "Ply.hpp"
 #include "Grid.hpp"
@@ -8,18 +8,18 @@
 typedef double CoordType;
 
 
-struct TestGridTraits
+struct DevelGridTraits
 {
   typedef TemplateVertex<CoordType> Vertex_t;
 };
 
 
-class TestGrid : public Grid<TestGrid, TestGridTraits>,
-                 public PlyGrid<TestGridTraits::Vertex_t>
+class DevelGrid : public Grid<DevelGrid, DevelGridTraits>,
+                  public PlyGrid<DevelGridTraits::Vertex_t>
 {
   public:
     
-    TestGrid(
+    DevelGrid(
            Vertex_t const origin,
            Vertex_t const diff,
            int const Nx, int const Ny, int const Nz )
@@ -49,4 +49,4 @@ class TestGrid : public Grid<TestGrid, TestGridTraits>,
     int _Nx, _Ny, _Nz;
 };
 
-#endif  // #ifndef TESTGRID_HPP
+#endif  // #ifndef DEVELGRID_HPP

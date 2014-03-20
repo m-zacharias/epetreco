@@ -1,5 +1,5 @@
-#ifndef TESTRAY_HPP
-#define TESTRAY_HPP
+#ifndef DEVELRAY_HPP
+#define DEVELRAY_HPP
 
 #include "Ply.hpp"
 #include "Ray.hpp"
@@ -8,23 +8,23 @@
 typedef double CoordType;
 
 
-struct TestRayTraits
+struct DevelRayTraits
 {
   typedef TemplateVertex<CoordType> Vertex_t;
 };
 
 
-class TestRay : public Ray<TestRay, TestRayTraits>,
-                public PlyLine<typename TestRayTraits::Vertex_t>
+class DevelRay : public Ray<DevelRay, DevelRayTraits>,
+                 public PlyLine<typename DevelRayTraits::Vertex_t>
 {
   public:
     
     // Constructor
-    TestRay( Vertex_t const p0, Vertex_t const p1 )
+    DevelRay( Vertex_t const p0, Vertex_t const p1 )
     : PlyLine<Vertex_t>(std::string(""),p0,p1) {}
     
     // Default constructor
-    TestRay( void )
+    DevelRay( void )
     : PlyLine<Vertex_t>(std::string(""),Vertex_t(0,0,0),Vertex_t(0,0,0)) {}
         
     Vertex_t start() const { return PlyLine<Vertex_t>::_p0; }
@@ -40,4 +40,4 @@ class TestRay : public Ray<TestRay, TestRayTraits>,
     }
 };
 
-#endif  // #ifndef TESTRAY_HPP
+#endif  // #ifndef DEVELRAY_HPP
