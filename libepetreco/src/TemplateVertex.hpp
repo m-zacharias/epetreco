@@ -17,13 +17,11 @@ struct TemplateVertex {
     /* Copy Assignment */
     void operator=( TemplateVertex const & v );
     
+    T operator[]( int dim );
 
 
     T x, y, z;
 };
 #include "TemplateVertex.tpp"
-
-// typedef double coord_type;
-// typedef TemplateVertex<coord_type> Vertex;
 
 #endif  // #define TEMPLATEVERTEX_HPP

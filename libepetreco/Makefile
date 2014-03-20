@@ -26,6 +26,7 @@ all : \
         test_CudaTransform.out \
         test_H5Reader.out \
         test_H5DensityWriter.out \
+        test_IntersectionLengthFunctor.out \
         cublasExampleMatrixVectorMult.out
 
 libepetreco.a : \
@@ -94,6 +95,12 @@ test_H5DensityWriter.out : \
         $(SRC)/H5DensityWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
 
+test_IntersectionLengthFunctor.out : \
+        $(SRC)/test_IntersectionLengthFunctor.cpp \
+        $(SRC)/IntersectionLengthFunctor.hpp \
+        libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
+
 
 PlyGeometry.o : \
         $(PLY)/PlyGeometry.cpp \
@@ -130,6 +137,7 @@ clean:
       ./test_CudaTransform.out \
       ./test_H5Reader.out \
       ./test_H5DensityWriter.out \
+      ./test_IntersectionLengthFunctor.out \
       ./libepetreco.a \
       ./*.ply \
       ./*.h5

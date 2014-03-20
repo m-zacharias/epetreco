@@ -13,3 +13,12 @@ void TemplateVertex<T>::operator=( TemplateVertex<T> const & v )
 {
   x=v.x; y=v.y; z=v.z;
 }
+
+template<typename T>
+T TemplateVertex<T>::operator[]( int dim )
+{
+  if(dim==0) return x;
+  else if(dim==1) return y;
+  else if(dim==2) return z;
+  else throw 1;
+}
