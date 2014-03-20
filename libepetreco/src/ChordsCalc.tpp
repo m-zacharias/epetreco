@@ -1,4 +1,4 @@
-#include "IntersectionLengthFunctor.hpp"
+#include "ChordsCalc.hpp"
 #include "Siddon_helper.hpp"
 
 #include <cmath>
@@ -6,19 +6,18 @@
 #include <iostream>
 
 
-template<typename Ray, typename Grid, typename Intersection>
-IntersectionLengthFunctor<Ray, Grid, Intersection>
-::IntersectionLengthFunctor() {}
+template<typename Ray, typename Grid, typename Chord>
+ChordsCalc<Ray, Grid, Chord>
+::ChordsCalc() {}
 
 
-template<typename Ray, typename Grid, typename Intersection>
-void      IntersectionLengthFunctor<Ray, Grid, Intersection>
-::calculateIntersectionLengths( Intersection * a, Ray ray, Grid grid )
+template<typename Ray, typename Grid, typename Chord>
+void      ChordsCalc<Ray, Grid, Chord>
+::getChords( Chord * a, Ray ray, Grid grid )
 {
   if(!valid(ray, grid))
   {
-    std::cerr << "IntersectionLengthFunctor<...>" << std::endl
-              << "::calculateIntersectionLengths(...) : "
+    std::cerr << "ChordsCalc<...>::getChords(...) : "
               << "Error: Ray starts/ends within the grid"
               << std::endl;
     throw 1;
@@ -28,8 +27,8 @@ void      IntersectionLengthFunctor<Ray, Grid, Intersection>
   // INITIALISATION
   // #################################
 #ifdef DEBUG
-  std::cout << "IntersectionLengthFunctor<...>" << std::endl
-            << "::calculateIntersectionLengths(...) : start initialisation"
+  std::cout << "ChordsCalc<...>::getChords(...) : "
+            << "start initialisation"
             << std::endl;
 #endif
   Coord_t length      = ray.length();             // length of ray (cartesian)
@@ -93,8 +92,7 @@ void      IntersectionLengthFunctor<Ray, Grid, Intersection>
   std::cout << "    dimalpha[2] :    " << dimalpha[2]    << std::endl;
   std::cout << "    alpha_curr : " << alpha_curr << std::endl;
   std::cout << std::endl;
-  std::cout << "IntersectionLengthFunctor<...>" << std::endl
-            << "::calculateIntersectionLengths(...) : initialisation done"
+  std::cout << "ChordsCalc<...>::getChords(...) : initialisation done"
             << std::endl;
 #endif
   // #################################
@@ -105,8 +103,7 @@ void      IntersectionLengthFunctor<Ray, Grid, Intersection>
   // ITERATIONS
   // #################################
 #ifdef DEBUG
-  std::cout << "IntersectionLengthFunctor<...>" << std::endl
-            << "::calculateIntersectionLengths(...) : start iterations"
+  std::cout << "ChordsCalc<...>::getChords(...) : start iterations"
             << std::endl;
 #endif
   int i = 0;
@@ -149,23 +146,22 @@ void      IntersectionLengthFunctor<Ray, Grid, Intersection>
       throw -1;
   } 
 #ifdef DEBUG
-  std::cout << "IntersectionLengthFunctor<...>" << std::endl
-            << "::calculateIntersectionLengths(...) : iterations done"
+  std::cout << "ChordsCalc<...>::getChords(...) : iterations done"
             << std::endl;
 #endif
 }
 
 
-template<typename Ray, typename Grid, typename Intersection>
-bool      IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+bool      ChordsCalc<Ray, Grid, Chord>
 ::intersects( Ray ray, Grid grid, int dim )
 {
   return ray.end()[dim] - ray.start()[dim] != 0;
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-bool      IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+bool      ChordsCalc<Ray, Grid, Chord>
 ::intersectsAny( Ray ray, Grid grid )
 {
   return   intersects(ray, grid, 0)\
@@ -174,8 +170,8 @@ bool      IntersectionLengthFunctor<Ray, Grid, Intersection>
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::alphaFromId( int i, Ray ray, Grid grid, int dim )
 {
   return (       grid.origin()[dim]
@@ -187,8 +183,8 @@ typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Interse
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::phiFromAlpha(
       typename Ray::Vertex_t::Coord_t alpha, Ray ray, Grid grid, int dim )
 {
@@ -201,8 +197,8 @@ typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Interse
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::getAlphaDimmin( Ray ray, Grid grid, int dim )
 {
   return std::min(alphaFromId(0,             ray, grid, dim),
@@ -210,8 +206,8 @@ typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Interse
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::getAlphaDimmax( Ray ray, Grid grid, int dim )
 {
   return std::max(alphaFromId(0,             ray, grid, dim),
@@ -219,8 +215,8 @@ typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Interse
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::getAlphaMin( Ray ray, Grid grid )
 {
   typename Ray::Vertex_t::Coord_t temp;
@@ -251,8 +247,8 @@ typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Interse
 } 
 
 
-template<typename Ray, typename Grid, typename Intersection>
-typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::getAlphaMax( Ray ray, Grid grid )
 {
   typename Ray::Vertex_t::Coord_t temp;
@@ -283,8 +279,8 @@ typename Ray::Vertex_t::Coord_t     IntersectionLengthFunctor<Ray, Grid, Interse
 } 
 
     
-template<typename Ray, typename Grid, typename Intersection>
-int     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+int     ChordsCalc<Ray, Grid, Chord>
 ::getIdDimmin( Ray ray, Grid grid, int dim )
 {
   if(ray.start()[dim] < ray.end()[dim]) {
@@ -312,8 +308,8 @@ int     IntersectionLengthFunctor<Ray, Grid, Intersection>
 } 
 
     
-template<typename Ray, typename Grid, typename Intersection>
-int     IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+int     ChordsCalc<Ray, Grid, Chord>
 ::getIdDimmax( Ray ray, Grid grid, int dim )
 {
   if(ray.start()[dim] < ray.end()[dim]) {
@@ -341,14 +337,14 @@ int     IntersectionLengthFunctor<Ray, Grid, Intersection>
 } 
 
  
-template<typename Ray, typename Grid, typename Intersection>
-int     IntersectionLengthFunctor<Ray, Grid, Intersection>
-::getNCrossedVoxels( Ray ray, Grid grid )
+template<typename Ray, typename Grid, typename Chord>
+int     ChordsCalc<Ray, Grid, Chord>
+::getNChords( Ray ray, Grid grid )
 {
   if(!valid(ray, grid))
   {
-    std::cerr << "IntersectionLengthFunctor<...>" << std::endl
-              << "::calculateIntersectionLengths(...) : "
+    std::cerr << "ChordsCalc<...>" << std::endl
+              << "::calculateChordLengths(...) : "
               << "Error: Ray starts/ends within the grid"
               << std::endl;
     throw 1;
@@ -371,8 +367,8 @@ int     IntersectionLengthFunctor<Ray, Grid, Intersection>
 } 
 
     
-template<typename Ray, typename Grid, typename Intersection>
-void      IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+void      ChordsCalc<Ray, Grid, Chord>
 ::updateAlpha(
       typename Ray::Vertex_t::Coord_t & alpha, Ray ray, Grid grid,
       int dim )
@@ -381,8 +377,8 @@ void      IntersectionLengthFunctor<Ray, Grid, Intersection>
 } 
 
     
-template<typename Ray, typename Grid, typename Intersection>
-void      IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+void      ChordsCalc<Ray, Grid, Chord>
 ::updateId( int & id, Ray ray, Grid grid, int dim )
 {
   int i_update;
@@ -395,8 +391,8 @@ void      IntersectionLengthFunctor<Ray, Grid, Intersection>
 }
 
 
-template<typename Ray, typename Grid, typename Intersection>
-bool      IntersectionLengthFunctor<Ray, Grid, Intersection>
+template<typename Ray, typename Grid, typename Chord>
+bool      ChordsCalc<Ray, Grid, Chord>
 ::valid( Ray ray, Grid grid )
 {
   bool      start_valid = false;

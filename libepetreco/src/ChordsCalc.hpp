@@ -1,18 +1,18 @@
-#ifndef INTERSECTIONLENGTHFUNCTOR_HPP
-#define INTERSECTIONLENGTHFUNCTOR_HPP
+#ifndef CHORDSCALC_HPP
+#define CHORDSCALC_HPP
 
-template<typename Ray, typename Grid, typename Intersection>
-class IntersectionLengthFunctor
+template<typename Ray, typename Grid, typename Chord>
+class ChordsCalc
 {
   public:
     
     typedef typename Ray::Vertex_t::Coord_t Coord_t;
     
-    IntersectionLengthFunctor();
+    ChordsCalc();
 
-    void calculateIntersectionLengths( Intersection * a, Ray ray, Grid grid ); 
+    void getChords( Chord * a, Ray ray, Grid grid ); 
 
-    int getNCrossedVoxels( Ray ray, Grid grid );
+    int getNChords( Ray ray, Grid grid );
     
     
   private:
@@ -49,6 +49,6 @@ class IntersectionLengthFunctor
     
     void updateId( int & id, Ray ray, Grid grid, int dim );
 };
-#include "IntersectionLengthFunctor.tpp"
+#include "ChordsCalc.tpp"
 
-#endif  // #ifndef INTERSECTIONLENGTHFUNCTOR_HPP
+#endif  // #ifndef CHORDSCALC_HPP

@@ -1,4 +1,4 @@
-#include "IntersectionLengthFunctor.hpp"
+#include "ChordsCalc.hpp"
 #include "TestRay.hpp"
 #include "TestGrid.hpp"
 #include "Ply.hpp"
@@ -6,7 +6,7 @@
 #include <iostream>
 
 template<typename CoordType>
-struct Intersection
+struct Chord
 {
   typedef CoordType Coord_t;
 
@@ -24,10 +24,10 @@ struct Intersection
   int _id[3];
   Coord_t _length;
 };
-typedef Intersection<double> TestIntersection;
+typedef Chord<double> TestChord;
 
 
-typedef IntersectionLengthFunctor<TestRay, TestGrid, TestIntersection> TestFunctor;
+typedef ChordsCalc<TestRay, TestGrid, TestChord> TestChordsCalc;
 
 
 int main()
@@ -35,12 +35,12 @@ int main()
   TestGrid grid(TestGrid::Vertex_t(0., 0., 0.), TestGrid::Vertex_t(1., 1.,1.), 2, 2, 1);
   TestRay  ray (TestRay::Vertex_t (-0.5,-0.5,0.),  TestRay::Vertex_t (3.5,2.5,1.));
 
-  TestFunctor functor;
-  int nisc = functor.getNCrossedVoxels(ray,grid);
+  TestChordsCalc calc;
+  int nisc = calc.getNChords(ray,grid);
   std::cout << "Number of voxels crossed: " << nisc << std::endl;
 
-  TestIntersection * iscs = new TestIntersection[nisc];
-  functor.calculateIntersectionLengths(iscs, ray, grid);
+  TestChord * iscs = new TestChord[nisc];
+  calc.getChords(iscs, ray, grid);
 
   for(int i=0; i<nisc; i++)
   {
@@ -50,11 +50,11 @@ int main()
               << iscs[i]._length << std::endl;
   }
 
-  PlyWriter gridwriter("test_IntersectionLengthFunctor_grid.ply");
+  PlyWriter gridwriter("test_ChordsCalc_grid.ply");
   gridwriter.write(grid);
   gridwriter.close();
 
-  PlyWriter raywriter("test_IntersectionLengthFunctor_ray.ply");
+  PlyWriter raywriter("test_ChordsCalc_ray.ply");
   raywriter.write(ray);
   raywriter.close();
 
