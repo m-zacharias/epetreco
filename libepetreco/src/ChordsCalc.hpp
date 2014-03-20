@@ -7,7 +7,8 @@ class ChordsCalc
   public:
     
     typedef typename Ray::Vertex_t::Coord_t Coord_t;
-    
+    typedef Chord                  Chord_t;
+        
     ChordsCalc();
 
     void getChords( Chord * a, Ray ray, Grid grid ); 

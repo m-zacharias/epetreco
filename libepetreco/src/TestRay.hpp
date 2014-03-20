@@ -19,9 +19,14 @@ class TestRay : public Ray<TestRay, TestRayTraits>,
 {
   public:
     
+    // Constructor
     TestRay( Vertex_t const p0, Vertex_t const p1 )
     : PlyLine<Vertex_t>(std::string(""),p0,p1) {}
     
+    // Default constructor
+    TestRay( void )
+    : PlyLine<Vertex_t>(std::string(""),Vertex_t(0,0,0),Vertex_t(0,0,0)) {}
+        
     Vertex_t start() const { return PlyLine<Vertex_t>::_p0; }
     
     Vertex_t end() const { return PlyLine<Vertex_t>::_p1; }

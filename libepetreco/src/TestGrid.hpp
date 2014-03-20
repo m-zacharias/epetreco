@@ -33,6 +33,8 @@ class TestGrid : public Grid<TestGrid, TestGridTraits>,
 
     TemplateVertex<int> N( void ) const { return TemplateVertex<int>(Nx(),Ny(),Nz()); }
 
+    int getNVoxels() const { return _Nx*_Ny*_Nz; }
+
     int Nx() const { return _Nx; }
 
     int Ny() const { return _Ny; }
