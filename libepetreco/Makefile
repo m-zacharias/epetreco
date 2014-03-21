@@ -101,6 +101,12 @@ test_ChordsCalc.out : \
         libepetreco.a
 	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
 
+test_SMChunkGetter.out : \
+        $(SRC)/test_SMChunkGetter.cpp \
+        $(SRC)/SMChunkGetter.hpp \
+        libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
+
 
 PlyGeometry.o : \
         $(PLY)/PlyGeometry.cpp \

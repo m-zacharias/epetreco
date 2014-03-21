@@ -5,50 +5,52 @@ template<typename Ray, typename Grid, typename Chord>
 class ChordsCalc
 {
   public:
-    
-    typedef typename Ray::Vertex_t::Coord_t Coord_t;
-    typedef Chord                  Chord_t;
+   
+    typedef          Ray                      Ray_t;
+    typedef          Grid                     Grid_t;
+    typedef          Chord                    Chord_t;
+    typedef typename Ray_t::Vertex_t::Coord_t Coord_t;
         
     ChordsCalc();
 
-    void getChords( Chord * a, Ray ray, Grid grid ); 
+    void getChords( Chord_t * a, Ray_t ray, Grid_t grid ); 
 
-    int getNChords( Ray ray, Grid grid );
+    int getNChords( Ray_t ray, Grid_t grid );
     
     
   private:
     
-    bool valid( Ray ray, Grid grid );
+    bool valid( Ray_t ray, Grid_t grid );
     
-    bool intersects( Ray ray, Grid grid, int dim );
+    bool intersects( Ray_t ray, Grid_t grid, int dim );
 
-    bool intersectsAny( Ray ray, Grid grid );
+    bool intersectsAny( Ray_t ray, Grid_t grid );
     
-    typename Ray::Vertex_t::Coord_t alphaFromId(
-          int i, Ray ray, Grid grid, int dim );
+    Coord_t alphaFromId(
+          int i, Ray_t ray, Grid_t grid, int dim );
     
-    typename Ray::Vertex_t::Coord_t phiFromAlpha(
-          typename Ray::Vertex_t::Coord_t alpha, Ray ray, Grid grid, int dim );
+    Coord_t phiFromAlpha(
+          Coord_t alpha, Ray_t ray, Grid_t grid, int dim );
     
-    typename Ray::Vertex_t::Coord_t getAlphaDimmin(
-          Ray ray, Grid grid, int dim );
+    Coord_t getAlphaDimmin(
+          Ray_t ray, Grid_t grid, int dim );
     
-    typename Ray::Vertex_t::Coord_t getAlphaDimmax(
-          Ray ray, Grid grid, int dim );
+    Coord_t getAlphaDimmax(
+          Ray_t ray, Grid_t grid, int dim );
     
-    typename Ray::Vertex_t::Coord_t getAlphaMin( Ray ray, Grid grid );
+    Coord_t getAlphaMin( Ray_t ray, Grid_t grid );
     
-    typename Ray::Vertex_t::Coord_t getAlphaMax( Ray ray, Grid grid );
+    Coord_t getAlphaMax( Ray_t ray, Grid_t grid );
     
-    int getIdDimmin( Ray ray, Grid grid, int dim );
+    int getIdDimmin( Ray_t ray, Grid_t grid, int dim );
     
-    int getIdDimmax( Ray ray, Grid grid, int dim );
+    int getIdDimmax( Ray_t ray, Grid_t grid, int dim );
     
     void updateAlpha(
-          typename Ray::Vertex_t::Coord_t & alpha, Ray ray, Grid grid,
+          Coord_t & alpha, Ray_t ray, Grid_t grid,
           int dim );
     
-    void updateId( int & id, Ray ray, Grid grid, int dim );
+    void updateId( int & id, Ray_t ray, Grid_t grid, int dim );
 };
 #include "ChordsCalc.tpp"
 

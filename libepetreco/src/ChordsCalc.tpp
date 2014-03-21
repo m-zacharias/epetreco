@@ -5,20 +5,37 @@
 #include <algorithm>
 #include <iostream>
 
+#ifdef DEBUG
+#include <iostream>
+#endif
 
 template<typename Ray, typename Grid, typename Chord>
 ChordsCalc<Ray, Grid, Chord>
-::ChordsCalc() {}
+::ChordsCalc()
+{
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::ChordsCalc()"
+            << std::endl;
+#endif
+#endif
+}
 
 
 template<typename Ray, typename Grid, typename Chord>
 void      ChordsCalc<Ray, Grid, Chord>
-::getChords( Chord * a, Ray ray, Grid grid )
+::getChords( Chord_t * a, Ray_t ray, Grid_t grid )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getChords(Chord_t*,Ray_t,Grid_t)"
+            << std::endl;
+#endif
+#endif
   if(!valid(ray, grid))
   {
-    std::cerr << "ChordsCalc<...>::getChords(...) : "
-              << "Error: Ray starts/ends within the grid"
+    std::cerr << "### ChordsCalc<...>::getChords(...) : "
+              << "Error: Ray_t starts/ends within the grid"
               << std::endl;
     throw 1;
   }
@@ -27,7 +44,7 @@ void      ChordsCalc<Ray, Grid, Chord>
   // INITIALISATION
   // #################################
 #ifdef DEBUG
-  std::cout << "ChordsCalc<...>::getChords(...) : "
+  std::cout << "### ChordsCalc<...>::getChords(...) : "
             << "start initialisation"
             << std::endl;
 #endif
@@ -75,24 +92,24 @@ void      ChordsCalc<Ray, Grid, Chord>
   Coord_t alpha_curr = alpha_min;
 
 #ifdef DEBUG
-  std::cout << "    length:      " << length     << std::endl;
-  std::cout << "    alpha_min :  " << alpha_min  << std::endl;
-  std::cout << "    alpha_max :  " << alpha_max  << std::endl;
+  std::cout << "### length:      " << length     << std::endl;
+  std::cout << "### alpha_min :  " << alpha_min  << std::endl;
+  std::cout << "### alpha_max :  " << alpha_max  << std::endl;
   std::cout << std::endl;
-  std::cout << "    i_dim_min[0] :    " << i_dim_min[0]    << std::endl;
-  std::cout << "    i_dim_min[1] :    " << i_dim_min[1]    << std::endl;
-  std::cout << "    i_dim_min[2] :    " << i_dim_min[2]    << std::endl;
+  std::cout << "### i_dim_min[0] :    " << i_dim_min[0]    << std::endl;
+  std::cout << "### i_dim_min[1] :    " << i_dim_min[1]    << std::endl;
+  std::cout << "### i_dim_min[2] :    " << i_dim_min[2]    << std::endl;
   std::cout << std::endl;
-  std::cout << "    i_dim_max[0] :    " << i_dim_max[0]    << std::endl;
-  std::cout << "    i_dim_max[1] :    " << i_dim_max[1]    << std::endl;
-  std::cout << "    i_dim_max[2] :    " << i_dim_max[2]    << std::endl;
+  std::cout << "### i_dim_max[0] :    " << i_dim_max[0]    << std::endl;
+  std::cout << "### i_dim_max[1] :    " << i_dim_max[1]    << std::endl;
+  std::cout << "### i_dim_max[2] :    " << i_dim_max[2]    << std::endl;
   std::cout << std::endl;
-  std::cout << "    dimalpha[0] :    " << dimalpha[0]    << std::endl;
-  std::cout << "    dimalpha[1] :    " << dimalpha[1]    << std::endl;
-  std::cout << "    dimalpha[2] :    " << dimalpha[2]    << std::endl;
-  std::cout << "    alpha_curr : " << alpha_curr << std::endl;
+  std::cout << "### dimalpha[0] :    " << dimalpha[0]    << std::endl;
+  std::cout << "### dimalpha[1] :    " << dimalpha[1]    << std::endl;
+  std::cout << "### dimalpha[2] :    " << dimalpha[2]    << std::endl;
+  std::cout << "### alpha_curr : " << alpha_curr << std::endl;
   std::cout << std::endl;
-  std::cout << "ChordsCalc<...>::getChords(...) : initialisation done"
+  std::cout << "### ChordsCalc<...>::getChords(...) : initialisation done"
             << std::endl;
 #endif
   // #################################
@@ -103,7 +120,7 @@ void      ChordsCalc<Ray, Grid, Chord>
   // ITERATIONS
   // #################################
 #ifdef DEBUG
-  std::cout << "ChordsCalc<...>::getChords(...) : start iterations"
+  std::cout << "### ChordsCalc<...>::getChords(...) : start iterations"
             << std::endl;
 #endif
   int i = 0;
@@ -146,7 +163,7 @@ void      ChordsCalc<Ray, Grid, Chord>
       throw -1;
   } 
 #ifdef DEBUG
-  std::cout << "ChordsCalc<...>::getChords(...) : iterations done"
+  std::cout << "### ChordsCalc<...>::getChords(...) : iterations done"
             << std::endl;
 #endif
 }
@@ -154,16 +171,28 @@ void      ChordsCalc<Ray, Grid, Chord>
 
 template<typename Ray, typename Grid, typename Chord>
 bool      ChordsCalc<Ray, Grid, Chord>
-::intersects( Ray ray, Grid grid, int dim )
+::intersects( Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::intersects(Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   return ray.end()[dim] - ray.start()[dim] != 0;
 } 
 
 
 template<typename Ray, typename Grid, typename Chord>
 bool      ChordsCalc<Ray, Grid, Chord>
-::intersectsAny( Ray ray, Grid grid )
+::intersectsAny( Ray_t ray, Grid_t grid )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::intersectsAny(Ray_t,Grid_t)"
+            << std::endl;
+#endif
+#endif
   return   intersects(ray, grid, 0)\
         || intersects(ray, grid, 1)\
         || intersects(ray, grid, 2);
@@ -171,9 +200,15 @@ bool      ChordsCalc<Ray, Grid, Chord>
 
 
 template<typename Ray, typename Grid, typename Chord>
-typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
-::alphaFromId( int i, Ray ray, Grid grid, int dim )
+typename ChordsCalc<Ray, Grid, Chord>::Coord_t     ChordsCalc<Ray, Grid, Chord>
+::alphaFromId( int i, Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::alphaFromId(int,Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   return (       grid.origin()[dim]
            + i * grid.diff()[dim]
            -      ray.start()[dim] )
@@ -184,10 +219,16 @@ typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 
 
 template<typename Ray, typename Grid, typename Chord>
-typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
+typename ChordsCalc<Ray, Grid, Chord>::Coord_t     ChordsCalc<Ray, Grid, Chord>
 ::phiFromAlpha(
-      typename Ray::Vertex_t::Coord_t alpha, Ray ray, Grid grid, int dim )
+      Coord_t alpha, Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::phiFromAlpha(Coord_t,Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   return (   ray.start()[dim]
            + alpha * (   ray.end()[dim]
                        - ray.start()[dim] )
@@ -198,29 +239,47 @@ typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 
 
 template<typename Ray, typename Grid, typename Chord>
-typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
-::getAlphaDimmin( Ray ray, Grid grid, int dim )
+typename ChordsCalc<Ray, Grid, Chord>::Coord_t     ChordsCalc<Ray, Grid, Chord>
+::getAlphaDimmin( Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getAlphaDimmin(Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   return std::min(alphaFromId(0,             ray, grid, dim),
                   alphaFromId(grid.N()[dim], ray, grid, dim));
 } 
 
 
 template<typename Ray, typename Grid, typename Chord>
-typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
-::getAlphaDimmax( Ray ray, Grid grid, int dim )
+typename ChordsCalc<Ray, Grid, Chord>::Coord_t     ChordsCalc<Ray, Grid, Chord>
+::getAlphaDimmax( Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getAlphaDimmax(Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   return std::max(alphaFromId(0,             ray, grid, dim),
                   alphaFromId(grid.N()[dim], ray, grid, dim));
 } 
 
 
 template<typename Ray, typename Grid, typename Chord>
-typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
-::getAlphaMin( Ray ray, Grid grid )
+typename ChordsCalc<Ray, Grid, Chord>::Coord_t     ChordsCalc<Ray, Grid, Chord>
+::getAlphaMin( Ray_t ray, Grid_t grid )
 {
-  typename Ray::Vertex_t::Coord_t temp;
-  typename Ray::Vertex_t::Coord_t temp_min;
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getAlphaMin(Ray_t,Grid_t)"
+            << std::endl;
+#endif
+#endif
+  typename Ray_t::Vertex_t::Coord_t temp;
+  typename Ray_t::Vertex_t::Coord_t temp_min;
   bool       not_first = false;
 
   for(int dim=0; dim<3; dim++)
@@ -237,9 +296,6 @@ typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
   }
 
   if(!not_first) {
-#ifdef DEBUG
-    std::cout << "Haha" << std::endl << std::flush; // debugging *****************
-#endif
     throw 1;
   }
   
@@ -248,11 +304,17 @@ typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
 
 
 template<typename Ray, typename Grid, typename Chord>
-typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
-::getAlphaMax( Ray ray, Grid grid )
+typename ChordsCalc<Ray, Grid, Chord>::Coord_t     ChordsCalc<Ray, Grid, Chord>
+::getAlphaMax( Ray_t ray, Grid_t grid )
 {
-  typename Ray::Vertex_t::Coord_t temp;
-  typename Ray::Vertex_t::Coord_t temp_max;
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getAlphaMax(Ray_t,Grid_t)"
+            << std::endl;
+#endif
+#endif
+  Coord_t temp;
+  Coord_t temp_max;
   bool       not_first = false;
 
   for(int dim=0; dim<3; dim++)
@@ -269,9 +331,6 @@ typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
   }
 
   if(!not_first) {
-#ifdef DEBUG
-    std::cout << "Haha" << std::endl << std::flush; // debugging *****************
-#endif
     throw 1;
   }
   
@@ -281,8 +340,14 @@ typename Ray::Vertex_t::Coord_t     ChordsCalc<Ray, Grid, Chord>
     
 template<typename Ray, typename Grid, typename Chord>
 int     ChordsCalc<Ray, Grid, Chord>
-::getIdDimmin( Ray ray, Grid grid, int dim )
+::getIdDimmin( Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getIdDimmin(Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   if(ray.start()[dim] < ray.end()[dim]) {
     Coord_t alpha_min =    getAlphaMin   (ray, grid);
     Coord_t alpha_dimmin = getAlphaDimmin(ray, grid, dim);
@@ -310,8 +375,14 @@ int     ChordsCalc<Ray, Grid, Chord>
     
 template<typename Ray, typename Grid, typename Chord>
 int     ChordsCalc<Ray, Grid, Chord>
-::getIdDimmax( Ray ray, Grid grid, int dim )
+::getIdDimmax( Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::GetIdDimmax(Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   if(ray.start()[dim] < ray.end()[dim]) {
     Coord_t alpha_max    = getAlphaMax   (ray, grid);
     Coord_t alpha_dimmax = getAlphaDimmax(ray, grid, dim);
@@ -336,16 +407,22 @@ int     ChordsCalc<Ray, Grid, Chord>
   }
 } 
 
- 
+#include <iostream> 
 template<typename Ray, typename Grid, typename Chord>
 int     ChordsCalc<Ray, Grid, Chord>
-::getNChords( Ray ray, Grid grid )
+::getNChords( Ray_t ray, Grid_t grid )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::getNChords(Ray_t,Grid_t)"
+            << std::endl;
+#endif
+#endif
   if(!valid(ray, grid))
   {
     std::cerr << "ChordsCalc<...>" << std::endl
               << "::calculateChordLengths(...) : "
-              << "Error: Ray starts/ends within the grid"
+              << "Error: Ray_t starts/ends within the grid"
               << std::endl;
     throw 1;
   }
@@ -353,12 +430,6 @@ int     ChordsCalc<Ray, Grid, Chord>
   int N = 0;
   for(int dim=0; dim<3; dim++)
   {
-#ifdef DEBUG_ILF
-    std::cout << "dim: " << dim
-              << ", IdDimmax: " << getIdDimmax(ray, grid, dim)
-              << ", IdDimmin: " << getIdDimmin(ray, grid, dim)
-              << std::endl;
-#endif
     N += getIdDimmax(ray, grid, dim);
     N -= getIdDimmin(ray, grid, dim);
     N += 1;
@@ -370,17 +441,29 @@ int     ChordsCalc<Ray, Grid, Chord>
 template<typename Ray, typename Grid, typename Chord>
 void      ChordsCalc<Ray, Grid, Chord>
 ::updateAlpha(
-      typename Ray::Vertex_t::Coord_t & alpha, Ray ray, Grid grid,
+      Coord_t & alpha, Ray_t ray, Grid_t grid,
       int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::updateAlpha(Coord_t&,Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   alpha += grid.diff()[dim] / std::abs(ray.end()[dim] - ray.start()[dim]);
 } 
 
     
 template<typename Ray, typename Grid, typename Chord>
 void      ChordsCalc<Ray, Grid, Chord>
-::updateId( int & id, Ray ray, Grid grid, int dim )
+::updateId( int & id, Ray_t ray, Grid_t grid, int dim )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::updateId(int&,Ray_t,Grid_t,int)"
+            << std::endl;
+#endif
+#endif
   int i_update;
   if(ray.start()[dim] < ray.end()[dim]){
     i_update = 1;
@@ -393,8 +476,14 @@ void      ChordsCalc<Ray, Grid, Chord>
 
 template<typename Ray, typename Grid, typename Chord>
 bool      ChordsCalc<Ray, Grid, Chord>
-::valid( Ray ray, Grid grid )
+::valid( Ray_t ray, Grid_t grid )
 {
+#ifdef DEBUG
+#ifndef NO_CHORDSCALC_DEBUG
+  std::cout << "ChordsCalc<>::valid(Ray_t,Grid_t)"
+            << std::endl;
+#endif
+#endif
   bool      start_valid = false;
   bool      end_valid   = false;
   Coord_t   origin[3];
