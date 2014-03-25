@@ -125,6 +125,31 @@ class DevelSetup
         channels[linearChannelId] = Channel_t(2*dimensionalChannelId[0], pos0_, pos1_);
       }
     }
+
+    void createChannels(
+          Channel_t * const channels, int const beginChannelId,
+          int const endChannelId) const
+    {
+#if ((defined DEBUG || defined DEVELSETUP_DEBUG) && (NO_DEVELSETUP_DEBUG==0))
+      std::cout << "DevelSetup::createChannels(Channel_t* const, int const, "
+                << "int const)"
+                << std::endl;
+#endif
+      //int NChannels(endChannelId-beginChannelId);
+      for(int linearChannelId = beginChannelId;
+              linearChannelId < endChannelId;
+              linearChannelId++)
+      {
+        Coord_t pos0_[3];
+        Coord_t pos1_[3];
+        int dimensionalChannelId[5];
+        getDimensionalChannelId(linearChannelId, dimensionalChannelId);
+        getPos0(dimensionalChannelId, pos0_);
+        getPos1(dimensionalChannelId, pos1_);
+        
+        channels[linearChannelId] = Channel_t(2*dimensionalChannelId[0], pos0_, pos1_);
+      }
+    }
 };
 
 #endif  // #ifndef DEVELSETUP_HPP

@@ -20,9 +20,9 @@ int main()
   DevelSMChunk sm(setup, grid);
 
   std::cout
-  << "SMChunkGetter<DevelSetup, DevelGrid, DevelSMChunk>()(setup, grid, 0, sm, 1);"
+  << "SMChunkGetter<DevelSetup, DevelGrid, DevelSMChunk>()(setup, grid, 0, 10000, sm, 1);"
   << std::endl;
-  SMChunkGetter<DevelSetup, DevelGrid, DevelSMChunk>()(setup, grid, 0, sm, 1);
+  SMChunkGetter<DevelSetup, DevelGrid, DevelSMChunk>()(setup, grid, 0, 10000, sm, 1);
   
   return 0;
 }

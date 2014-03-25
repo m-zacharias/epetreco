@@ -21,19 +21,19 @@ struct SMChunkGetter
   typedef typename ChordsCalc_t::Chord_t          Chord_t;
 
   void operator()(
-             Setup const & setup, Grid const & grid, int const id,
-             SMChunk & sm, int const nRays )
+             Setup const & setup, Grid const & grid, int const beginChannelId,
+             int const endChannelId, SMChunk & sm, int const nRays )
   {
 #ifdef DEBUG
     std::cout << "SMChunkGetter<>::operator()(...)" << std::endl;
 #endif
     // Create channels
-    int nChannels = setup.getNChannels();
+    int nChannels = endChannelId - beginChannelId;
     Channel_t * channels = new Channel_t[nChannels];
-    setup.createChannels(channels);
+    setup.createChannels(channels, beginChannelId, endChannelId);
     
     // Iterate over channels ...
-    for(int idChannel=0; idChannel<nChannels; idChannel++)
+    for(int idChannel=beginChannelId; idChannel<endChannelId; idChannel++)
     {
       // Create rays in channel
       Ray_t * rays = new Ray_t[nRays];
@@ -72,7 +72,9 @@ struct SMChunkGetter
         delete[] a;
       }
       // Normalize
-      for(int idVoxel=id*sm.getNVoxel(); idVoxel<(id+1)*sm.getNVoxel(); idVoxel++)
+      for(int idVoxel = beginChannelId    *sm.getNVoxel();
+              idVoxel < (beginChannelId+1)*sm.getNVoxel();
+              idVoxel++)
       {
         sm.setElem(idChannel, idVoxel, sm.getElem(idChannel, idVoxel)/nRays);
       }
