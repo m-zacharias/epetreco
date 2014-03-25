@@ -2,8 +2,7 @@ SRC = ./src
 PLY = $(SRC)/Ply
 
 CPPC = g++
-CPPCFLAGS = -Wall
-#CPPCFLAGS = -Wall -DDEBUG
+override CPPCFLAGS += -Wall
 CPPO = -c
 INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
 LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
@@ -13,21 +12,42 @@ CUCFLAGS =
 CUCINC = -I$(CUDA_ROOT)/include
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
+# ##############################################################################
+# ### PUT ALL DEFAULT TARGETS HERE
+# ##############################################################################
+# Define simply expanded variable for all executables. Synchronizes the clean
+# rule with the default rule - everything that is compiled by default will also
+# be cleaned up.
+EXECUTABLES := \
+      test_Siddon.out \
+      test_02_Siddon.out \
+      test_PlyGeometry.out \
+      test_PlyBox.out \
+      test_PlyWriter.out \
+      test_PlyGrid.out \
+      test_PlyLine.out \
+      test_CudaTransform.out \
+      test_H5Reader.out \
+      test_H5DensityWriter.out \
+      test_ChordsCalc.out \
+      test_SMChunkGetter.out \
+      test_DevelChannel.out \
+      cublasExampleMatrixVectorMult.out
 
 
-all : \
-        test_Siddon.out \
-        test_02_Siddon.out \
-        test_PlyGeometry.out \
-        test_PlyBox.out \
-        test_PlyWriter.out \
-        test_PlyGrid.out \
-        test_PlyLine.out \
-        test_CudaTransform.out \
-        test_H5Reader.out \
-        test_H5DensityWriter.out \
-        test_ChordsCalc.out \
-        cublasExampleMatrixVectorMult.out
+
+
+
+default : $(EXECUTABLES)
+
+
+clean:
+	rm \
+      $(EXECUTABLES) \
+      ./libepetreco.a \
+      ./*.ply \
+      ./*.h5
+
 
 libepetreco.a : \
         PlyGeometry.o \
@@ -35,6 +55,7 @@ libepetreco.a : \
         PlyWriter.o
 	rm -f $@
 	ar rcs $@ $^
+
 
 .INTERMEDIATE : \
         PlyGeometry.o \
@@ -85,27 +106,11 @@ bigtest.out : \
         libepetreco.a
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
-test_H5Reader.out : \
-        $(SRC)/test_H5Reader.cpp \
-        $(SRC)/H5Reader.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
-
-test_H5DensityWriter.out : \
-        $(SRC)/test_H5DensityWriter.cpp \
-        $(SRC)/H5DensityWriter.hpp
-	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
-
-test_ChordsCalc.out : \
-        $(SRC)/test_ChordsCalc.cpp \
-        $(SRC)/ChordsCalc.hpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
-
-test_SMChunkGetter.out : \
-        $(SRC)/test_SMChunkGetter.cpp \
-        $(SRC)/SMChunkGetter.hpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
+test_%.out : \
+      $(SRC)/test_%.cpp \
+      $(SRC)/%.hpp \
+      libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $^ $(LIB) -o $@
 
 
 PlyGeometry.o : \
@@ -124,26 +129,3 @@ PlyWriter.o : \
         $(PLY)/PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
-#Siddon.o : Siddon.hpp
-#	$(CPPC) $(CPPFLAGS) $(CPPO) $< -o $@
-
-
-
-clean:
-	rm \
-      ./test_Siddon.out \
-      ./test_02_Siddon.out \
-      ./test_03_Siddon.out \
-      ./test_PlyGeometry.out \
-      ./test_PlyWriter.out \
-      ./test_PlyGrid.out \
-      ./test_PlyBox.out \
-      ./test_PlyLine.out \
-      ./cublasExampleMatrixVectorMult.out \
-      ./test_CudaTransform.out \
-      ./test_H5Reader.out \
-      ./test_H5DensityWriter.out \
-      ./test_ChordsCalc.out \
-      ./libepetreco.a \
-      ./*.ply \
-      ./*.h5

@@ -1,6 +1,6 @@
 #include "ChordsCalc.hpp"
-#include "TestRay.hpp"
-#include "TestGrid.hpp"
+#include "DevelRay.hpp"
+#include "DevelGrid.hpp"
 #include "Ply.hpp"
 
 #include <iostream>
@@ -24,22 +24,22 @@ struct Chord
   int _id[3];
   Coord_t _length;
 };
-typedef Chord<double> TestChord;
+typedef Chord<double> DevelChord;
 
 
-typedef ChordsCalc<TestRay, TestGrid, TestChord> TestChordsCalc;
+typedef ChordsCalc<DevelRay, DevelGrid, DevelChord> DevelChordsCalc;
 
 
 int main()
 {
-  TestGrid grid(TestGrid::Vertex_t(0., 0., 0.), TestGrid::Vertex_t(1., 1.,1.), 2, 2, 1);
-  TestRay  ray (TestRay::Vertex_t (-0.5,-0.5,0.),  TestRay::Vertex_t (3.5,2.5,1.));
+  DevelGrid grid(DevelGrid::Vertex_t(0., 0., 0.), DevelGrid::Vertex_t(1., 1.,1.), 2, 2, 1);
+  DevelRay  ray (DevelRay::Vertex_t (-0.5,-0.5,0.),  DevelRay::Vertex_t (3.5,2.5,1.));
 
-  TestChordsCalc calc;
+  DevelChordsCalc calc;
   int nisc = calc.getNChords(ray,grid);
   std::cout << "Number of voxels crossed: " << nisc << std::endl;
 
-  TestChord * iscs = new TestChord[nisc];
+  DevelChord * iscs = new DevelChord[nisc];
   calc.getChords(iscs, ray, grid);
 
   for(int i=0; i<nisc; i++)

@@ -28,42 +28,65 @@ T min( T a, T b, T c )
 template<typename T>
 T min( T a, T b, T c, bool ab, bool bb, bool cb )
 {
-  if( !ab ) {
-    if( !bb ) {
-      if( !cb ) {
+  if( !ab )
+    if( !bb )
+      if( !cb )
         throw -1;
-      }
-      else {
+      else
         return c;
-      }
-    }
-    else {
-      if( !cb ) {
+    else
+      if( !cb )
         return b;
-      }
-      else {
+      else
         return std::min(b, c);
-      }
-    }
-  }
-  else {
-    if( !bb ) {
-      if( !cb ) {
+  else
+    if( !bb )
+      if( !cb )
         return a;
-      }
-      else {
+      else
         return std::min(a, c);
-      }
-    }
-    else {
-      if( !cb ) {
+    else
+      if( !cb )
         return std::min(a, b);
-      }
-      else {
+      else
         return std::min(std::min(a, b), c);
-      }
-    }
-  }
+}
+
+
+/* Conditional maximum of three numbers */
+/**
+ * @param a Possibly a canditate for maximum
+ * @param b Possibly a canditate for maximum
+ * @param c Possibly a canditate for maximum
+ * @param ab a actually is a canditate: true/false
+ * @param bb b actually is a canditate: true/false
+ * @param cb c actually is a canditate: true/false
+ */
+template<typename T>
+T max( T a, T b, T c, bool ab, bool bb, bool cb )
+{
+  if( !ab )
+    if( !bb )
+      if( !cb )
+        throw -1;
+      else
+        return c;
+    else
+      if( !cb )
+        return b;
+      else
+        return std::max(b, c);
+  else
+    if( !bb )
+      if( !cb )
+        return a;
+      else
+        return std::max(a, c);
+    else
+      if( !cb )
+        return std::max(a, b);
+      else
+        return std::max(std::max(a, b), c);
 }
 
 #endif  // #ifndef SIDDON_HELPER_HPP
