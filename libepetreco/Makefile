@@ -32,6 +32,7 @@ EXECUTABLES := \
       test_ChordsCalc.out \
       test_SMChunkGetter.out \
       test_DevelChannel.out \
+      test_CudaTransform.out \
       cublasExampleMatrixVectorMult.out \
       cublasExampleMatrixVectorMult2.out \
       cublasxtExampleMatrixVectorMult.out

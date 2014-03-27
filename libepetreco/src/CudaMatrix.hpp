@@ -26,7 +26,7 @@ class CudaMatrix : public Matrix<CudaMatrix<TE,TI>, CudaMatrixTraits<TE,TI> >
     typedef typename CudaMatrixTraits<TE, TI>::external_elem_t external_elem_t;
     typedef typename CudaMatrixTraits<TE, TI>::internal_elem_t internal_elem_t;
 
-    CudaMatrix( int nx, int ny );
+    CudaMatrix( int nRows, int nCols );
     
     ~CudaMatrix();
     

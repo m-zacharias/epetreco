@@ -26,30 +26,24 @@ class Transform
      *  y = alpha*A^H*x + beta*y
      *
      * @param trans Type of operation:  Use matrix *A in:
-     *  BLAS_OP_N : non-transposed form
-     *  BLAS_OP_T : transposed form
-     *  BLAS_OP_C : transposed and elementwise conjugated form
-     * @param nRows Number of rows
-     * @param nCols Number of columns
+     *  BLAS_OP_N : non-transposed form                         (A)
+     *  BLAS_OP_T : transposed form                             (A^T)
+     *  BLAS_OP_C : transposed and elementwise conjugated form  (A^H)
      * @param alpha Pointer to the matrix scalar factor
      * @param A Pointer to the matrix
-     * @param ldA Leading dimension of the matrix (which means?!)
      * @param x Pointer to the factor vector
-     * @param incx Increment/spacing of the factor vector in memory
      * @param beta Pointer to the summand/output vector scalar factor
      * @param y Pointer to the summand/output vector
-     * @param incy Increment/spacing of the summand/output vector in memory
      */
     void gemv( Operation_t trans,
-               int nRows, int nCols,
                Scalar_t * alpha,
-               Matrix_t * A, int ldA,
-               Vector_t * x, int incx,
+               Matrix_t * A,
+               Vector_t * x,
                Scalar_t * beta,
-               Vector_t * y, int incy )
+               Vector_t * y)
     {
       static_cast<ConcreteTransform *>(this)->\
-      gemv( trans, nRows, nCols, alpha, A, ldA, x, incx, beta, y, incy );
+      gemv( trans, alpha, A, x, beta, y );
     }
 };
 
