@@ -40,11 +40,44 @@ class Transform
                Matrix_t * A,
                Vector_t * x,
                Scalar_t * beta,
-               Vector_t * y)
+               Vector_t * y )
     {
       static_cast<ConcreteTransform *>(this)->\
       gemv( trans, alpha, A, x, beta, y );
     }
+    
+    /**
+     * @brief Elementwise divide Vector by Vector.
+     * 
+     * @param x Pointer to divident vector
+     * @param y Pointer to divisor vector
+     * @param r Pointer to result vector
+     */
+    void divides( Vector_t * x,
+                  Vector_t * y,
+                  Vector_t * r )
+    {
+      static_cast<ConcreteTransform *>(this)->\
+      divides( x, y, r );
+    }
+    
+    /**
+     * @brief Elementwise calculate new intensities, not normalized.
+     * 
+     * @param x Pointer to old intensities vector
+     * @param c Pointer to correction vector
+     * @param s Pointer to sensitivity vector
+     * @param xx Pointer to result vector
+     */
+    void corrects( Vector_t * x,
+                   Vector_t * c,
+                   Vector_t * s,
+                   Vector_t * xx )
+    {
+      static_cast<ConcreteTransform *>(this)->\
+      corrects( x, c, s, xx );
+    }
+      
 };
 
 #endif  // #define TRANSFORM_HPP

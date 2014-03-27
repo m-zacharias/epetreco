@@ -27,15 +27,18 @@ EXECUTABLES := \
       test_PlyGrid.out \
       test_PlyLine.out \
       test_CudaTransform.out \
+      test_CudaTransform2.out \
+      test_CudaTransform3.out \
+      test_CudaTransform4.out \
       test_H5Reader.out \
       test_H5DensityWriter.out \
       test_ChordsCalc.out \
       test_SMChunkGetter.out \
       test_DevelChannel.out \
-      test_CudaTransform.out \
-      cublasExampleMatrixVectorMult.out \
-      cublasExampleMatrixVectorMult2.out \
-      cublasxtExampleMatrixVectorMult.out
+      example_cublas_MatrixVectorMult.out \
+      example_cublas_MatrixVectorMult2.out \
+      example_cublasxt_MatrixVectorMult.out \
+      example_thrustZipIterator.out
 
 
 
@@ -70,25 +73,8 @@ libepetreco.a : \
 
 %.out : \
         $(SRC)/%.cu
-	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
-
-#cublasExampleMatrixVectorMult2.out : \
-#        $(SRC)/cublasExampleMatrixVectorMult2.cu
-#	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
-
-
-test_CudaTransform.out :\
-        $(SRC)/test_CudaTransform.cu\
-        $(SRC)/CudaMatrix.hpp\
-        $(SRC)/CudaMatrix.tpp\
-        $(SRC)/CudaVector.hpp\
-        $(SRC)/CudaVector.tpp\
-        $(SRC)/CudaTransform.hpp\
-        $(SRC)/CudaTransform.tpp\
-        $(SRC)/conversion.hpp\
-        $(SRC)/cublas_gemv.hpp\
-        $(SRC)/cublas_gemv.tpp
-	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $< -o $@
+	CPLUS_INCLUDE_PATH= ; \
+  $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
 
 test_Siddon.out : \

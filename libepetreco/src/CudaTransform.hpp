@@ -47,8 +47,17 @@ class CudaTransform : public Transform<CudaTransform<TE,TI>,
                Vector_t * x,
                Scalar_t * beta,
                Vector_t * y );
+
+    void divides( Vector_t * x,
+                  Vector_t * y,
+                  Vector_t * r ); 
     
-    
+    void corrects( Vector_t * x,
+                   Vector_t * c,
+                   Vector_t * s,
+                   Vector_t * xx );
+  
+
   private:
     
     cublasHandle_t _cublasHandle;

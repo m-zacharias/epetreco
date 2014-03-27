@@ -97,6 +97,70 @@ void CudaTransform<TE,TI>::gemv
   }
 }
 
+#include <thrust/for_each.h>
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/functional.h>
+template<typename TE, typename TI>
+void CudaTransform<TE,TI>::divides( Vector_t * x, Vector_t * y, Vector_t * r )
+{
+  int size = x->getN();
+  thrust::device_ptr<TI> xDeviPtr( static_cast<TI *>(x->data()) );
+  thrust::device_ptr<TI> yDeviPtr( static_cast<TI *>(y->data()) );
+  thrust::device_ptr<TI> rDeviPtr( static_cast<TI *>(r->data()) );
+  
+  thrust::transform( xDeviPtr, xDeviPtr+size, yDeviPtr, rDeviPtr,
+                     thrust::divides<TI>() );
+  
+  if(cudaGetLastError()!=cudaSuccess)
+  {
+    std::cerr << "divides failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  r->set_devi_data_changed();
+}
+
+struct correctsFunctor
+{
+  template<typename Tuple>
+  __host__ __device__
+  void operator()(Tuple t)
+  {
+    thrust::get<3>(t) =   thrust::get<0>(t) * thrust::get<1>(t)
+                        / thrust::get<2>(t);
+  }
+};
+template<typename TE, typename TI>
+void CudaTransform<TE,TI>::corrects( Vector_t * x, Vector_t * c, Vector_t * s,
+                                 Vector_t * xx )
+{
+  int size = x->getN();
+  thrust::device_ptr<TI> xDeviPtr(  static_cast<TI *>(x-> data()) );
+  thrust::device_ptr<TI> cDeviPtr(  static_cast<TI *>(c-> data()) );
+  thrust::device_ptr<TI> sDeviPtr(  static_cast<TI *>(s-> data()) );
+  thrust::device_ptr<TI> xxDeviPtr( static_cast<TI *>(xx->data()) );
+  
+  thrust::for_each(
+        thrust::make_zip_iterator(thrust::make_tuple(xDeviPtr,
+                                                     cDeviPtr,
+                                                     sDeviPtr,
+                                                     xxDeviPtr)),
+        thrust::make_zip_iterator(thrust::make_tuple(xDeviPtr+size,
+                                                     cDeviPtr+size,
+                                                     sDeviPtr+size,
+                                                     xxDeviPtr+size)),
+        correctsFunctor());
+
+  if(cudaGetLastError()!=cudaSuccess)
+  {
+    std::cerr << "corrects failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  xx->set_devi_data_changed();
+}
+
 //template<typename TE, typename TI>
 // CudaTransform<TE,TI>::
 //{
