@@ -2,22 +2,25 @@
 #include <fstream>
 #include <string>
 
-#define MAX_LINESIZE 80
+#define MAX_LINESIZE 160
 
 class FileTalk
 {
   private:
     
     std::ifstream _file;
+    std::string   _filename;
 
 
   public:
     
     FileTalk( std::string const filename )
-    : _file(filename.c_str()) {}
+    : _file(("./"+filename).c_str()),
+      _filename("./"+filename) {}
 
     void sayLine( int lineNumber )
     {
+      std::cout << _filename << " : ";
       char line[MAX_LINESIZE];
 
       _file.seekg(0);

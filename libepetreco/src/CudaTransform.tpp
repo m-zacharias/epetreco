@@ -25,7 +25,7 @@ CudaTransform<TE,TI>::~CudaTransform()
 
 template<typename TE, typename TI>
 void CudaTransform<TE,TI>::gemv
-                          ( Operation_t trans, int M, int N,
+                          ( Operation_t trans, int nRows, int nCols,
                             Scalar_t * alpha, Matrix_t * A, int ldA,
                             Vector_t * x, int incx,
                             Scalar_t * beta, Vector_t * y, int incy )
@@ -34,19 +34,19 @@ void CudaTransform<TE,TI>::gemv
   TI ibeta = convert2internal(*beta);
   
   if     (trans==BLAS_OP_N) {
-    _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_N, M, N,
+    _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_N, nRows, nCols,
                                     &ialpha, static_cast<TI*>(A->data()), ldA,
                                     static_cast<TI*>(x->data()), incx,
                                     &ibeta, static_cast<TI*>(y->data()), incy );
   }
   else if(trans==BLAS_OP_T) {
-    _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_T, M, N,
+    _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_T, nRows, nCols,
                                     &ialpha, static_cast<TI*>(A->data()), ldA,
                                     static_cast<TI*>(x->data()), incx,
                                     &ibeta, static_cast<TI*>(y->data()), incy );
   }
   else if(trans==BLAS_OP_C) {
-    _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_C, M, N,
+    _cublasStatus = cublas_gemv<TI>(_cublasHandle, CUBLAS_OP_C, nRows, nCols,
                                     &ialpha, static_cast<TI*>(A->data()), ldA,
                                     static_cast<TI*>(x->data()), incx,
                                     &ibeta, static_cast<TI*>(y->data()), incy );

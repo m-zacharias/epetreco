@@ -42,10 +42,12 @@ class CudaTransform : public Transform<CudaTransform<TE,TI>,
     
     
     void gemv( Operation_t trans,
-               int M, int N,
-               Scalar_t * alpha, Matrix_t * A, int ldA,
+               int nRows, int nCols,
+               Scalar_t * alpha,
+               Matrix_t * A, int ldA,
                Vector_t * x, int incx,
-               Scalar_t * beta, Vector_t * y, int incy );
+               Scalar_t * beta,
+               Vector_t * y, int incy );
     
     
   private:

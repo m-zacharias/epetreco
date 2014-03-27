@@ -13,19 +13,19 @@ class Matrix
     typedef typename ConcreteMatrixTraits::elem_t elem_t;
 
     /**
-     * @brief Gets the number of elements in x direction ("width").
+     * @brief Gets the number of columns ("width").
      */
-    int get_nx( void )
+    int getNCols( void )
     {
-      return static_cast<ConcreteMatrix *>(this)->get_nx();
+      return static_cast<ConcreteMatrix *>(this)->getNCols();
     }
     
     /**
-     * @brief Gets the number of elements in y direction ("height").
+     * @brief Gets the number of rows ("height").
      */
-    int get_ny( void )
+    int getNRows( void )
     {
-      return static_cast<ConcreteMatrix *>(this)->get_ny();
+      return static_cast<ConcreteMatrix *>(this)->getNRows();
     }
     
     /**
@@ -39,24 +39,24 @@ class Matrix
     /**
      * @brief Gets the value of a specific element of this Matrix.
      * 
-     * @param idx Index of the element in x direction
-     * @param idy Index of the element in y direction
+     * @param colId Index of column
+     * @param rowId Index of row
      */
-    elem_t get( int idx, int idy )
+    elem_t get( int rowId, int colId )
     {
-      return static_cast<ConcreteMatrix *>(this)->get(idx, idy);
+      return static_cast<ConcreteMatrix *>(this)->get(rowId, colId);
     }
     
     /**
      * @brief Sets the value of a specific element of this Matrix.
      * 
-     * @param idx Index of the element in x direction
-     * @param idy Index of the element in y direction
+     * @param rowId Index of column
+     * @param colId Index of row
      * @param val New value of the element
      */
-    void set( int idx, int idy, elem_t val )
+    void set( int rowId, int colId, elem_t val )
     {
-      return static_cast<ConcreteMatrix *>(this)->set(idx, idy, val);
+      return static_cast<ConcreteMatrix *>(this)->set(rowId, colId, val);
     }
     
     /**

@@ -31,7 +31,7 @@ class CudaVector : public Vector<CudaVector<TE,TI>, CudaVectorTraits<TE,TI> >
     ~CudaVector();
     
     
-    int get_n();
+    int getN();
     
     void * data();
     
@@ -51,15 +51,15 @@ class CudaVector : public Vector<CudaVector<TE,TI>, CudaVectorTraits<TE,TI> >
     void update_host_data();
     
     
-    TI * raw_host_;
+    TI * _raw_host;
     
-    TI * raw_devi_;
+    TI * _raw_devi;
     
-    bool devi_data_changed_;
+    bool _devi_data_changed;
     
-    bool host_data_changed_;
+    bool _host_data_changed;
     
-    int n_;
+    int _n;
 };
 #include "CudaVector.tpp"
 

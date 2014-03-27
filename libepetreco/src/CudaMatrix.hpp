@@ -31,15 +31,15 @@ class CudaMatrix : public Matrix<CudaMatrix<TE,TI>, CudaMatrixTraits<TE,TI> >
     ~CudaMatrix();
     
 
-    int get_nx();
+    int getNRows();
     
-    int get_ny();
+    int getNCols();
     
     void * data();
     
-    elem_t get( int idx, int idy );
+    elem_t get( int rowId, int colId );
     
-    void set( int idx, int idy, elem_t val );
+    void set( int rowId, int colId, elem_t val );
     
     CudaMatrix<TE,TI> * clone();
     
@@ -54,17 +54,17 @@ class CudaMatrix : public Matrix<CudaMatrix<TE,TI>, CudaMatrixTraits<TE,TI> >
     void update_host_data();
     
 
-    internal_elem_t * raw_host_;
+    internal_elem_t * _raw_host;
     
-    internal_elem_t * raw_devi_;
+    internal_elem_t * _raw_devi;
     
-    bool devi_data_changed_;
+    bool _devi_data_changed;
     
-    bool host_data_changed_;
+    bool _host_data_changed;
     
-    int nx_;
+    int _nRows;
     
-    int ny_;
+    int _nCols;
 };
 #include "CudaMatrix.tpp"
 

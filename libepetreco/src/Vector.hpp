@@ -15,9 +15,9 @@ class Vector
     /**
      * @brief Gets the number of elements in x direction ("width").
      */
-    int get_n( void )
+    int getN( void )
     {
-      return static_cast<ConcreteVector *>(this)->get_n();
+      return static_cast<ConcreteVector *>(this)->getN();
     }
     
     /**

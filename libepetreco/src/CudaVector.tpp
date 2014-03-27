@@ -11,92 +11,93 @@
 template<class TE, class TI>
 void CudaVector<TE,TI>::update_devi_data()
 {
-  cublasStatus_t cublasStatus = cublasSetVector(n_, sizeof(internal_elem_t), raw_host_, 1,
-                                                raw_devi_, 1);
+  cublasStatus_t cublasStatus = cublasSetVector(_n, sizeof(internal_elem_t), _raw_host, 1,
+                                                _raw_devi, 1);
   if(cublasStatus != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data upload failed." << std::endl;
     exit(EXIT_FAILURE);
   }
-  host_data_changed_ = false;
+  _host_data_changed = false;
 }
 
 template<class TE, class TI>
 void CudaVector<TE,TI>::update_host_data()
 {
-  cublasStatus_t cublasStatus = cublasGetVector(n_, sizeof(internal_elem_t), raw_devi_, 1,
-                                                raw_host_, 1);
+  cublasStatus_t cublasStatus = cublasGetVector(_n, sizeof(internal_elem_t), _raw_devi, 1,
+                                                _raw_host, 1);
   if(cublasStatus != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data download failed." << std::endl;
     exit(EXIT_FAILURE);
   }
-  devi_data_changed_ = false;
+  _devi_data_changed = false;
 }
 
 template<class TE, class TI>
 CudaVector<TE,TI>::CudaVector( int n )
-: n_(n)
+: _n(n)
 {
-  raw_host_ = new internal_elem_t[n];
+  _raw_host = new internal_elem_t[n];
 
-  cudaError_t cudaError = cudaMalloc((void**)&raw_devi_, n*sizeof(internal_elem_t));
+  cudaError_t cudaError = cudaMalloc((void**)&_raw_devi, n*sizeof(internal_elem_t));
   if(cudaError != cudaSuccess) {
     std::cerr << "Device memory allocation failed: "
               << cudaGetErrorString(cudaError) <<std::endl;
     exit(EXIT_FAILURE);
   }
-  devi_data_changed_ = true;
-  host_data_changed_ = false;
+  _devi_data_changed = true;
+  _host_data_changed = false;
 }
 
 template<class TE, class TI>
 CudaVector<TE,TI>::~CudaVector()
 {
-  delete[] raw_host_;
-  cudaFree(raw_devi_);
+  delete[] _raw_host;
+  cudaFree(_raw_devi);
 }
 
 template<class TE, class TI>
-int CudaVector<TE,TI>::get_n()
+int CudaVector<TE,TI>::getN()
 {
-  return n_;
+  return _n;
 }
 
 template<class TE, class TI>
 void * CudaVector<TE,TI>::data()
 {
-  if(host_data_changed_)
+  if(_host_data_changed)
     update_devi_data();
 
-  return raw_devi_;
+  return _raw_devi;
 }
 
 template<class TE, class TI>
 TE CudaVector<TE,TI>::get( int id )
 {
-  if(devi_data_changed_)
+  if(_devi_data_changed)
     update_host_data();
   
-  return TE( raw_host_[id] );
+  return TE( _raw_host[id] );
 }
 
 template<class TE, class TI>
 void CudaVector<TE,TI>::set( int id, TE val )
 {
-  if(devi_data_changed_)
+  if(_devi_data_changed)
     update_host_data();
   
-  raw_host_[id] = convert2internal(val);
-  host_data_changed_ = true;
+  _raw_host[id] = convert2internal(val);
+  _host_data_changed = true;
 }
 
 template<class TE, class TI>
 CudaVector<TE,TI> * CudaVector<TE,TI>::clone()
 {
-  if(host_data_changed_)
+  if(_host_data_changed)
     update_devi_data();
 
-  CudaVector<TE,TI> * clone = new CudaVector<TE,TI>(n_);
-  cudaMemcpy(clone->data(), raw_devi_, n_*sizeof(internal_elem_t), cudaMemcpyDeviceToDevice);
+  CudaVector<TE,TI> * clone = new CudaVector<TE,TI>(_n);
+  cudaMemcpy(clone->data(), _raw_devi, _n*sizeof(internal_elem_t),
+             cudaMemcpyDeviceToDevice);
 
   return clone;
 }
@@ -104,5 +105,5 @@ CudaVector<TE,TI> * CudaVector<TE,TI>::clone()
 template<class TE, class TI>
 void CudaVector<TE,TI>::set_devi_data_changed()
 {
-  devi_data_changed_ = true;
+  _devi_data_changed = true;
 }

@@ -29,8 +29,8 @@ class Transform
      *  BLAS_OP_N : non-transposed form
      *  BLAS_OP_T : transposed form
      *  BLAS_OP_C : transposed and elementwise conjugated form
-     * @param M Number of rows (?)
-     * @param N Number of columns (?)
+     * @param nRows Number of rows
+     * @param nCols Number of columns
      * @param alpha Pointer to the matrix scalar factor
      * @param A Pointer to the matrix
      * @param ldA Leading dimension of the matrix (which means?!)
@@ -40,13 +40,16 @@ class Transform
      * @param y Pointer to the summand/output vector
      * @param incy Increment/spacing of the summand/output vector in memory
      */
-    void gemv( Operation_t trans, int M, int N,
-               Scalar_t * alpha, Matrix_t * A, int ldA,
+    void gemv( Operation_t trans,
+               int nRows, int nCols,
+               Scalar_t * alpha,
+               Matrix_t * A, int ldA,
                Vector_t * x, int incx,
-               Scalar_t * beta, Vector_t * y, int incy )
+               Scalar_t * beta,
+               Vector_t * y, int incy )
     {
       static_cast<ConcreteTransform *>(this)->\
-      gemv( trans, M, N, alpha, A, ldA, x, incx, beta, y, incy );
+      gemv( trans, nRows, nCols, alpha, A, ldA, x, incx, beta, y, incy );
     }
 };
 

@@ -6,36 +6,42 @@
 #include <cublas_v2.h>
 #include <complex>
 
+// Matrix operations with cublas often need the 'leading dimension'. Because
+// cublas complies with FORTRAN style column major storage, this is the
+// dimension of one column - which is the number of rows!!!
+
 template<class TE, class TI>
 void CudaMatrix<TE,TI>::update_devi_data()
 {
-  cublasStatus_t status = cublasSetMatrix(ny_, nx_, sizeof(internal_elem_t),
-                                          raw_host_, ny_, raw_devi_, ny_);
+  cublasStatus_t status = cublasSetMatrix(_nRows, _nCols, sizeof(internal_elem_t),
+                                          _raw_host, _nRows, _raw_devi, _nRows);
   if(status != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data upload failed." << std::endl;
     exit( EXIT_FAILURE );
   }
-  host_data_changed_ = false;
+  _host_data_changed = false;
 }
 
 template<class TE, class TI>
 void CudaMatrix<TE,TI>::update_host_data()
 {
-  cublasStatus_t status = cublasGetMatrix(ny_, nx_, sizeof(internal_elem_t),
-                                          raw_devi_, ny_, raw_host_, ny_ );
+  cublasStatus_t status =
+        cublasGetMatrix(_nRows, _nCols, sizeof(internal_elem_t),
+                        _raw_devi, _nRows, _raw_host, _nRows );
   if(status != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "Data download failed." << std::endl;
     exit( EXIT_FAILURE );
   }
-  devi_data_changed_ = false;
+  _devi_data_changed = false;
 }
 
 template<class TE, class TI>    
-CudaMatrix<TE,TI>::CudaMatrix( int nx, int ny )
-: nx_(nx), ny_(ny)
+CudaMatrix<TE,TI>::CudaMatrix( int nRows, int nCols )
+: _nCols(nCols), _nRows(nRows)
 {
-  raw_host_ = new internal_elem_t[nx*ny];
-  cudaError_t status = cudaMalloc( (void**)&raw_devi_, nx_*ny_*sizeof(internal_elem_t) );
+  _raw_host = new internal_elem_t[nRows*nCols];
+  cudaError_t status =
+        cudaMalloc( (void**)&_raw_devi, nCols*nRows*sizeof(internal_elem_t) );
   
   if( status != cudaSuccess ) {
     std::cerr << "Device memory allocation failed: "
@@ -43,65 +49,66 @@ CudaMatrix<TE,TI>::CudaMatrix( int nx, int ny )
     exit( EXIT_FAILURE );
   }
 
-  devi_data_changed_ = true;
-  host_data_changed_ = false;
+  _devi_data_changed = true;
+  _host_data_changed = false;
 }
 
 template<class TE, class TI>
 CudaMatrix<TE,TI>::~CudaMatrix()
 {
-  delete[] raw_host_;
-  cudaFree( raw_devi_ );
+  delete[] _raw_host;
+  cudaFree( _raw_devi );
 }
 
 template<class TE, class TI>
-int CudaMatrix<TE,TI>::get_nx()
+int CudaMatrix<TE,TI>::getNCols()
 {
-  return nx_;
+  return _nCols;
 }
 
 template<class TE, class TI>
-int CudaMatrix<TE,TI>::get_ny()
+int CudaMatrix<TE,TI>::getNRows()
 {
-  return ny_;
+  return _nRows;
 }
 
 template<class TE, class TI>
 void * CudaMatrix<TE,TI>::data()
 {
-  if( host_data_changed_ )
+  if( _host_data_changed )
     update_devi_data();
   
-  return raw_devi_;
+  return _raw_devi;
 }
 
 template<class TE, class TI>
-CudaMatrix<TE,TI>::elem_t CudaMatrix<TE,TI>::get( int idx, int idy )
+CudaMatrix<TE,TI>::elem_t CudaMatrix<TE,TI>::get( int rowId, int colId )
 {
-  if( devi_data_changed_ )
+  if( _devi_data_changed )
     update_host_data();
   
-  return convert2external(raw_host_[idx * ny_ + idy]);
+  return convert2external(_raw_host[colId * _nRows + rowId]);
 }
 
 template<class TE, class TI>
-void CudaMatrix<TE,TI>::set( int idx, int idy, elem_t val )
+void CudaMatrix<TE,TI>::set( int rowId, int colId, elem_t val )
 {
-  if( devi_data_changed_ )
+  if( _devi_data_changed )
     update_host_data();
 
-  raw_host_[idx * ny_ + idy] = convert2internal( val );
-  host_data_changed_ = true;
+  _raw_host[colId * _nRows + rowId] = convert2internal( val );
+  _host_data_changed = true;
 }
 
 template<class TE, class TI>
 CudaMatrix<TE,TI> * CudaMatrix<TE,TI>::clone()
 {
-  if( host_data_changed_ )
+  if( _host_data_changed )
     update_devi_data();
   
-  CudaMatrix<TE,TI> * clone = new CudaMatrix<TE,TI>( nx_, ny_ );
-  cudaMemcpy( clone->data(), raw_devi_, nx_*ny_*sizeof(internal_elem_t), cudaMemcpyDeviceToDevice );
+  CudaMatrix<TE,TI> * clone = new CudaMatrix<TE,TI>( _nCols, _nRows );
+  cudaMemcpy( clone->data(), _raw_devi, _nCols*_nRows*sizeof(internal_elem_t),
+              cudaMemcpyDeviceToDevice );
   
   return clone;
 }
@@ -109,5 +116,5 @@ CudaMatrix<TE,TI> * CudaMatrix<TE,TI>::clone()
 template<class TE, class TI>
 void CudaMatrix<TE,TI>::set_devi_data_changed()
 {
-  devi_data_changed_ = true;
+  _devi_data_changed = true;
 }

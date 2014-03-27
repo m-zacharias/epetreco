@@ -37,7 +37,7 @@ int main()
     }
   }
   x_host = (float *) malloc(N*sizeof(*A_host));
-  if(!A_host) {
+  if(!x_host) {
     std::cerr << "Host memory allocation failed" << std::endl;
     return EXIT_FAILURE;
   }
@@ -45,7 +45,7 @@ int main()
     x_host[j] = 1;
   }
   y_host = (float *) malloc(M*sizeof(*A_host));
-  if(!A_host) {
+  if(!y_host) {
     std::cerr << "Host memory allocation failed" << std::endl;
     return EXIT_FAILURE;
   }

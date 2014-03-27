@@ -32,7 +32,9 @@ EXECUTABLES := \
       test_ChordsCalc.out \
       test_SMChunkGetter.out \
       test_DevelChannel.out \
-      cublasExampleMatrixVectorMult.out
+      cublasExampleMatrixVectorMult.out \
+      cublasExampleMatrixVectorMult2.out \
+      cublasxtExampleMatrixVectorMult.out
 
 
 
@@ -65,9 +67,13 @@ libepetreco.a : \
 
 
 
-cublasExampleMatrixVectorMult.out : \
-        $(SRC)/cublasExampleMatrixVectorMult.cu
+%.out : \
+        $(SRC)/%.cu
 	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
+
+#cublasExampleMatrixVectorMult2.out : \
+#        $(SRC)/cublasExampleMatrixVectorMult2.cu
+#	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
 
 test_CudaTransform.out :\
