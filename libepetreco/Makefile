@@ -1,4 +1,5 @@
 SRC = ./src
+TESTS_SRC = ./src/tests
 PLY = $(SRC)/Ply
 
 CPPC = g++
@@ -9,7 +10,7 @@ LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
 
 CUC = nvcc
 CUCFLAGS =
-CUCINC = -I$(CUDA_ROOT)/include
+CUCINC = -I$(CUDA_ROOT)/include -I$(SRC)
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
 # ##############################################################################
@@ -35,18 +36,9 @@ EXECUTABLES := \
       test_H5DensityWriter.out \
       test_ChordsCalc.out \
       test_SMChunkGetter.out \
-      test_DevelChannel.out \
-      example_cublas_MatrixVectorMult.out \
-      example_cublas_MatrixVectorMult2.out \
-      example_cublasxt_MatrixVectorMult.out \
-      example_thrustZipIterator.out
-
-
-
-
+      test_DevelChannel.out
 
 default : $(EXECUTABLES)
-
 
 clean:
 	rm \
@@ -68,58 +60,57 @@ libepetreco.a : \
         PlyGeometry.o \
         CompositePlyGeometry.o \
         PlyWriter.o
-        
 
 
 
 %.out : \
-        $(SRC)/%.cu
+        $(TESTS_SRC)/%.cu
 	CPLUS_INCLUDE_PATH= ; \
   $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
-
-test_Siddon.out : \
-        $(SRC)/test_Siddon.cpp\
-        $(SRC)/Siddon.hpp
-	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
+test_Ply%.out : \
+      $(PLY)/test_Ply%.cpp \
+      libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
 
 test_%_Siddon.out : \
-        $(SRC)/test_%_Siddon.cpp \
-        $(SRC)/Siddon.hpp \
-        $(SRC)/Siddon_helper.hpp \
-        libepetreco.a
+      $(TESTS_SRC)/test_%_Siddon.cpp \
+      $(SRC)/Siddon.hpp \
+      $(SRC)/Siddon_helper.hpp \
+      libepetreco.a
 	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
 
-test_Ply%.out : \
-        $(PLY)/test_Ply%.cpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
-bigtest.out : \
-        $(SRC)/bigtest.cpp \
-        libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
 test_%.out : \
-      $(SRC)/test_%.cpp \
+      $(TESTS_SRC)/test_%.cpp \
       $(SRC)/%.hpp \
       libepetreco.a
 	$(CPPC) $(CPPCFLAGS) $(INC) $^ $(LIB) -o $@
 
+test_Siddon.out : \
+      $(TESTS_SRC)/test_Siddon.cpp\
+      $(SRC)/Siddon.hpp
+	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
+
+bigtest.out : \
+      $(TESTS_SRC)/bigtest.cpp \
+      libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+
+
 
 PlyGeometry.o : \
-        $(PLY)/PlyGeometry.cpp \
-        $(PLY)/PlyGeometry.hpp
+      $(PLY)/PlyGeometry.cpp \
+      $(PLY)/PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 CompositePlyGeometry.o : \
-        $(PLY)/CompositePlyGeometry.cpp \
-        $(PLY)/CompositePlyGeometry.hpp \
-        $(PLY)/PlyGeometry.hpp
+      $(PLY)/CompositePlyGeometry.cpp \
+      $(PLY)/CompositePlyGeometry.hpp \
+      $(PLY)/PlyGeometry.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
 PlyWriter.o : \
-        $(PLY)/PlyWriter.cpp\
-        $(PLY)/PlyWriter.hpp
+      $(PLY)/PlyWriter.cpp\
+      $(PLY)/PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
