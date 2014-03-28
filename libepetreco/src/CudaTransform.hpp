@@ -56,6 +56,9 @@ class CudaTransform : public Transform<CudaTransform<TE,TI>,
                    Vector_t * c,
                    Vector_t * s,
                    Vector_t * xx );
+
+    void normalize( Vector_t * x,
+                    Scalar_t * norm );
   
 
   private:

@@ -1,6 +1,7 @@
 #include "CudaTransform.hpp"
 
 #include "cublas_gemv.hpp"
+#include "cublas_dot.hpp"
 #include "conversion.hpp"
 #include <iostream>
 #include <stdlib.h>
@@ -159,6 +160,48 @@ void CudaTransform<TE,TI>::corrects( Vector_t * x, Vector_t * c, Vector_t * s,
   }
 
   xx->set_devi_data_changed();
+}
+
+template<typename TI>
+struct multFunctor
+{
+  const TI a;
+
+  multFunctor( TI a_) : a(a_) {}
+
+  __host__ __device__
+  TI operator()( TI const & x ) const
+  {
+    return a*x;
+  }
+};
+template<typename TE, typename TI>
+void CudaTransform<TE,TI>::normalize( Vector_t * x, Scalar_t * norm )
+{
+  int size = x->getN();
+  thrust::device_vector<TI> one(size, 1.);
+
+  TI * xDevi   = static_cast<TI *>       ( x->data() );
+  thrust::device_ptr<TI> xDeviPtr( xDevi );
+  TI * oneDevi = thrust::raw_pointer_cast( &one[0] );
+
+  TI isNorm;
+
+  _cublasStatus = cublas_dot<TI>(_cublasHandle,
+                                  size,
+                                  xDevi, 1,
+                                  oneDevi, 1,
+                                  &isNorm );
+  thrust::transform(
+        xDeviPtr, xDeviPtr+size, xDeviPtr, multFunctor<TI>(*norm/isNorm));
+
+  if(cudaGetLastError()!=cudaSuccess)
+  {
+    std::cerr << "normalize failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  x->set_devi_data_changed();
 }
 
 //template<typename TE, typename TI>

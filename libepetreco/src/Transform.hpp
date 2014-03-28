@@ -77,7 +77,16 @@ class Transform
       static_cast<ConcreteTransform *>(this)->\
       corrects( x, c, s, xx );
     }
-      
+    
+    /**
+     * @brief Normalize a vector
+     */
+    void normalize( Vector_t * x,
+                    Scalar_t * norm )
+    {
+      static_cast<ConcreteTransform *>(this)->\
+      normalize( x, norm );
+    }
 };
 
 #endif  // #define TRANSFORM_HPP
