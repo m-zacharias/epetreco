@@ -9,7 +9,7 @@ INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
 LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
 
 CUC = nvcc
-CUCFLAGS =
+CUCFLAGS = -arch=sm_20
 CUCINC = -I$(CUDA_ROOT)/include -I$(SRC)
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
@@ -36,7 +36,9 @@ EXECUTABLES := \
       test_H5DensityWriter.out \
       test_ChordsCalc.out \
       test_SMChunkGetter.out \
-      test_DevelChannel.out
+      test_DevelChannel.out \
+      test_cudaSMLine.out \
+      test_ChordsCalc_lowlevel.out
 
 default : $(EXECUTABLES)
 
@@ -45,7 +47,8 @@ clean:
       $(EXECUTABLES) \
       ./libepetreco.a \
       ./*.ply \
-      ./*.h5
+      ./*.h5 ; \
+  cd ./src/external_library_examples/ && make clean
 
 
 libepetreco.a : \

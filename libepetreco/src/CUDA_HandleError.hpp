@@ -1,6 +1,8 @@
 #ifndef CUDA_HANDLE_ERROR
 #define CUDA_HANDLE_ERROR
 
+#include <cstdio>
+
 void HandleError( cudaError_t err, const char * file, int line )
 {
   if(err != cudaSuccess)

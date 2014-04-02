@@ -1,12 +1,13 @@
+SRC = ..
 EXAMPLES_SRC = .
 CPPC = g++
 override CPPCFLAGS += -Wall
-INC = -I$(HDF5_ROOT)/include
+INC = -I$(HDF5_ROOT)/include -I$(SRC)
 LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
 
 CUC = nvcc
 CUCFLAGS =
-CUCINC = -I$(CUDA_ROOT)/include
+CUCINC = -I$(CUDA_ROOT)/include -I$(SRC)
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
 EXAMPLES := \
@@ -17,7 +18,9 @@ EXAMPLES := \
       example_cublas_MatrixVectorMult.out \
       example_cublas_MatrixVectorMult2.out \
       example_cublasxt_MatrixVectorMult.out \
-      example_thrustZipIterator.out
+      example_thrust_zipIterator.out \
+      example_curand.out \
+      example_cuda_memory.out
 
 default : $(EXAMPLES)
 
@@ -27,7 +30,8 @@ example%.out : \
 
 example%.out : \
       $(EXAMPLES_SRC)/example%.cu
-	$(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $< -o $@
+	CPLUS_INCLUDE_PATH= ; \
+  $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $< -o $@
 
 
 clean :
