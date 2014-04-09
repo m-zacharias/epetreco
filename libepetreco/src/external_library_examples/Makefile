@@ -6,7 +6,7 @@ INC = -I$(HDF5_ROOT)/include -I$(SRC)
 LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
 
 CUC = nvcc
-CUCFLAGS =
+CUCFLAGS = -arch=sm_35
 CUCINC = -I$(CUDA_ROOT)/include -I$(SRC)
 CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
 
@@ -20,7 +20,8 @@ EXAMPLES := \
       example_cublasxt_MatrixVectorMult.out \
       example_thrust_zipIterator.out \
       example_curand.out \
-      example_cuda_memory.out
+      example_cuda_memory.out \
+      example_cuda_double-buffering.out
 
 default : $(EXAMPLES)
 
