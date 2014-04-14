@@ -31,4 +31,5 @@ class FileTalk
     }
 };
 #define SAYLINE( i ) { FileTalk(__FILE__).sayLine(i); }
+//#define SAYLINE( i ) {}
 #define SAYLINES( begin, end ) { for(int i=begin;i<end+1;i++) SAYLINE(i); }

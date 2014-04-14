@@ -4,6 +4,7 @@
 #ifndef CHORDSCALC_LOWLEVEL_HPP
 #define CHORDSCALC_LOWLEVEL_HPP
 
+#include <cuda.h>
 #include <cmath>
 #include <algorithm>
 
@@ -29,6 +30,7 @@ struct MinFunctor
    * @arg b    Vector of possible candidates
    */
   template<typename T>
+  __host__ __device__
   void operator()(
         T * const min_, bool * const good,
         T const a[], bool const b[] )
@@ -39,7 +41,7 @@ struct MinFunctor
     // determine min without 'if': sum of products with int-cast exclusive
     // conditions
     *min_ =
-          (int)( (*good) &&  b[n-1]) * std::min((*min_), a[n-1])
+          (int)( (*good) &&  b[n-1]) * min((*min_), a[n-1])
          +(int)( (*good) && !b[n-1]) * (*min_)
          +(int)(!(*good) &&  b[n-1]) * a[n-1];
   
@@ -54,6 +56,7 @@ template<>
 struct MinFunctor<2>
 {
   template<typename T>
+  __host__ __device__
   void operator()(
         T * const min_, bool * const good,
         T const a[], bool const b[] )
@@ -61,7 +64,7 @@ struct MinFunctor<2>
     // determine min without 'if': sum of products with int-cast exclusive
     // conditions
     *min_ =
-          (int)( b[0] &&  b[1]) * std::min(a[0], a[1])
+          (int)( b[0] &&  b[1]) * min(a[0], a[1])
          +(int)( b[0] && !b[1]) * a[0]
          +(int)(!b[0] &&  b[1]) * a[1];
   
@@ -89,6 +92,7 @@ struct MaxFunctor
    * @arg b    Vector of possible candidates
    */
   template<typename T>
+  __host__ __device__
   void operator()(
         T * const max_, bool * const good,
         T const a[], bool const b[] )
@@ -99,7 +103,7 @@ struct MaxFunctor
     // determine max without 'if': sum of products with int-cast exclusive
     // conditions
     *max_ =
-          (int)( (*good) &&  b[n-1]) * std::max((*max_), a[n-1])
+          (int)( (*good) &&  b[n-1]) * max((*max_), a[n-1])
          +(int)( (*good) && !b[n-1]) * (*max_)
          +(int)(!(*good) &&  b[n-1]) * a[n-1];
   
@@ -114,6 +118,7 @@ template<>
 struct MaxFunctor<2>
 {
   template<typename T>
+  __host__ __device__
   void operator()(
         T * const max_, bool * const good,
         T const a[], bool const b[] )
@@ -121,7 +126,7 @@ struct MaxFunctor<2>
     // determine max without 'if': sum of products with int-cast exclusive
     // conditions
     *max_ =
-          (int)( b[0] &&  b[1]) * std::max(a[0], a[1])
+          (int)( b[0] &&  b[1]) * max(a[0], a[1])
          +(int)( b[0] && !b[1]) * a[0]
          +(int)(!b[0] &&  b[1]) * a[1];
   
@@ -137,10 +142,17 @@ struct MaxFunctor<2>
 
 
 template<typename val_t>
-void getChords( val_t chords[], int voxelIds[],
-                int const nChords,
-                val_t const ray[],
-                val_t const gridO[], val_t const gridD[], int const gridN[] )
+__host__ __device__
+void
+getChords(
+//      val_t chords[], int voxelIds[],
+//      int const nChords,
+//      val_t const ray[],
+//      val_t const gridO[], val_t const gridD[], int const gridN[] )
+      val_t * const chords, int * const voxelIds,
+      int const nChords,
+      val_t const * const ray,
+      val_t const * const gridO, val_t const * const gridD, int const * const gridN )
 {
   // Get intersection minima for all axes, get intersection info
   val_t aDimmin[3];
@@ -217,7 +229,7 @@ void getChords( val_t chords[], int voxelIds[],
   MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
 
   for(int dim=0; dim<3; dim++)
-    id[dim] = std::floor(phiFromAlpha(
+    id[dim] = floor(phiFromAlpha(
           float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
                                      )
                         );
@@ -315,7 +327,7 @@ void getChords( val_t chords[], int voxelIds[],
               << std::endl << std::endl;
 #endif
     
-    if(!anyAxisCrossed) throw -1;
+//    if(!anyAxisCrossed) throw -1;
   }
 }
 
@@ -377,6 +389,7 @@ void getChords( val_t chords[], int voxelIds[],
  * @arg gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
+__host__ __device__
 void
 getCrossesPlanes(
       bool crosses[],
@@ -423,6 +436,7 @@ getCrossesPlanes(
  * @arg gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
+__host__ __device__
 val_t
 alphaFromId(
       int const i, int const dim,
@@ -453,6 +467,7 @@ alphaFromId(
  * @arg gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
+__host__ __device__
 val_t
 phiFromAlpha(
       val_t const alpha,
@@ -483,6 +498,7 @@ phiFromAlpha(
  * @arg gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
+__host__ __device__
 void
 getAlphaDimmin( 
       val_t aDimmin[],
@@ -491,7 +507,7 @@ getAlphaDimmin(
 {
   for(int dim=0; dim<3; dim++)
   {
-    aDimmin[dim] = std::min(
+    aDimmin[dim] = min(
           alphaFromId(0,          dim, ray, gridO, gridD, gridN),
           alphaFromId(gridN[dim], dim, ray, gridO, gridD, gridN)
                            );
@@ -516,6 +532,7 @@ getAlphaDimmin(
  * @arg gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
+__host__ __device__
 void
 getAlphaDimmax(
       val_t aDimmax[],
@@ -524,7 +541,7 @@ getAlphaDimmax(
 {
   for(int dim=0; dim<3; dim++)
   {
-     aDimmax[dim] = std::max(
+     aDimmax[dim] = max(
           alphaFromId(0,          dim, ray, gridO, gridD, gridN),
           alphaFromId(gridN[dim], dim, ray, gridO, gridD, gridN)
                             );
@@ -543,6 +560,7 @@ getAlphaDimmax(
  * @arg aDimminGood   Array of states of the intersection minima for each axis
  */
 template<typename val_t>
+__host__ __device__
 void
 getAlphaMin(
       val_t * aMin, bool * good,
@@ -564,6 +582,7 @@ getAlphaMin(
  * @arg aDimmaxGood   Array of states of the intersection maxima for each axis
  */
 template<typename val_t>
+__host__ __device__
 void
 getAlphaMax(
       val_t * aMax, bool * good,
@@ -580,11 +599,12 @@ getAlphaMax(
  * @arg ray   Array of ray start and end coordinates
  */
 template<typename val_t>
+__host__ __device__
 val_t
 getLength(
       val_t const ray[])
 {
-  return std::sqrt(
+  return sqrt(
         (ray[0+3] - ray[0]) * (ray[0+3] - ray[0])
        +(ray[1+3] - ray[1]) * (ray[1+3] - ray[1])
        +(ray[2+3] - ray[2]) * (ray[2+3] - ray[2])
@@ -602,6 +622,7 @@ getLength(
  * @arg gridD   Array of grid plane spacings for each axis
  */
 template<typename val_t>
+__host__ __device__
 void
 getAlphaDimup(
       val_t aDimup[],
@@ -612,7 +633,7 @@ getAlphaDimup(
   for(int dim=0; dim<3; dim++)
   {
     // Make sure, no division by zero will be performed!
-    val_t divisor = std::sqrt((ray[dim+3]-ray[dim])*(ray[dim+3]-ray[dim]));
+    val_t divisor = sqrt((ray[dim+3]-ray[dim])*(ray[dim+3]-ray[dim]));
     divisor += (int)(divisor==0);
     
     aDimup[dim] =  gridD[dim] / divisor;
@@ -630,6 +651,7 @@ getAlphaDimup(
  * @arg ray      Array of ray start and end coordinates
  */
 template<typename val_t>
+__host__ __device__
 void
 getIdDimup(
       int idDimup[],
