@@ -11,7 +11,7 @@
 #include "CUDA_HandleError.hpp"
 #include "FileTalk.hpp"
 
-#define BSIZE 64
+#define BSIZE 8
 
 __global__
 void db_kernel( float * const a, int const size )
@@ -49,8 +49,8 @@ void db_kernel( float * const a, int const size )
         // copy elements from 1st buffer to global
         for(int i=start; i<end; i++)
         {
-          a[i] = localmem0[i%BSIZE];
-                 localmem0[i%BSIZE] = 0.;
+          atomicAdd(&a[i], localmem0[i%BSIZE]);
+          localmem0[i%BSIZE] = 0.;
         }
       }
       // if current buffer is 2nd buffer
@@ -61,8 +61,8 @@ void db_kernel( float * const a, int const size )
         // copy elements from 2nd buffer to global
         for(int i=start; i<end; i++)
         {
-          a[i] = localmem1[i%BSIZE];
-                 localmem1[i%BSIZE] = 0.;
+          atomicAdd(&a[i], localmem1[i%BSIZE]);
+          localmem1[i%BSIZE] = 0.;
         }
       }
     }
@@ -98,7 +98,7 @@ void b_kernel( float * const a, int const size )
       // copy elements from 1st buffer to global
       for(int i=start; i<end; i++)
       {
-        a[i] = localmem[i%BSIZE];
+        atomicAdd(&a[i], localmem[i%BSIZE]);
                localmem[i%BSIZE] = 0.;
       }
     }
@@ -119,14 +119,14 @@ void n_kernel( float * const a, int const size )
   while(memid < size)
   {
     float temp = curand_uniform(&state) * curand_uniform(&state) / curand_uniform(&state);
-    a[memid] = temp;
+    atomicAdd(&a[memid], temp);
     memid++;
   }
 }
 
 
 
-#define NBLOCKS 1
+#define NBLOCKS 1024
 #define NTHREADS 1024
 #define SIZE 65536
 
@@ -136,48 +136,47 @@ int main()
   SAYLINE( __LINE__+1 );
   cudaSetDevice(0);
 
-  // Create timers
-  cudaEvent_t start_db, stop_db;
-  cudaEventCreate(&start_db); cudaEventCreate(&stop_db);
-  
-  cudaEvent_t start_b,  stop_b;
-  cudaEventCreate(&start_b); cudaEventCreate(&stop_b);
-  
-  cudaEvent_t start_n,  stop_n;
-  cudaEventCreate(&start_n); cudaEventCreate(&stop_n);
-  
   // Allocate global memory
   float * a;
   SAYLINE( __LINE__+1 );
   HANDLE_ERROR( cudaMalloc((void**)&a, SIZE*sizeof(float)) );
+  
+  
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start); cudaEventCreate(&stop);
+  float time;
 
   // Time measurement
   SAYLINE( __LINE__-1 );
-  cudaEventRecord(start_db, 0);
+  cudaEventRecord(start, 0);
   db_kernel<<<NBLOCKS, NTHREADS>>>( a, SIZE );
-  cudaEventRecord( stop_db, 0);
-  cudaThreadSynchronize();
-  float db_time;
-  cudaEventElapsedTime(&db_time, start_db, stop_db);
+  cudaDeviceSynchronize();
+  cudaEventRecord( stop, 0);
+  cudaEventSynchronize(stop);
+  HANDLE_ERROR(cudaGetLastError());
+  cudaEventElapsedTime(&time, start, stop);
+  std::cout << "db: " << time << " ms" << std::endl;
   
-  cudaEventRecord( start_b, 0);
+  cudaEventRecord( start, 0);
   b_kernel<<<NBLOCKS, NTHREADS>>> ( a, SIZE );
-  cudaEventRecord(  stop_b, 0);
-  cudaThreadSynchronize();
-  float  b_time;
-  cudaEventElapsedTime( &b_time,  start_b,  stop_b);
+  cudaDeviceSynchronize();
+  cudaEventRecord(  stop, 0);
+  cudaEventSynchronize(stop);
+  HANDLE_ERROR(cudaGetLastError());
+  cudaEventElapsedTime( &time,  start,  stop);
+  std::cout << " b: " <<  time << " ms" << std::endl;
   
-  cudaEventRecord( start_n, 0);
+  cudaEventRecord( start, 0);
   n_kernel<<<NBLOCKS, NTHREADS>>> ( a, SIZE );
-  cudaEventRecord(  stop_n, 0);
-  cudaThreadSynchronize();
-  float n_time;
-  cudaEventElapsedTime( &n_time,  start_n,  stop_n);
+  cudaDeviceSynchronize();
+  cudaEventRecord(  stop, 0);
+  cudaEventSynchronize(stop);
+  HANDLE_ERROR(cudaGetLastError());
+  cudaEventElapsedTime( &time,  start,  stop);
+  std::cout << " n: " <<  time << " ms" << std::endl;
 
   // Print Result
-  std::cout << "db: " << db_time << " ms" << std::endl;
-  std::cout << " b: " <<  b_time << " ms" << std::endl;
-  std::cout << " n: " <<  n_time << " ms" << std::endl;
   
   return 0;
 }
+

@@ -47,8 +47,8 @@ clean:
       $(EXECUTABLES) \
       ./libepetreco.a \
       ./*.ply \
-      ./*.h5 ; \
-  cd ./src/external_library_examples/ && make clean
+      ./*.h5 2>/dev/null; \
+  cd ./src/external_library_examples/ && make clean 2>/dev/null
 
 
 libepetreco.a : \
