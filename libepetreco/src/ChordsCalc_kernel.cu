@@ -374,7 +374,13 @@ void chordsCalc(
   
   // Initialize array of next parameters
   val_t aDimnext[3];
-  for(int dim=0; dim<3; dim++) aDimnext[dim] = aDimmin[dim] + aDimup[dim];
+  //for(int dim=0; dim<3; dim++) aDimnext[dim] = aDimmin[dim] + aDimup[dim];
+  for(int dim=0; dim<3; dim++)
+  {
+    aDimnext[dim] = aDimmin[dim];
+    while(aDimnext[dim]<=aMin)
+      aDimnext[dim] += aDimup[dim];
+  }
   
   // Initialize array of voxel indices
   int id[3];
@@ -396,7 +402,13 @@ void chordsCalc(
   // ###  ITERATIONS
   // ##################
   int chordId = 0;
-  while(aCurr < aMax)
+  //while(aCurr < aMax)
+  while(   id[0]<gridN[0]
+        && id[1]<gridN[1]
+        && id[2]<gridN[2]
+        && id[0]>=0
+        && id[1]>=0
+        && id[2]>=0)
   {
     assert(chordId<GRIDNX*GRIDNY*GRIDNZ);
 
@@ -408,7 +420,7 @@ void chordsCalc(
     for(int dim=0; dim<3; dim++)
     {
       // Is this axis' plane crossed at the next parameter of intersection?
-      bool dimCrossed = (aDimnext[dim] == aNext);
+      bool dimCrossed = (aDimnext[dim] == aNext && aNextExists);
       anyAxisCrossed |= dimCrossed;
       
 
@@ -521,7 +533,7 @@ class CPlyLine : public PlyLine<Vertex>
 
 
 #define NBLOCKS 1
-#define NTHREADS 1024
+#define NTHREADS 512
 int main()
 {
   // Host memory allocation, initialization
@@ -542,7 +554,7 @@ int main()
   PlyGrid<Vertex> grid("", Vertex(gridO_host[0], gridO_host[1], gridO_host[2]),
                        gridN_host[0]+1, gridN_host[1]+1, gridN_host[2]+1,
                        gridD_host[0], gridD_host[1], gridD_host[2]);
-  PlyWriter writer("ChordsCalc_kernel2_grid.ply");
+  PlyWriter writer("ChordsCalc_kernel_grid.ply");
   writer.write(grid);
   writer.close();
   
@@ -551,7 +563,7 @@ int main()
   val_t det0C[] = {POS0X, 0, 0};
   val_t detD[]  = {SEGX, SEGY, SEGZ};
   CPlyGrid det0("", det0C, detD, det0N, CPlyGrid::AT_CENTER);
-  PlyWriter det0Writer("ChordsCalc_kernel2_det0.ply");
+  PlyWriter det0Writer("ChordsCalc_kernel_det0.ply");
   det0Writer.write(det0);
   det0Writer.close();
 
@@ -559,7 +571,7 @@ int main()
   int   det1N[] = {1, N1Y, N1Z};
   val_t det1C[] = {POS1X, 0, 0};
   CPlyGrid det1("", det1C, detD, det1N, CPlyGrid::AT_CENTER);
-  PlyWriter det1Writer("ChordsCalc_kernel2_det1.ply");
+  PlyWriter det1Writer("ChordsCalc_kernel_det1.ply");
   det1Writer.write(det1);
   det1Writer.close();
   
@@ -595,6 +607,7 @@ int main()
   chordsCalc<<<NBLOCKS,NTHREADS>>>(chords_devi, voxelIds_devi, rays_devi,
                                    linearChannelId,
                                    gridO_devi, gridD_devi, gridN_devi );
+  HANDLE_ERROR( cudaGetLastError() );
   HANDLE_ERROR( cudaDeviceSynchronize() );
   
   // Copy results device to host
@@ -620,7 +633,7 @@ int main()
     lines[i] = CPlyLine("", &rays_host[6*i]);
     compositeLines.add(&lines[i]);
   }
-  PlyWriter raysWriter("ChordsCalc_kernel2_rays.ply");
+  PlyWriter raysWriter("ChordsCalc_kernel_rays.ply");
   raysWriter.write(compositeLines);
   raysWriter.close();
   
