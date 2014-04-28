@@ -9,6 +9,7 @@
 #define SEGX 1.     // x edge length of one detector segment
 #define SEGY 1.     // y edge length of one detector segment
 #define SEGZ 1.     // z edge length of one detector segment
+#define NCHANNELS N0Z*N0Y*N1Z*N1Y
 
 #define GRIDNX 3    // x dimension of voxel grid
 #define GRIDNY 1    // y dimension of voxel grid
@@ -16,10 +17,10 @@
 #define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
 
 #define NTHREADRAYS 20
-#define NBLOCKS 20
+#define NBLOCKS NCHANNELS
 #define NTHREADS 1
 
-#define DEBUG
-#define PRINT_KERNEL 8
+//#define DEBUG
+#define PRINT_KERNEL 0
 
 #define RANDOM_SEED 1234

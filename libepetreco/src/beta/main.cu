@@ -83,7 +83,6 @@ int main()
   
   // Run kernel
   chordsCalc<<<NBLOCKS,1>>>(chords_devi, rays_devi,
-                                   linearChannelId,
                                    gridO_devi, gridD_devi, gridN_devi );
   HANDLE_ERROR( cudaDeviceSynchronize() );
   

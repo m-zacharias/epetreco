@@ -272,15 +272,14 @@ __global__
 void chordsCalc(
       val_t * const chords,
       val_t * const rays,
-      int const linearChannelId,
       val_t const * gridO, val_t const * const gridD, int const * const gridN )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
 #ifdef DEBUG
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\nchordsCalc(...):\n");
-/**/}
+    if(globalId == PRINT_KERNEL)
+    {
+      printf("\nchordsCalc(...):\n");
+    }
 #endif
   int const linChannelId(blockIdx.x);
   val_t ray[6];

@@ -3,6 +3,7 @@
 
 #include "Transform.hpp"
 #include "CudaMatrix.hpp"
+#include "CudaDeviceOnlyMatrix.hpp"
 #include "CudaVector.hpp"
 
 #include "cublas_v2.h"
@@ -44,6 +45,13 @@ class CudaTransform : public Transform<CudaTransform<TE,TI>,
     void gemv( Operation_t trans,
                Scalar_t * alpha,
                Matrix_t * A,
+               Vector_t * x,
+               Scalar_t * beta,
+               Vector_t * y );
+
+    void gemv( Operation_t trans,
+               Scalar_t * alpha,
+               CudaDeviceOnlyMatrix<TE, TI> * A,
                Vector_t * x,
                Scalar_t * beta,
                Vector_t * y );
