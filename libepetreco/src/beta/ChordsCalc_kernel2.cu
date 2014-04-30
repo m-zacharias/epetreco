@@ -59,6 +59,16 @@ int getLinChannelId(
 
 
 
+__inline__ __host__ __device__
+int getLinMtxId(
+      int const rowId, int const rowDim,
+      int const colId, int const colDim )
+{
+  return colId * colDim + rowId;
+}
+
+
+
 /**
  * @brief Get indices of channel configuration, seperately.
  *
@@ -272,7 +282,9 @@ __global__
 void chordsCalc(
       val_t * const chords,
       val_t * const rays,
-      val_t const * gridO, val_t const * const gridD, int const * const gridN )
+      val_t const * gridO, val_t const * const gridD, int const * const gridN,
+      int const channelOffset, int const nChannels, int const chunkSize,
+      int const vgridSize )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
 #ifdef DEBUG
@@ -281,10 +293,14 @@ void chordsCalc(
       printf("\nchordsCalc(...):\n");
     }
 #endif
-  int const linChannelId(blockIdx.x);
+  // Global id of channel
+  int const linChannelId(channelOffset + blockIdx.x);
+  if(linChannelId >= nChannels)
+    return;
+
   val_t ray[6];
   curandState kernelRandState;
-  curand_init(RANDOM_SEED, globalId, 0, &kernelRandState);
+  curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
 
   for(int iRay=0; iRay<NTHREADRAYS; iRay++)
   {
@@ -498,9 +514,18 @@ void chordsCalc(
 /**/    syncthreads();
 #endif
         assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
-        atomicAdd(&chords[  linChannelId * VGRIDSIZE
-                          + getLinVoxelId(id[0], id[1], id[2], gridN)],
+        
+        int rowId  = linChannelId % chunkSize;
+        int rowDim = vgridSize;
+        int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
+        int colDim = chunkSize;
+        int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
+        atomicAdd(&chords[linMtxId],
                   (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+
+        //atomicAdd(&chords[  linChannelId * VGRIDSIZE
+        //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
+        //          (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
         
         //      ... increase chord index (writing index)
         chordId       +=  (int)(dimCrossed);

@@ -106,7 +106,7 @@ CudaMatrix<TE,TI> * CudaMatrix<TE,TI>::clone()
   if( _host_data_changed )
     update_devi_data();
   
-  CudaMatrix<TE,TI> * clone = new CudaMatrix<TE,TI>( _nCols, _nRows );
+  CudaMatrix<TE,TI> * clone = new CudaMatrix<TE,TI>( _nRows, _nCols );
   cudaMemcpy( clone->data(), _raw_devi, _nCols*_nRows*sizeof(internal_elem_t),
               cudaMemcpyDeviceToDevice );
   

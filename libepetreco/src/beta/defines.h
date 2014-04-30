@@ -20,7 +20,7 @@
 #define NBLOCKS NCHANNELS
 #define NTHREADS 1
 
-//#define DEBUG
+//#define DEBUG 1
 #define PRINT_KERNEL 0
 
 #define RANDOM_SEED 1234
