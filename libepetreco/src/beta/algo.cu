@@ -18,7 +18,7 @@
 
 #define M VGRIDSIZE // number of voxels
 #define N NCHANNELS // number of channels
-#define NITERATIONS 50
+#define NITERATIONS 1
 
 struct BaseGrid
 {
@@ -128,18 +128,37 @@ class Grid
     }
 };
 
+template<typename ConcreteMeasurementSetup>
 void chordsCalc(
       int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
       float * const chords,
       float * const rays,
       Grid * const grid,
-      int const vgridSize )
+      int const vgridSize,
+      ConcreteMeasurementSetup & setup )
 {
   chordsCalc<<<chunkSize, nThreads>>>(chords, rays,
                                       grid->deviRepr()->gridO,
                                       grid->deviRepr()->gridD,
                                       grid->deviRepr()->gridN,
-                                      chunkId*chunkSize, nChannels, chunkSize, vgridSize);
+                                      chunkId*chunkSize, nChannels, chunkSize, vgridSize,
+                                      &setup);
+}
+
+template<typename ConcreteMeasurementSetup>
+void chordsCalc_noVis(
+      int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
+      float * const chords,
+      Grid * const grid,
+      int const vgridSize,
+      ConcreteMeasurementSetup & setup )
+{
+  chordsCalc_noVis<<<chunkSize, nThreads>>>(chords,
+                                            grid->deviRepr()->gridO,
+                                            grid->deviRepr()->gridD,
+                                            grid->deviRepr()->gridN,
+                                            chunkId*chunkSize, nChannels,
+                                            chunkSize, vgridSize, &setup);
 }
 
 
@@ -158,6 +177,15 @@ int main()
         new Grid(-1.5,    -0.5,  -2.0,
                   1.0,     1.0,   1.0,
                   GRIDNX, GRIDNY, GRIDNZ);
+  DefaultMeasurementSetup<float> * setup_host =
+        new DefaultMeasurementSetup<float>(POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
+                                           DA, SEGX, SEGY, SEGZ );
+  DefaultMeasurementSetup<float> * setup_devi;
+  HANDLE_ERROR( cudaMalloc((void**)&setup_devi,
+                           sizeof(DefaultMeasurementSetup<float>)) );
+  HANDLE_ERROR( cudaMemcpy(setup_devi, setup_host,
+                           sizeof(DefaultMeasurementSetup<float>),
+                           cudaMemcpyHostToDevice) );
   CudaTransform<float,float>        trafo;
   CudaDeviceOnlyMatrix<float,float> SM(N, M);       // system matrix
   CudaVector<float,float>           xx(M);          // true density
@@ -170,14 +198,11 @@ int main()
   CudaVector<float,float>           y(N);           // true measurement
   float one(1.);
   float zero(0.);
-  float rays_host[6*N*NTHREADRAYS*sizeof(float)];
-  float * rays_devi;
-  HANDLE_ERROR( cudaMalloc((void**)&rays_devi, 6*N*NTHREADRAYS*sizeof(float)) );
   
   /* Calculate system matrix */
   SAYLINE(__LINE__-1);
-  chordsCalc(0, N, N, 1, static_cast<float*>(SM.data()), rays_devi, grid,
-             VGRIDSIZE);
+  chordsCalc_noVis(0, N, N, 1, static_cast<float*>(SM.data()), grid,
+                   VGRIDSIZE, *setup_devi);
   HANDLE_ERROR( cudaDeviceSynchronize() );
 
   std::cout << "System matrix:" << std::endl
@@ -209,7 +234,7 @@ int main()
    * ######################################################################## */
   SAYLINES(__LINE__-3, __LINE__-1);
   
-  int const CHUNKSIZE(NCHANNELS/3);
+  int const CHUNKSIZE(NCHANNELS/20);
   int const NCHUNKS((NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE);
 
   /* Create objects */
@@ -245,9 +270,9 @@ int main()
     HANDLE_ERROR( cudaDeviceSynchronize() );
     
     /* Calculate system matrix chunk */
-    chordsCalc(chunkId, NCHANNELS, CHUNKSIZE, 1,
-               static_cast<float*>(chunk.data()), rays_devi, grid,
-               VGRIDSIZE);
+    chordsCalc_noVis(chunkId, NCHANNELS, CHUNKSIZE, 1,
+                     static_cast<float*>(chunk.data()), grid,
+                     VGRIDSIZE, *setup_devi);
     HANDLE_ERROR( cudaDeviceSynchronize() );
     
     /* Add column sums to sensitivity */
@@ -267,6 +292,13 @@ int main()
   /* ----------
    * Iterations
    * ---------- */
+
+  /* Allocate memory for rays */
+  float rays_host[NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(float)];
+  float * rays_devi;
+  HANDLE_ERROR( cudaMalloc((void**)&rays_devi,
+                NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(float)) );
+  
   for(int iteration=0; iteration<NITERATIONS; iteration++)  // for iterations
   {
     std::cout << "Iteration " << iteration << std::endl
@@ -296,8 +328,10 @@ int main()
       
       /* Calculate system matrix chunk */
       chordsCalc(chunkId, NCHANNELS, CHUNKSIZE, 1,
-                 static_cast<float*>(chunk.data()), rays_devi, grid,
-                 VGRIDSIZE);
+                 static_cast<float*>(chunk.data()),
+//                 &rays_devi[chunkId*CHUNKSIZE*NTHREADRAYS*6], grid,
+                 rays_devi, grid,
+                 VGRIDSIZE, *setup_devi);
       HANDLE_ERROR( cudaDeviceSynchronize() );
       
       std::cout << "|" << std::endl
@@ -401,7 +435,7 @@ int main()
   
   // Visualize rays
   HANDLE_ERROR( cudaMemcpy(rays_host, rays_devi,
-                           6*N*NTHREADRAYS*sizeof(val_t),
+                           6*NCHUNKS*CHUNKSIZE*NTHREADRAYS*sizeof(val_t),
                            cudaMemcpyDeviceToHost) );
   for(int i=0; i<NBLOCKS; i++)
   {

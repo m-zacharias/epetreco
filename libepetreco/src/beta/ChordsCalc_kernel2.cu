@@ -2,7 +2,6 @@
 #define CHORDSCALC_KERNEL
 
 #include "ChordsCalc_lowlevel.hpp"
-//#include "defines.h"
 
 #include <math.h>
 #include <curand_kernel.h>
@@ -49,19 +48,19 @@ __inline__
 int getLinChannelId(
       int const ida,
       int const id0z, int const id0y,
-      int const id1z, int const id1y)
-//      int const * const dims )
+      int const id1z, int const id1y,
+      int const * const dims )
 {
-  return   ida  * N0Z*N0Y*N1Z*N1Y
-         + id0z *     N0Y*N1Z*N1Y
-         + id0y *         N1Z*N1Y
-         + id1z *             N1Y
-         + id1y;
-//  return   ida  * dims[1]*dims[2]*dims[3]*dims[4]
-//         + id0z *         dims[2]*dims[3]*dims[4]
-//         + id0y *                 dims[3]*dims[4]
-//         + id1z *                         dims[4]
+//  return   ida  * N0Z*N0Y*N1Z*N1Y
+//         + id0z *     N0Y*N1Z*N1Y
+//         + id0y *         N1Z*N1Y
+//         + id1z *             N1Y
 //         + id1y;
+  return   ida  * dims[1]*dims[2]*dims[3]*dims[4]
+         + id0z *         dims[2]*dims[3]*dims[4]
+         + id0y *                 dims[3]*dims[4]
+         + id1z *                         dims[4]
+         + id1y;
 }
 
 
@@ -86,43 +85,202 @@ int getLinMtxId(
 __host__ __device__
 void get5DChannelId(
       int * const dimChannelId,
-      int const linChannelId)
-//      int const  const dims)
+      int const linChannelId,
+      int const * const dims)
 {
-  int temp( linChannelId );
-  dimChannelId[0] = temp / (N1Y*N1Z*N0Y*N0Z); // angular index
-  temp %= (N1Y*N1Z*N0Y*N0Z);
-  dimChannelId[1] = temp / (N1Y*N1Z*N0Y);     // det0z index
-  temp %= (N1Y*N1Z*N0Y);
-  dimChannelId[2] = temp / (N1Y*N1Z);         // det0y index
-  temp %= (N1Y*N1Z);
-  dimChannelId[3] = temp / (N1Y);             // det1z index
-  temp %= (N1Y);
-  dimChannelId[4] = temp;                     // det1y index
 //  int temp( linChannelId );
-//  dimChannelId[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular index
-//  temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
-//  dimChannelId[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
-//  temp %= (dims[4]*dims[3]*dims[2]);
-//  dimChannelId[2] = temp / (dims[4]*dims[3]);                 // det0y index
-//  temp %= (dims[4]*dims[3]);
-//  dimChannelId[3] = temp / (dims[4]);                         // det1z index
-//  temp %= (dims[4]);
-//  dimChannelId[4] = temp;                                     // det1y index
+//  dimChannelId[0] = temp / (N1Y*N1Z*N0Y*N0Z); // angular index
+//  temp %= (N1Y*N1Z*N0Y*N0Z);
+//  dimChannelId[1] = temp / (N1Y*N1Z*N0Y);     // det0z index
+//  temp %= (N1Y*N1Z*N0Y);
+//  dimChannelId[2] = temp / (N1Y*N1Z);         // det0y index
+//  temp %= (N1Y*N1Z);
+//  dimChannelId[3] = temp / (N1Y);             // det1z index
+//  temp %= (N1Y);
+//  dimChannelId[4] = temp;                     // det1y index
+  int temp( linChannelId );
+  dimChannelId[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular index
+  temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
+  dimChannelId[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
+  temp %= (dims[4]*dims[3]*dims[2]);
+  dimChannelId[2] = temp / (dims[4]*dims[3]);                 // det0y index
+  temp %= (dims[4]*dims[3]);
+  dimChannelId[3] = temp / (dims[4]);                         // det1z index
+  temp %= (dims[4]);
+  dimChannelId[4] = temp;                                     // det1y index
 }
 
 
 
-//template<typename T>
-//struct MeasurementSetup
-//{
-//  T posx0, posx1;             // x posisions of 1st and 2nd detector
-//  int na;                     // number of angular steps
-//  T da;                       // angular step [°]
-//  int n0z, n0y, n1z, n1y;     // number of detector segments
-//  T segx, segy, segz;         // edge lengths od one detector segment (same for
-//                              //  both detectors)
-//};
+template<typename T, typename ConcreteMeasurementSetup>
+class MeasurementSetup
+{
+  public:
+    
+    // x posision of 1st detector
+    __host__ __device__ T   pos0x() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->pos0x();
+    }
+
+    // x posision of 2nd detector
+    __host__ __device__ T   pos1x() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->pos1x();
+    }
+
+    // number of angular steps
+    __host__ __device__ int na() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->na();
+    }
+
+    // number of detector segments 1st det, z direction
+    __host__ __device__ int n0z() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->n0z();
+    }
+
+        // number of detector segments 1st det, y direction
+    __host__ __device__ int n0y() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->n0y();
+    }
+
+    // number of detector segments 2nd det, z direction
+    __host__ __device__ int n1z() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->n1z();
+    }
+
+    // number of detector segments 2nd det, y direction
+    __host__ __device__ int n1y() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->n1y();
+    }
+
+    // angular step [°]
+    __host__ __device__ T   da() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->da();
+    }
+
+    // x edge length of one detector segment (same for both detectors)
+    __host__ __device__ T   segx() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->segx();
+    }
+
+    // y edge length of one detector segment (same for both detectors)
+    __host__ __device__ T   segy() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->segy();
+    }
+    
+    // z edge length of one detector segment (same for both detectors)
+    __host__ __device__ T   segz() const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->segz();
+    }
+};
+
+template<typename T>
+class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSetup<T> >
+{
+  public:
+    
+    DefaultMeasurementSetup(
+          T   pos0x, T   pos1x,
+          int na,    int n0z,   int n0y,  int n1z, int n1y,
+          T   da,    T   segx,  T   segy, T   segz )
+    : _pos0x(pos0x), _pos1x(pos1x), _na(na), _n0z(n0z), _n0y(n0y), _n1z(n1z),
+      _n1y(n1y), _da(da), _segx(segx), _segy(segy), _segz(segz)
+    {}
+
+    ~DefaultMeasurementSetup()
+    {}
+    
+    __host__ __device__
+    T   pos0x() const
+    {
+      return _pos0x;
+    }
+
+    __host__ __device__
+    T   pos1x() const
+    {
+      return _pos1x;
+    }
+
+    __host__ __device__
+    int na() const
+    {
+      return _na;
+    }
+
+    __host__ __device__
+    T   da() const
+    {
+      return _da;
+    }
+
+    __host__ __device__
+    int n0z() const
+    {
+      return _n0z;
+    }
+
+    __host__ __device__
+    int n0y() const
+    {
+      return _n0y;
+    }
+
+    __host__ __device__
+    int n1z() const
+    {
+      return _n1z;
+    }
+
+    __host__ __device__
+    int n1y() const
+    {
+      return _n1y;
+    }
+
+    __host__ __device__
+    T   segx() const
+    {
+      return _segx;
+    }
+
+    __host__ __device__
+    T   segy() const
+    {
+      return _segy;
+    }
+
+    __host__ __device__
+    T   segz() const
+    {
+      return _segz;
+    }
+
+
+  private:
+    
+    T   _pos0x;
+    T   _pos1x;
+    int _na;
+    T   _da;
+    int _n0z;
+    int _n0y;
+    int _n1z;
+    int _n1y;
+    T   _segx;
+    T   _segy;
+    T   _segz;
+};
 
 /**
  * @brief Get a channel's geometrical properties.
@@ -135,36 +293,37 @@ void get5DChannelId(
  * @param 5DChannelId Indices of channel configuration
  * @param setup Measurement setup description
  */
+template<typename ConcreteMeasurementSetup>
 __host__ __device__
 void getGeomProps(
       val_t * const pos0, val_t * const pos1,
       val_t * const edges,
       val_t * const sin_, val_t * const cos_,
-      int const * const dimChannelId)
-//      MeasurementSetup const setup)
+      int const * const dimChannelId,
+      ConcreteMeasurementSetup const & setup )
 {
-  pos0[0]  = POS0X;
-  pos0[1]  = (dimChannelId[2]-0.5*N0Y+0.5)*SEGY;
-  pos0[2]  = (dimChannelId[1]-0.5*N0Z+0.5)*SEGZ;
-  pos1[0]  = POS1X;
-  pos1[1]  = (dimChannelId[4]-0.5*N1Y+0.5)*SEGY;
-  pos1[2]  = (dimChannelId[3]-0.5*N1Z+0.5)*SEGZ;
-  edges[0] = SEGX;
-  edges[1] = SEGY;
-  edges[2] = SEGZ;
-  sin_[0]  = sin(dimChannelId[0]*DA);
-  cos_[0]  = cos(dimChannelId[0]*DA);
-//  pos0[0]  = setup.pos0x;
-//  pos0[1]  = (dimChannelId[2]-0.5*setup.n0y+0.5)*setup.segy;
-//  pos0[2]  = (dimChannelId[1]-0.5*setup.n0z+0.5)*setup.segz;
-//  pos1[0]  = setup.pos1x;
-//  pos1[1]  = (dimChannelId[4]-0.5*setup.n1y+0.5)*setup.segy;
-//  pos1[2]  = (dimChannelId[3]-0.5*setup.n1z+0.5)*setup.segz;
-//  edges[0] = setup.segx;
-//  edges[1] = setup.segy;
-//  edges[2] = setup.segz;
-//  sin_[0]  = sin(dimChannelId[0]*setup.da);
-//  cos_[0]  = cos(dimChannelId[0]*setup.da);
+//  pos0[0]  = POS0X;
+//  pos0[1]  = (dimChannelId[2]-0.5*N0Y+0.5)*SEGY;
+//  pos0[2]  = (dimChannelId[1]-0.5*N0Z+0.5)*SEGZ;
+//  pos1[0]  = POS1X;
+//  pos1[1]  = (dimChannelId[4]-0.5*N1Y+0.5)*SEGY;
+//  pos1[2]  = (dimChannelId[3]-0.5*N1Z+0.5)*SEGZ;
+//  edges[0] = SEGX;
+//  edges[1] = SEGY;
+//  edges[2] = SEGZ;
+//  sin_[0]  = sin(dimChannelId[0]*DA);
+//  cos_[0]  = cos(dimChannelId[0]*DA);
+  pos0[0]  = setup.pos0x();
+  pos0[1]  = (dimChannelId[2]-0.5*setup.n0y()+0.5)*setup.segy();
+  pos0[2]  = (dimChannelId[1]-0.5*setup.n0z()+0.5)*setup.segz();
+  pos1[0]  = setup.pos1x();
+  pos1[1]  = (dimChannelId[4]-0.5*setup.n1y()+0.5)*setup.segy();
+  pos1[2]  = (dimChannelId[3]-0.5*setup.n1z()+0.5)*setup.segz();
+  edges[0] = setup.segx();
+  edges[1] = setup.segy();
+  edges[2] = setup.segz();
+  sin_[0]  = sin(dimChannelId[0]*setup.da());
+  cos_[0]  = cos(dimChannelId[0]*setup.da());
 }
 
 
@@ -209,25 +368,28 @@ void getTransformation(
  * @aram ray Result memory (val_t[6]), start, end coordinates - in this order
  * @param linChannelId Linear index of channel
  */
+template<typename ConcreteMeasurementSetup>
 __device__
 void getRay(
       val_t * const ray,
       curandState & state,
-      int const linChannelId)
+//      int const linChannelId)
+      int const * const dimChannelId,
+      ConcreteMeasurementSetup const & setup )
 {
   int id = blockDim.x * blockIdx.x + threadIdx.x;
 
-  // Get dimensional channel id
-  int dimChannelId[5];
-  get5DChannelId(dimChannelId, linChannelId);
+//  // Get dimensional channel id
+//  int dimChannelId[5];
+//  get5DChannelId(dimChannelId, linChannelId);
 
   // Get geometrical properties of the channel
   val_t pos0[3];
   val_t pos1[3];
   val_t edges[3];
   val_t sin, cos;
-  getGeomProps(pos0, pos1, edges, &sin, &cos, dimChannelId);
-#ifdef DEBUG
+  getGeomProps(pos0, pos1, edges, &sin, &cos, dimChannelId, setup);
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf("getRay(...):\n");
@@ -241,7 +403,7 @@ void getRay(
   // Get transformation matrices
   val_t trafo0[12];
   getTransformation(trafo0, pos0, edges, sin, cos);
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf( "    -----\n");
@@ -257,7 +419,7 @@ void getRay(
 
   val_t trafo1[12];
   getTransformation(trafo1, pos1, edges, sin, cos);
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf( "    -----\n");
@@ -282,7 +444,7 @@ void getRay(
   }
   rand[3] = 1.;
   rand[7] = 1.;
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf( "    -----\n");
@@ -321,16 +483,22 @@ void getRay(
  * @param gridD Grid voxels edge lengths
  * @param gridN Grid dimensions
  */
+template<typename ConcreteMeasurementSetup>
 __global__
 void chordsCalc(
-      val_t * const chords,
-      val_t * const rays,
-      val_t const * gridO, val_t const * const gridD, int const * const gridN,
-      int const channelOffset, int const nChannels, int const chunkSize,
-      int const vgridSize )
+      val_t * const                   chords,
+      val_t * const                   rays,
+      val_t const * const             gridO,
+      val_t const * const             gridD,
+      int const * const               gridN,
+      int const                       channelOffset,
+      int const                       nChannels,
+      int const                       chunkSize,
+      int const                       vgridSize,
+      ConcreteMeasurementSetup const * setup )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
     if(globalId == PRINT_KERNEL)
     {
       printf("\nchordsCalc(...):\n");
@@ -344,12 +512,31 @@ void chordsCalc(
   val_t ray[6];
   curandState kernelRandState;
   curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
+  
+  int dimChannelId[5];
+  int channelSetDims[] = {
+        setup->na(), setup->n0z(), setup->n0y(), setup->n1z(), setup->n1y() };
+  get5DChannelId(dimChannelId, linChannelId, channelSetDims);
+
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG || defined SPECIAL) && (NO_CHORDSCALC_DEBUG==0))
+  if(globalId == PRINT_KERNEL)
+  {
+    printf("\n");
+    printf("channelSetDims: %i,  %i,  %i,  %i,  %i\n",
+           channelSetDims[0], channelSetDims[1], channelSetDims[2],
+           channelSetDims[3], channelSetDims[4]);
+    printf("linChannelId: %i,  dimChannelId: %i,  %i,  %i,  %i,  %i\n",
+           linChannelId, dimChannelId[0], dimChannelId[1], dimChannelId[2],
+           dimChannelId[3], dimChannelId[4]);
+  }
+#endif
 
   for(int iRay=0; iRay<NTHREADRAYS; iRay++)
   {
     // Get ray
-    getRay(ray, kernelRandState, linChannelId);
-#ifdef DEBUG
+    getRay(ray, kernelRandState, dimChannelId, *setup);
+
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG || defined SPECIAL) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -362,12 +549,12 @@ void chordsCalc(
     
     // Write ray 
     for(int dim=0; dim<6; dim++)
-      rays[6*(globalId*NTHREADRAYS + iRay) + dim] = ray[dim];
+      rays[6*(linChannelId*NTHREADRAYS + iRay) + dim] = ray[dim];
 
     // ##################
     // ### INITIALIZATION
     // ##################
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -379,7 +566,7 @@ void chordsCalc(
     val_t aDimmin[3];
     val_t aDimmax[3];
     bool  crosses[3];
-//#ifdef DEBUG
+//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  for(int dim=0; dim<3; dim++)
@@ -395,7 +582,7 @@ void chordsCalc(
     getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
     getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
     getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
-//#ifdef DEBUG
+//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
@@ -452,7 +639,7 @@ void chordsCalc(
     bool aNextExists;
     MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
 
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("aMin:        %f\n", aMin);
@@ -466,7 +653,7 @@ void chordsCalc(
             float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
                                        )
                           );
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("phiFromAlpha: %f  ",
@@ -476,7 +663,7 @@ void chordsCalc(
 /**/  }
 #endif
     } // for(dim)
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("\n");
@@ -487,7 +674,7 @@ void chordsCalc(
     // Initialize current parameter
     val_t aCurr = aMin;
 
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("aMin:    %05.3f\n", aMin);
@@ -505,7 +692,7 @@ void chordsCalc(
     // ##################
     // ###  ITERATIONS
     // ##################
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -521,7 +708,7 @@ void chordsCalc(
           && id[1]>=0
           && id[2]>=0)
     {
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 ///**/  printf("aCurr: %05.2f\n", aCurr);
@@ -546,7 +733,7 @@ void chordsCalc(
 
         // If this axis' plane is crossed ...
         //      ... write chord length at voxel index
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/    syncthreads();
 /**/    if(globalId == PRINT_KERNEL)
 /**/    {
@@ -599,15 +786,17 @@ void chordsCalc(
  * @param gridD Grid voxels edge lengths
  * @param gridN Grid dimensions
  */
+template<typename ConcreteMeasurementSetup>
 __global__
 void chordsCalc_noVis(
       val_t * const chords,
       val_t const * gridO, val_t const * const gridD, int const * const gridN,
       int const channelOffset, int const nChannels, int const chunkSize,
-      int const vgridSize )
+      int const vgridSize,
+      ConcreteMeasurementSetup const * setup )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
     if(globalId == PRINT_KERNEL)
     {
       printf("\nchordsCalc(...):\n");
@@ -625,8 +814,12 @@ void chordsCalc_noVis(
   for(int iRay=0; iRay<NTHREADRAYS; iRay++)
   {
     // Get ray
-    getRay(ray, kernelRandState, linChannelId);
-#ifdef DEBUG
+    int dimChannelId[5];
+    int channelSetDims[] = {
+          setup->na(), setup->n0z(), setup->n0y(), setup->n1z(), setup->n1y() };
+    get5DChannelId(dimChannelId, linChannelId, channelSetDims);
+    getRay(ray, kernelRandState, dimChannelId, *setup);
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -640,7 +833,7 @@ void chordsCalc_noVis(
     // ##################
     // ### INITIALIZATION
     // ##################
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -652,7 +845,7 @@ void chordsCalc_noVis(
     val_t aDimmin[3];
     val_t aDimmax[3];
     bool  crosses[3];
-//#ifdef DEBUG
+//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  for(int dim=0; dim<3; dim++)
@@ -668,7 +861,7 @@ void chordsCalc_noVis(
     getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
     getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
     getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
-//#ifdef DEBUG
+//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
@@ -725,7 +918,7 @@ void chordsCalc_noVis(
     bool aNextExists;
     MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
 
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("aMin:        %f\n", aMin);
@@ -739,7 +932,8 @@ void chordsCalc_noVis(
             float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
                                        )
                           );
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+/**/  if(globalId == PRINT_KERNEL)
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("phiFromAlpha: %f  ",
@@ -749,7 +943,7 @@ void chordsCalc_noVis(
 /**/  }
 #endif
     } // for(dim)
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("\n");
@@ -760,7 +954,7 @@ void chordsCalc_noVis(
     // Initialize current parameter
     val_t aCurr = aMin;
 
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("aMin:    %05.3f\n", aMin);
@@ -778,7 +972,7 @@ void chordsCalc_noVis(
     // ##################
     // ###  ITERATIONS
     // ##################
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -794,7 +988,7 @@ void chordsCalc_noVis(
           && id[1]>=0
           && id[2]>=0)
     {
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 ///**/  printf("aCurr: %05.2f\n", aCurr);
@@ -819,7 +1013,7 @@ void chordsCalc_noVis(
 
         // If this axis' plane is crossed ...
         //      ... write chord length at voxel index
-#ifdef DEBUG
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/    syncthreads();
 /**/    if(globalId == PRINT_KERNEL)
 /**/    {
