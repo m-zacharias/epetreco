@@ -18,7 +18,7 @@
 
 #define M VGRIDSIZE // number of voxels
 #define N NCHANNELS // number of channels
-#define NITERATIONS 1
+#define NITERATIONS 50
 
 struct BaseGrid
 {

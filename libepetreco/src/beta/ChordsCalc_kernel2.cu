@@ -34,34 +34,29 @@ int getLinVoxelId(
 
 
 
-/**
- * @brief Get linearized index of channel.
- *
- * @param ida Angular index
- * @param id0z Index of detector 0 segment in z direction
- * @param id0y Index of detector 0 segment in y direction
- * @param id1z Index of detector 1 segment in z direction
- * @param id1y Index of detector 1 segment in y direction
- * @param dims "Maximum index value + 1" of above indices (same order)
- */
-__inline__
-int getLinChannelId(
-      int const ida,
-      int const id0z, int const id0y,
-      int const id1z, int const id1y,
-      int const * const dims )
-{
-//  return   ida  * N0Z*N0Y*N1Z*N1Y
-//         + id0z *     N0Y*N1Z*N1Y
-//         + id0y *         N1Z*N1Y
-//         + id1z *             N1Y
+///**
+// * @brief Get linearized index of channel.
+// *
+// * @param ida Angular index
+// * @param id0z Index of detector 0 segment in z direction
+// * @param id0y Index of detector 0 segment in y direction
+// * @param id1z Index of detector 1 segment in z direction
+// * @param id1y Index of detector 1 segment in y direction
+// * @param dims "Maximum index value + 1" of above indices (same order)
+// */
+//__inline__
+//int getLinChannelId(
+//      int const ida,
+//      int const id0z, int const id0y,
+//      int const id1z, int const id1y,
+//      int const * const dims )
+//{
+//  return   ida  * dims[1]*dims[2]*dims[3]*dims[4]
+//         + id0z *         dims[2]*dims[3]*dims[4]
+//         + id0y *                 dims[3]*dims[4]
+//         + id1z *                         dims[4]
 //         + id1y;
-  return   ida  * dims[1]*dims[2]*dims[3]*dims[4]
-         + id0z *         dims[2]*dims[3]*dims[4]
-         + id0y *                 dims[3]*dims[4]
-         + id1z *                         dims[4]
-         + id1y;
-}
+//}
 
 
 
@@ -75,40 +70,30 @@ int getLinMtxId(
 
 
 
-/**
- * @brief Get indices of channel configuration, seperately.
- *
- * @param 5DChannelId Result memory (int[5])
- * @param linChannelId Linear index of channel
- * @param dims "Maximum index value + 1" of above indices (same order)
- */
-__host__ __device__
-void get5DChannelId(
-      int * const dimChannelId,
-      int const linChannelId,
-      int const * const dims)
-{
+///**
+// * @brief Get indices of channel configuration, seperately.
+// *
+// * @param 5DChannelId Result memory (int[5])
+// * @param linChannelId Linear index of channel
+// * @param dims "Maximum index value + 1" of above indices (same order)
+// */
+//__host__ __device__
+//void get5DChannelId(
+//      int * const dimChannelId,
+//      int const linChannelId,
+//      int const * const dims)
+//{
 //  int temp( linChannelId );
-//  dimChannelId[0] = temp / (N1Y*N1Z*N0Y*N0Z); // angular index
-//  temp %= (N1Y*N1Z*N0Y*N0Z);
-//  dimChannelId[1] = temp / (N1Y*N1Z*N0Y);     // det0z index
-//  temp %= (N1Y*N1Z*N0Y);
-//  dimChannelId[2] = temp / (N1Y*N1Z);         // det0y index
-//  temp %= (N1Y*N1Z);
-//  dimChannelId[3] = temp / (N1Y);             // det1z index
-//  temp %= (N1Y);
-//  dimChannelId[4] = temp;                     // det1y index
-  int temp( linChannelId );
-  dimChannelId[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular index
-  temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
-  dimChannelId[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
-  temp %= (dims[4]*dims[3]*dims[2]);
-  dimChannelId[2] = temp / (dims[4]*dims[3]);                 // det0y index
-  temp %= (dims[4]*dims[3]);
-  dimChannelId[3] = temp / (dims[4]);                         // det1z index
-  temp %= (dims[4]);
-  dimChannelId[4] = temp;                                     // det1y index
-}
+//  dimChannelId[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular index
+//  temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
+//  dimChannelId[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
+//  temp %= (dims[4]*dims[3]*dims[2]);
+//  dimChannelId[2] = temp / (dims[4]*dims[3]);                 // det0y index
+//  temp %= (dims[4]*dims[3]);
+//  dimChannelId[3] = temp / (dims[4]);                         // det1z index
+//  temp %= (dims[4]);
+//  dimChannelId[4] = temp;                                     // det1y index
+//}
 
 
 
@@ -141,7 +126,7 @@ class MeasurementSetup
       return static_cast<ConcreteMeasurementSetup*>(this)->n0z();
     }
 
-        // number of detector segments 1st det, y direction
+    // number of detector segments 1st det, y direction
     __host__ __device__ int n0y() const
     {
       return static_cast<ConcreteMeasurementSetup*>(this)->n0y();
@@ -182,11 +167,83 @@ class MeasurementSetup
     {
       return static_cast<ConcreteMeasurementSetup*>(this)->segz();
     }
+
+    /**
+     * @brief Break linear channel index up into separate indices of channel
+     *        configuration.
+     *
+     * @param sepChannelId Result memory (int[5])
+     * @param linChannelId Linear index of channel
+     */
+    __host__ __device__ void sepChannelId(
+          int * const sepChannelId_, int const linChannelId ) const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->
+            sepChannelId(sepChannelId_, linChannelId);
+    }
+
+    /**
+     * @brief Linearized index of channel.
+     *
+     * @param sepChannelId Separate indices of channel configuration
+     */
+    __host__ __device__ int linChannelId(
+          int const * const sepChannelId ) const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->
+            linChannelId(sepChannelId);
+    }
+    
+    /**
+     * @brief Get a channel's geometrical properties.
+     *
+     * @param pos0 Result memory (val_t[3]), position of detector0 segment's center
+     * @param pos1 Result memory (val_t[3]), position of detector1 segment's center
+     * @param edges Result memory (val_t[3]), lengths of detector segments' edges
+     * @param sin_ Result memory (val_t *), sine of angle
+     * @param cos_ Result memory (val_t *), cosine of angle
+     * @param 5DChannelId Indices of channel configuration
+     * @param setup Measurement setup description
+     */
+    __host__ __device__ void getGeomProps(
+          T * const pos0,  T * const pos1,
+          T * const edges,
+          T * const sin_,  T * const cos_,
+          int const * const          sepChannelId ) const
+    {
+      return static_cast<ConcreteMeasurementSetup*>(this)->
+            getGeomProps(pos0, pos1, edges, sin_, cos_, sepChannelId);
+    }
 };
 
 template<typename T>
 class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSetup<T> >
 {
+  private:
+    
+    T   _pos0x;
+    T   _pos1x;
+    int _na;
+    T   _da;
+    int _n0z;
+    int _n0y;
+    int _n1z;
+    int _n1y;
+    T   _segx;
+    T   _segy;
+    T   _segz;
+
+    __host__ __device__
+    void getDims( int * const dims ) const
+    {
+      dims[0] = _na;
+      dims[1] = _n0z;
+      dims[2] = _n0y;
+      dims[3] = _n1z;
+      dims[4] = _n1y;
+    }
+
+
   public:
     
     DefaultMeasurementSetup(
@@ -265,66 +322,95 @@ class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSet
     {
       return _segz;
     }
-
-
-  private:
     
-    T   _pos0x;
-    T   _pos1x;
-    int _na;
-    T   _da;
-    int _n0z;
-    int _n0y;
-    int _n1z;
-    int _n1y;
-    T   _segx;
-    T   _segy;
-    T   _segz;
+    __host__ __device__
+    void sepChannelId(
+          int * const sepChannelId_, int const linChannelId ) const
+    {
+      int dims[5];
+      getDims(dims);
+
+      int temp( linChannelId );
+      sepChannelId_[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular id
+      temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
+      sepChannelId_[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
+      temp %= (dims[4]*dims[3]*dims[2]);
+      sepChannelId_[2] = temp / (dims[4]*dims[3]);                 // det0y index
+      temp %= (dims[4]*dims[3]);
+      sepChannelId_[3] = temp / (dims[4]);                         // det1z index
+      temp %= (dims[4]);
+      sepChannelId_[4] = temp;                                     // det1y index
+    }
+
+    __host__ __device__
+    int linChannelId(
+          int const * const sepChannelId ) const
+    {
+      int dims[5];
+      getDims(dims);
+
+      return   sepChannelId[0] * dims[1]*dims[2]*dims[3]*dims[4]
+             + sepChannelId[1] *         dims[2]*dims[3]*dims[4]
+             + sepChannelId[2] *                 dims[3]*dims[4]
+             + sepChannelId[3] *                         dims[4]
+             + sepChannelId[4];
+    }
+    
+    __host__ __device__
+    void getGeomProps(
+          val_t * const pos0, val_t * const pos1,
+          val_t * const edges,
+          val_t * const sin_, val_t * const cos_,
+          int const * const sepChannelId ) const
+    {
+      pos0[0]  = this->pos0x();
+      pos0[1]  = (sepChannelId[2]-0.5*this->n0y()+0.5)*this->segy();
+      pos0[2]  = (sepChannelId[1]-0.5*this->n0z()+0.5)*this->segz();
+      pos1[0]  = this->pos1x();
+      pos1[1]  = (sepChannelId[4]-0.5*this->n1y()+0.5)*this->segy();
+      pos1[2]  = (sepChannelId[3]-0.5*this->n1z()+0.5)*this->segz();
+      edges[0] = this->segx();
+      edges[1] = this->segy();
+      edges[2] = this->segz();
+      sin_[0]  = sin(sepChannelId[0]*this->da());
+      cos_[0]  = cos(sepChannelId[0]*this->da());
+    }
 };
 
-/**
- * @brief Get a channel's geometrical properties.
- *
- * @param pos0 Result memory (val_t[3]), position of detector0 segment's center
- * @param pos1 Result memory (val_t[3]), position of detector1 segment's center
- * @param edges Result memory (val_t[3]), lengths of detector segments' edges
- * @param sin_ Result memory (val_t *), sine of angle
- * @param cos_ Result memory (val_t *), cosine of angle
- * @param 5DChannelId Indices of channel configuration
- * @param setup Measurement setup description
- */
-template<typename ConcreteMeasurementSetup>
-__host__ __device__
-void getGeomProps(
-      val_t * const pos0, val_t * const pos1,
-      val_t * const edges,
-      val_t * const sin_, val_t * const cos_,
-      int const * const dimChannelId,
-      ConcreteMeasurementSetup const & setup )
-{
-//  pos0[0]  = POS0X;
-//  pos0[1]  = (dimChannelId[2]-0.5*N0Y+0.5)*SEGY;
-//  pos0[2]  = (dimChannelId[1]-0.5*N0Z+0.5)*SEGZ;
-//  pos1[0]  = POS1X;
-//  pos1[1]  = (dimChannelId[4]-0.5*N1Y+0.5)*SEGY;
-//  pos1[2]  = (dimChannelId[3]-0.5*N1Z+0.5)*SEGZ;
-//  edges[0] = SEGX;
-//  edges[1] = SEGY;
-//  edges[2] = SEGZ;
-//  sin_[0]  = sin(dimChannelId[0]*DA);
-//  cos_[0]  = cos(dimChannelId[0]*DA);
-  pos0[0]  = setup.pos0x();
-  pos0[1]  = (dimChannelId[2]-0.5*setup.n0y()+0.5)*setup.segy();
-  pos0[2]  = (dimChannelId[1]-0.5*setup.n0z()+0.5)*setup.segz();
-  pos1[0]  = setup.pos1x();
-  pos1[1]  = (dimChannelId[4]-0.5*setup.n1y()+0.5)*setup.segy();
-  pos1[2]  = (dimChannelId[3]-0.5*setup.n1z()+0.5)*setup.segz();
-  edges[0] = setup.segx();
-  edges[1] = setup.segy();
-  edges[2] = setup.segz();
-  sin_[0]  = sin(dimChannelId[0]*setup.da());
-  cos_[0]  = cos(dimChannelId[0]*setup.da());
-}
+
+
+///**
+// * @brief Get a channel's geometrical properties.
+// *
+// * @param pos0 Result memory (val_t[3]), position of detector0 segment's center
+// * @param pos1 Result memory (val_t[3]), position of detector1 segment's center
+// * @param edges Result memory (val_t[3]), lengths of detector segments' edges
+// * @param sin_ Result memory (val_t *), sine of angle
+// * @param cos_ Result memory (val_t *), cosine of angle
+// * @param 5DChannelId Indices of channel configuration
+// * @param setup Measurement setup description
+// */
+//template<typename ConcreteMeasurementSetup>
+//__host__ __device__
+//void getGeomProps(
+//      val_t * const pos0, val_t * const pos1,
+//      val_t * const edges,
+//      val_t * const sin_, val_t * const cos_,
+//      int const * const dimChannelId,
+//      ConcreteMeasurementSetup const & setup )
+//{
+//  pos0[0]  = setup.pos0x();
+//  pos0[1]  = (dimChannelId[2]-0.5*setup.n0y()+0.5)*setup.segy();
+//  pos0[2]  = (dimChannelId[1]-0.5*setup.n0z()+0.5)*setup.segz();
+//  pos1[0]  = setup.pos1x();
+//  pos1[1]  = (dimChannelId[4]-0.5*setup.n1y()+0.5)*setup.segy();
+//  pos1[2]  = (dimChannelId[3]-0.5*setup.n1z()+0.5)*setup.segz();
+//  edges[0] = setup.segx();
+//  edges[1] = setup.segy();
+//  edges[2] = setup.segz();
+//  sin_[0]  = sin(dimChannelId[0]*setup.da());
+//  cos_[0]  = cos(dimChannelId[0]*setup.da());
+//}
 
 
 
@@ -373,22 +459,17 @@ __device__
 void getRay(
       val_t * const ray,
       curandState & state,
-//      int const linChannelId)
       int const * const dimChannelId,
       ConcreteMeasurementSetup const & setup )
 {
   int id = blockDim.x * blockIdx.x + threadIdx.x;
-
-//  // Get dimensional channel id
-//  int dimChannelId[5];
-//  get5DChannelId(dimChannelId, linChannelId);
 
   // Get geometrical properties of the channel
   val_t pos0[3];
   val_t pos1[3];
   val_t edges[3];
   val_t sin, cos;
-  getGeomProps(pos0, pos1, edges, &sin, &cos, dimChannelId, setup);
+  setup.getGeomProps(pos0, pos1, edges, &sin, &cos, dimChannelId);
 #if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(id == PRINT_KERNEL)
 /**/{
@@ -434,8 +515,6 @@ void getRay(
 #endif
 
   // Get homogenuous seed coordinates for ray start, end
-  //curandState state;
-  //curand_init(SEED, id, 0, &state);
   val_t rand[8];
   for(int i=0; i<3; i++)
   {
@@ -514,11 +593,9 @@ void chordsCalc(
   curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
   
   int dimChannelId[5];
-  int channelSetDims[] = {
-        setup->na(), setup->n0z(), setup->n0y(), setup->n1z(), setup->n1y() };
-  get5DChannelId(dimChannelId, linChannelId, channelSetDims);
+  setup->sepChannelId(dimChannelId, linChannelId);
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG || defined SPECIAL) && (NO_CHORDSCALC_DEBUG==0))
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
   if(globalId == PRINT_KERNEL)
   {
     printf("\n");
@@ -536,7 +613,7 @@ void chordsCalc(
     // Get ray
     getRay(ray, kernelRandState, dimChannelId, *setup);
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG || defined SPECIAL) && (NO_CHORDSCALC_DEBUG==0))
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -815,9 +892,7 @@ void chordsCalc_noVis(
   {
     // Get ray
     int dimChannelId[5];
-    int channelSetDims[] = {
-          setup->na(), setup->n0z(), setup->n0y(), setup->n1z(), setup->n1y() };
-    get5DChannelId(dimChannelId, linChannelId, channelSetDims);
+    setup->sepChannelId(dimChannelId, linChannelId);
     getRay(ray, kernelRandState, dimChannelId, *setup);
 #if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
 /**/if(globalId == PRINT_KERNEL)
