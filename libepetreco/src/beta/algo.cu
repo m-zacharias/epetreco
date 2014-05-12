@@ -7,12 +7,13 @@
  * using MLEM.
  */
 
-#include "defines.h"
+#include "FileTalk.hpp"
 #include "CUDA_HandleError.hpp"
+#include <iomanip>
+
+#include "defines.h"
 #include "ChordsCalc_kernel2.cu"
 #include "CudaTransform.hpp"
-#include <iomanip>
-#include "FileTalk.hpp"
 #include "visualization.hpp"
 
 #define M VGRIDSIZE // number of voxels
@@ -222,66 +223,78 @@ int main()
   for(int voxelId=0; voxelId<M; voxelId++)
     x.set(voxelId, 1.);
 
-  /* Calculate sensitivity */
-  SAYLINE(__LINE__-1);
-  for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)      // set to zero
+  /* ---------------------
+   * Calculate sensitivity
+   * --------------------- */
+  SAYLINES(__LINE__-3, __LINE__-1);
+  /* Set sensitivity elements to null */
+  for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
     s.set(voxelId, 0.);
-
+  
+  /* Create vector of ones of chunk's size */
   CudaVector<float,float>           onesChannel(CHUNKSIZE);
   for(int channelId=0; channelId<CHUNKSIZE; channelId++)
     onesChannel.set(channelId, 1.);
   
-  for(int chunkId=0; chunkId<NCHUNKS; chunkId++)
+  for(int chunkId=0; chunkId<NCHUNKS; chunkId++)        // for chunks
   {
-    /* Calculate system matrix */
+    /* Set system matrix chunk elements to null */
     for(int i=0; i<CHUNKSIZE; i++)
       for(int j=0; j<VGRIDSIZE; j++)
         chunk.set(i, j, 0.);
     HANDLE_ERROR( cudaDeviceSynchronize() );
+    
+    /* Calculate system matrix chunk */
     chordsCalc(chunkId, NCHANNELS, CHUNKSIZE, 1,
                static_cast<float*>(chunk.data()), rays_devi, grid,
                VGRIDSIZE);
     HANDLE_ERROR( cudaDeviceSynchronize() );
     
+    /* Add column sums to sensitivity */
     trafo.gemv(BLAS_OP_T,
                &one, &chunk,
                &onesChannel,
                &one, &s);
   }
-
+  
+  /* Print sensitivity */
   std::cout << std::endl
             << "s: ";
   for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
     std::cout << std::setw(9) << s.get(voxelId);
   std::cout << std::endl;
   
-  /* Iterations */
-  for(int iteration=0; iteration<NITERATIONS; iteration++)
+  /* ----------
+   * Iterations
+   * ---------- */
+  for(int iteration=0; iteration<NITERATIONS; iteration++)  // for iterations
   {
     std::cout << "Iteration " << iteration << std::endl
               << "------------" << std::endl;
 
-    /* Set correction to zero */
+    /* Set correction images elements to null */
     for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
       c.set(voxelId, 0.);
     
-    for(int chunkId=0; chunkId<NCHUNKS; chunkId++)
+    for(int chunkId=0; chunkId<NCHUNKS; chunkId++)      // for chunks
     {
       std::cout << "/ ****" << std::endl
                 << "| chunkId: " << chunkId << std::endl;
       
-      /* Copy part of measurement vector */
+      /* Copy chunk's part of measurement vector */
       for(int channelId=0; channelId<CHUNKSIZE; channelId++)
         if(chunkId*CHUNKSIZE+channelId<NCHANNELS)
           y_chunk.set(channelId, y.get(chunkId*CHUNKSIZE+channelId));
         else
           y_chunk.set(channelId, 0.);
-
-      /* Calculate system matrix */
+      
+      /* Set system matrix chunk's elements to null */
       for(int i=0; i<CHUNKSIZE; i++)
         for(int j=0; j<VGRIDSIZE; j++)
           chunk.set(i, j, 0.);
       HANDLE_ERROR( cudaDeviceSynchronize() );
+      
+      /* Calculate system matrix chunk */
       chordsCalc(chunkId, NCHANNELS, CHUNKSIZE, 1,
                  static_cast<float*>(chunk.data()), rays_devi, grid,
                  VGRIDSIZE);
@@ -298,19 +311,20 @@ int main()
         std::cout << std::endl;
       }
       
-      /* Calculate "error" */
+      /* Calculate simulated measurement of current density guess */
       trafo.gemv(BLAS_OP_N,
                  &one, &chunk,
                  &x,
                  &zero, &e);
 
+      /* Calculate "error" */
       trafo.divides(&y_chunk, &e, &yy);
       
       for(int channelId=0; channelId<CHUNKSIZE; channelId++)
         if(e.get(channelId) == 0)
           yy.set(channelId, 0.);
       
-      /* Add up correction */
+      /* Add back transformed error to correction image */
       trafo.gemv(BLAS_OP_T,
                  &one, &chunk,
                  &yy,

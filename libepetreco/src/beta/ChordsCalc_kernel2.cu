@@ -2,7 +2,7 @@
 #define CHORDSCALC_KERNEL
 
 #include "ChordsCalc_lowlevel.hpp"
-#include "defines.h"
+//#include "defines.h"
 
 #include <math.h>
 #include <curand_kernel.h>
@@ -43,18 +43,25 @@ int getLinVoxelId(
  * @param id0y Index of detector 0 segment in y direction
  * @param id1z Index of detector 1 segment in z direction
  * @param id1y Index of detector 1 segment in y direction
+ * @param dims "Maximum index value + 1" of above indices (same order)
  */
 __inline__
 int getLinChannelId(
       int const ida,
       int const id0z, int const id0y,
-      int const id1z, int const id1y )
+      int const id1z, int const id1y)
+//      int const * const dims )
 {
   return   ida  * N0Z*N0Y*N1Z*N1Y
          + id0z *     N0Y*N1Z*N1Y
          + id0y *         N1Z*N1Y
          + id1z *             N1Y
          + id1y;
+//  return   ida  * dims[1]*dims[2]*dims[3]*dims[4]
+//         + id0z *         dims[2]*dims[3]*dims[4]
+//         + id0y *                 dims[3]*dims[4]
+//         + id1z *                         dims[4]
+//         + id1y;
 }
 
 
@@ -74,11 +81,13 @@ int getLinMtxId(
  *
  * @param 5DChannelId Result memory (int[5])
  * @param linChannelId Linear index of channel
+ * @param dims "Maximum index value + 1" of above indices (same order)
  */
 __host__ __device__
 void get5DChannelId(
       int * const dimChannelId,
       int const linChannelId)
+//      int const  const dims)
 {
   int temp( linChannelId );
   dimChannelId[0] = temp / (N1Y*N1Z*N0Y*N0Z); // angular index
@@ -90,9 +99,30 @@ void get5DChannelId(
   dimChannelId[3] = temp / (N1Y);             // det1z index
   temp %= (N1Y);
   dimChannelId[4] = temp;                     // det1y index
+//  int temp( linChannelId );
+//  dimChannelId[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular index
+//  temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
+//  dimChannelId[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
+//  temp %= (dims[4]*dims[3]*dims[2]);
+//  dimChannelId[2] = temp / (dims[4]*dims[3]);                 // det0y index
+//  temp %= (dims[4]*dims[3]);
+//  dimChannelId[3] = temp / (dims[4]);                         // det1z index
+//  temp %= (dims[4]);
+//  dimChannelId[4] = temp;                                     // det1y index
 }
 
 
+
+//template<typename T>
+//struct MeasurementSetup
+//{
+//  T posx0, posx1;             // x posisions of 1st and 2nd detector
+//  int na;                     // number of angular steps
+//  T da;                       // angular step [°]
+//  int n0z, n0y, n1z, n1y;     // number of detector segments
+//  T segx, segy, segz;         // edge lengths od one detector segment (same for
+//                              //  both detectors)
+//};
 
 /**
  * @brief Get a channel's geometrical properties.
@@ -103,6 +133,7 @@ void get5DChannelId(
  * @param sin_ Result memory (val_t *), sine of angle
  * @param cos_ Result memory (val_t *), cosine of angle
  * @param 5DChannelId Indices of channel configuration
+ * @param setup Measurement setup description
  */
 __host__ __device__
 void getGeomProps(
@@ -110,6 +141,7 @@ void getGeomProps(
       val_t * const edges,
       val_t * const sin_, val_t * const cos_,
       int const * const dimChannelId)
+//      MeasurementSetup const setup)
 {
   pos0[0]  = POS0X;
   pos0[1]  = (dimChannelId[2]-0.5*N0Y+0.5)*SEGY;
@@ -122,6 +154,17 @@ void getGeomProps(
   edges[2] = SEGZ;
   sin_[0]  = sin(dimChannelId[0]*DA);
   cos_[0]  = cos(dimChannelId[0]*DA);
+//  pos0[0]  = setup.pos0x;
+//  pos0[1]  = (dimChannelId[2]-0.5*setup.n0y+0.5)*setup.segy;
+//  pos0[2]  = (dimChannelId[1]-0.5*setup.n0z+0.5)*setup.segz;
+//  pos1[0]  = setup.pos1x;
+//  pos1[1]  = (dimChannelId[4]-0.5*setup.n1y+0.5)*setup.segy;
+//  pos1[2]  = (dimChannelId[3]-0.5*setup.n1z+0.5)*setup.segz;
+//  edges[0] = setup.segx;
+//  edges[1] = setup.segy;
+//  edges[2] = setup.segz;
+//  sin_[0]  = sin(dimChannelId[0]*setup.da);
+//  cos_[0]  = cos(dimChannelId[0]*setup.da);
 }
 
 
@@ -321,6 +364,279 @@ void chordsCalc(
     for(int dim=0; dim<6; dim++)
       rays[6*(globalId*NTHREADRAYS + iRay) + dim] = ray[dim];
 
+    // ##################
+    // ### INITIALIZATION
+    // ##################
+#ifdef DEBUG
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("### INITIALIZATION\n");
+/**/}
+#endif
+
+    // Get intersection minima for all axes, get intersection info
+    val_t aDimmin[3];
+    val_t aDimmax[3];
+    bool  crosses[3];
+//#ifdef DEBUG
+///**/if(globalId == PRINT_KERNEL)
+///**/{
+///**/  for(int dim=0; dim<3; dim++)
+///**/  {
+///**/    printf("alpha[%i](%i): %f\n", dim, 0,
+///**/            alphaFromId(0,          dim, ray, gridO, gridD, gridN));
+///**/
+///**/    printf("alpha[%i](%i): %f\n", dim, gridN[dim],
+///**/            alphaFromId(gridN[dim], dim, ray, gridO, gridD, gridN));
+///**/  }
+///**/}
+//#endif
+    getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
+    getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
+    getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
+//#ifdef DEBUG
+///**/if(globalId == PRINT_KERNEL)
+///**/{
+///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
+///**/          aDimmin[0], aDimmin[1], aDimmin[2] );
+///**/  printf("aDimmax:  %6f,  %6f,  %6f\n",
+///**/          aDimmax[0], aDimmax[1], aDimmax[2] );
+///**/  printf("crosses:  %i,  %i,  %i\n",
+///**/          crosses[0], crosses[1], crosses[2] );
+///**/}
+//#endif
+  
+    // Get parameter of the entry and exit points
+    val_t aMin;
+    val_t aMax;
+    bool  aMinGood;
+    bool  aMaxGood;
+    getAlphaMin(  &aMin, &aMinGood, aDimmin, crosses);
+    getAlphaMax(  &aMax, &aMaxGood, aDimmax, crosses);
+    // Do entry and exit points lie in beween ray start and end points?
+    aMinGood &= (aMin >= 0. && aMin <= 1.);
+    aMaxGood &= (aMax >= 0. && aMax <= 1.);
+    // Is grid intersected at all, does ray start and end outside the grid?
+    // - otherwise return
+    //if(aMin>aMax || !aMinGood || !aMaxGood) return;
+    if(aMin>aMax || !aMinGood || !aMaxGood)
+    {
+      //printf("fail\n");
+      return;
+    }
+
+    // Get length of ray
+    val_t const length(getLength(ray));
+    
+    // Get parameter update values 
+    val_t aDimup[3];
+    getAlphaDimup(  aDimup, ray, gridD);
+    
+    // Get id update values
+    int idDimup[3];
+    getIdDimup( idDimup, ray);
+    
+    // Initialize array of next parameters
+    val_t aDimnext[3];
+    for(int dim=0; dim<3; dim++)
+    {
+      aDimnext[dim] = aDimmin[dim];
+      while(aDimnext[dim]<=aMin)
+        aDimnext[dim] += aDimup[dim];
+    }
+
+    // Initialize array of voxel indices
+    int id[3];
+    val_t aNext;
+    bool aNextExists;
+    MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
+
+#ifdef DEBUG
+/**/  if(globalId == PRINT_KERNEL)
+/**/  {
+/**/    printf("aMin:        %f\n", aMin);
+/**/    printf("aNext:       %f\n", aNext);
+/**/    printf("aNextExists: %i\n", aNextExists);
+/**/  }
+#endif
+    for(int dim=0; dim<3; dim++)
+    {
+      id[dim] = floor(phiFromAlpha(
+            float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
+                                       )
+                          );
+#ifdef DEBUG
+/**/  if(globalId == PRINT_KERNEL)
+/**/  {
+/**/    printf("phiFromAlpha: %f  ",
+/**/           phiFromAlpha(float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN));
+/**/    printf("id[%i]: %02i  ",
+/**/           dim, id[dim]);
+/**/  }
+#endif
+    } // for(dim)
+#ifdef DEBUG
+/**/  if(globalId == PRINT_KERNEL)
+/**/  {
+/**/    printf("\n");
+/**/  }
+#endif
+
+
+    // Initialize current parameter
+    val_t aCurr = aMin;
+
+#ifdef DEBUG
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("aMin:    %05.3f\n", aMin);
+///**/  printf("aMax:    %05.3f\n", aMax);
+/**/  printf("aMax:    %f\n", aMax);
+/**/  printf("aDimup:  %05.3f,  %05.3f,  %05.3f\n",
+             aDimup[0], aDimup[1], aDimup[2]);
+/**/  printf("idDimup: %02i,  %02i,  %02i\n",
+             idDimup[0], idDimup[1], idDimup[2]);
+/**/  printf("length:  %05.3f\n", length);
+/**/}
+#endif
+    
+    
+    // ##################
+    // ###  ITERATIONS
+    // ##################
+#ifdef DEBUG
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("### ITERATIONS\n");
+/**/}
+#endif
+    int chordId = 0;
+//    while(aCurr < aMax)
+    while(   id[0]<gridN[0]
+          && id[1]<gridN[1]
+          && id[2]<gridN[2]
+          && id[0]>=0
+          && id[1]>=0
+          && id[2]>=0)
+    {
+#ifdef DEBUG
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+///**/  printf("aCurr: %05.2f\n", aCurr);
+/**/  printf("aCurr: %f\n", aCurr);
+/**/  printf("aCurr-aMax: %e\n", aCurr-aMax);
+/**/  printf("aCurr<aMax: %i\n", aCurr<aMax);
+/**/}
+#endif
+      assert(chordId<VGRIDSIZE);
+
+      // Get parameter of next intersection
+      MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
+      
+      bool anyAxisCrossed = false; 
+      // For all axes...
+      for(int dim=0; dim<3; dim++)
+      {
+        // Is this axis' plane crossed at the next parameter of intersection?
+        //bool dimCrossed = (aDimnext[dim] == aNext);
+        bool dimCrossed = (aDimnext[dim] == aNext && aNextExists);
+        anyAxisCrossed |= dimCrossed;
+
+        // If this axis' plane is crossed ...
+        //      ... write chord length at voxel index
+#ifdef DEBUG
+/**/    syncthreads();
+/**/    if(globalId == PRINT_KERNEL)
+/**/    {
+/**/      printf("kernel: %i, a: %5.3f\n",
+/**/             globalId,
+/**/             (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+/**/    }
+/**/    syncthreads();
+#endif
+        assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
+        
+        int rowId  = linChannelId % chunkSize;
+        int rowDim = vgridSize;
+        int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
+        int colDim = chunkSize;
+        int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
+        atomicAdd(&chords[linMtxId],
+                  (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+
+        //atomicAdd(&chords[  linChannelId * VGRIDSIZE
+        //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
+        //          (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+        
+        //      ... increase chord index (writing index)
+        chordId       +=  (int)(dimCrossed);
+        
+        //      ... update current parameter
+        aCurr          = (int)(!dimCrossed) * aCurr
+                        + (int)(dimCrossed) * aDimnext[dim];
+        //      ... update this axis' paramter to next plane
+        aDimnext[dim] +=  (int)(dimCrossed) * aDimup[dim];
+        //      ... update this axis' voxel index
+        id[dim]       +=  (int)(dimCrossed) * idDimup[dim];
+
+      } // for(dim)
+    } // while(aCurr)
+  } // for(iRay)
+}
+
+
+
+/**
+ * @brief Kernel function for calculation of chords (=intersection line of ray
+ *        with one voxel)
+ *
+ * @param chords Result memory
+ * @param linearVoxelId Result memory, linear voxel index
+ * @param linChannelId Linear index of channel that is calculated
+ * @param gridO Grid origin
+ * @param gridD Grid voxels edge lengths
+ * @param gridN Grid dimensions
+ */
+__global__
+void chordsCalc_noVis(
+      val_t * const chords,
+      val_t const * gridO, val_t const * const gridD, int const * const gridN,
+      int const channelOffset, int const nChannels, int const chunkSize,
+      int const vgridSize )
+{
+  int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
+#ifdef DEBUG
+    if(globalId == PRINT_KERNEL)
+    {
+      printf("\nchordsCalc(...):\n");
+    }
+#endif
+  // Global id of channel
+  int const linChannelId(channelOffset + blockIdx.x);
+  if(linChannelId >= nChannels)
+    return;
+
+  val_t ray[6];
+  curandState kernelRandState;
+  curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
+
+  for(int iRay=0; iRay<NTHREADRAYS; iRay++)
+  {
+    // Get ray
+    getRay(ray, kernelRandState, linChannelId);
+#ifdef DEBUG
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("start:  %06.3f,  %06.3f,  %06.3f\n",
+/**/          ray[0], ray[1], ray[2]);
+/**/  printf("end  :  %06.3f,  %06.3f,  %06.3f\n",
+/**/          ray[3], ray[4], ray[5]);
+/**/}
+#endif
+    
     // ##################
     // ### INITIALIZATION
     // ##################
