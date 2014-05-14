@@ -2,7 +2,7 @@
 #define CHORDSCALC_KERNEL
 
 #include "ChordsCalc_lowlevel.hpp"
-#include "MeasurementSetup.hpp"
+//#include "MeasurementSetup.hpp"
 
 #include <math.h>
 #include <curand_kernel.h>

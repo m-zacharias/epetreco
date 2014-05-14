@@ -13,6 +13,8 @@
 
 #include "defines.h"
 #include "ChordsCalc_kernel2.cu"
+#include "MeasurementSetup.hpp"
+#include "VoxelGrid.hpp"
 #include "CudaTransform.hpp"
 #include "visualization.hpp"
 
@@ -20,40 +22,27 @@
 #define N NCHANNELS // number of channels
 #define NITERATIONS 50
 
-struct BaseGrid
-{
-  BaseGrid( float const gridO0, float const gridO1, float const gridO2,
-            float const gridD0, float const gridD1, float const gridD2,
-            int const   gridN0, int const   gridN1, int const   gridN2 )
-  {
-    gridO[0]=gridO0; gridO[1]=gridO1; gridO[2]=gridO2;
-    gridD[0]=gridD0; gridD[1]=gridD1; gridD[2]=gridD2;
-    gridN[0]=gridN0; gridN[1]=gridN1; gridN[2]=gridN2;
-  }
 
-  float gridO[3];
-  float gridD[3];
-  int   gridN[3];
-};
 
-class Grid
+template<typename T, typename ConcreteVoxelGrid>
+class CudaVG
 {
   public:
     
-    Grid( float const gridO0, float const gridO1, float const gridO2,
-          float const gridD0, float const gridD1, float const gridD2,
-          int const   gridN0, int const   gridN1, int const   gridN2 )
+    CudaVG( T const   gridO0, T const   gridO1, T const   gridO2,
+            T const   gridD0, T const   gridD1, T const   gridD2,
+            int const gridN0, int const gridN1, int const gridN2 )
     {
       // Allocate host memory
-      _data_host = new BaseGrid(gridO0, gridO1, gridO2,
-                                gridD0, gridD1, gridD2,
-                                gridN0, gridN1, gridN2);
+      _data_host = new ConcreteVoxelGrid(gridO0, gridO1, gridO2,
+                                         gridD0, gridD1, gridD2,
+                                         gridN0, gridN1, gridN2);
       _host_data_changed = true;
       
       // Allocate device memory
       cudaError_t status;
       status =
-            cudaMalloc((void**)&_data_devi, sizeof(BaseGrid));
+            cudaMalloc((void**)&_data_devi, sizeof(ConcreteVoxelGrid));
       if(status != cudaSuccess)
       {
         std::cerr << "Grid::Grid(...) : cudaMalloc(...) failed" << std::endl;
@@ -62,13 +51,13 @@ class Grid
       _devi_data_changed = false;
     }
 
-    ~Grid()
+    ~CudaVG()
     {
       delete _data_host;
       cudaFree(_data_devi);
     }
 
-    BaseGrid * deviRepr()
+    ConcreteVoxelGrid * deviRepr()
     {
       if(_host_data_changed)
         update_devi_data();
@@ -77,7 +66,7 @@ class Grid
       return _data_devi;
     }
 
-    BaseGrid * hostRepr()
+    ConcreteVoxelGrid * hostRepr()
     {
       if(_devi_data_changed)
         update_host_data();
@@ -89,9 +78,9 @@ class Grid
 
   private:
     
-    BaseGrid * _data_host;
+    ConcreteVoxelGrid * _data_host;
     
-    BaseGrid * _data_devi;
+    ConcreteVoxelGrid * _data_devi;
 
     bool _host_data_changed;
 
@@ -101,7 +90,7 @@ class Grid
     {
       cudaError_t status;
       status =
-            cudaMemcpy(_data_host, _data_devi, sizeof(BaseGrid),
+            cudaMemcpy(_data_host, _data_devi, sizeof(ConcreteVoxelGrid),
                        cudaMemcpyDeviceToHost);
       if(status != cudaSuccess)
       {
@@ -116,7 +105,7 @@ class Grid
     {
       cudaError_t status;
       status =
-            cudaMemcpy(_data_devi, _data_host, sizeof(BaseGrid),
+            cudaMemcpy(_data_devi, _data_host, sizeof(ConcreteVoxelGrid),
                        cudaMemcpyHostToDevice);
       if(status != cudaSuccess)
       {
@@ -133,7 +122,7 @@ void chordsCalc(
       int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
       float * const chords,
       float * const rays,
-      Grid * const grid,
+      CudaVG<float, DefaultVoxelGrid<float> > * const grid,
       int const vgridSize,
       ConcreteMeasurementSetup & setup )
 {
@@ -149,7 +138,7 @@ template<typename ConcreteMeasurementSetup>
 void chordsCalc_noVis(
       int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
       float * const chords,
-      Grid * const grid,
+      CudaVG<float, DefaultVoxelGrid<float> > * const grid,
       int const vgridSize,
       ConcreteMeasurementSetup & setup )
 {
@@ -173,10 +162,10 @@ int main()
   
   /* Create objects */
   SAYLINE(__LINE__-1);
-  Grid * grid =
-        new Grid(-1.5,    -0.5,  -2.0,
-                  1.0,     1.0,   1.0,
-                  GRIDNX, GRIDNY, GRIDNZ);
+  CudaVG<val_t, DefaultVoxelGrid<val_t> > * grid =
+        new CudaVG<val_t, DefaultVoxelGrid<val_t> >(-1.5,    -0.5,  -2.0,
+                                                     1.0,     1.0,   1.0,
+                                                     GRIDNX, GRIDNY, GRIDNZ);
   DefaultMeasurementSetup<val_t> * setup_host =
         new DefaultMeasurementSetup<val_t>(POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
                                            DA, SEGX, SEGY, SEGZ );
@@ -401,7 +390,7 @@ int main()
               << std::endl;
 
   // Visualize grid
-  BaseGrid * hostRepr = grid->hostRepr();
+  DefaultVoxelGrid<val_t> * hostRepr = grid->hostRepr();
   PlyGrid<TemplateVertex<val_t> > visGrid("",
                           TemplateVertex<val_t>(hostRepr->gridO[0],
                                                 hostRepr->gridO[1],
