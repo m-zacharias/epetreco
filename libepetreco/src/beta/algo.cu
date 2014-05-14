@@ -163,7 +163,7 @@ void chordsCalc_noVis(
 
 
 
-
+typedef float val_t;
 
 int main()
 {
@@ -177,31 +177,31 @@ int main()
         new Grid(-1.5,    -0.5,  -2.0,
                   1.0,     1.0,   1.0,
                   GRIDNX, GRIDNY, GRIDNZ);
-  DefaultMeasurementSetup<float> * setup_host =
-        new DefaultMeasurementSetup<float>(POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
+  DefaultMeasurementSetup<val_t> * setup_host =
+        new DefaultMeasurementSetup<val_t>(POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
                                            DA, SEGX, SEGY, SEGZ );
-  DefaultMeasurementSetup<float> * setup_devi;
+  DefaultMeasurementSetup<val_t> * setup_devi;
   HANDLE_ERROR( cudaMalloc((void**)&setup_devi,
-                           sizeof(DefaultMeasurementSetup<float>)) );
+                           sizeof(DefaultMeasurementSetup<val_t>)) );
   HANDLE_ERROR( cudaMemcpy(setup_devi, setup_host,
-                           sizeof(DefaultMeasurementSetup<float>),
+                           sizeof(DefaultMeasurementSetup<val_t>),
                            cudaMemcpyHostToDevice) );
-  CudaTransform<float,float>        trafo;
-  CudaDeviceOnlyMatrix<float,float> SM(N, M);       // system matrix
-  CudaVector<float,float>           xx(M);          // true density
+  CudaTransform<val_t,val_t>        trafo;
+  CudaDeviceOnlyMatrix<val_t,val_t> SM(N, M);       // system matrix
+  CudaVector<val_t,val_t>           xx(M);          // true density
   for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
   {
     xx.set(voxelId, 0.);
     if(voxelId == 9 || voxelId == 3)
       xx.set(voxelId, 1.);
   }
-  CudaVector<float,float>           y(N);           // true measurement
-  float one(1.);
-  float zero(0.);
+  CudaVector<val_t,val_t>           y(N);           // true measurement
+  val_t one(1.);
+  val_t zero(0.);
   
   /* Calculate system matrix */
   SAYLINE(__LINE__-1);
-  chordsCalc_noVis(0, N, N, 1, static_cast<float*>(SM.data()), grid,
+  chordsCalc_noVis(0, N, N, 1, static_cast<val_t*>(SM.data()), grid,
                    VGRIDSIZE, *setup_devi);
   HANDLE_ERROR( cudaDeviceSynchronize() );
 
@@ -238,13 +238,13 @@ int main()
   int const NCHUNKS((NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE);
 
   /* Create objects */
-  CudaDeviceOnlyMatrix<float,float> chunk(CHUNKSIZE, M);// system matrix
-  CudaVector<float,float>           e(CHUNKSIZE);       // simulated measurement
-  CudaVector<float,float>           y_chunk(CHUNKSIZE); // part of true meas vct
-  CudaVector<float,float>           yy(CHUNKSIZE);      // "error"
-  CudaVector<float,float>           c(M);               // correction
-  CudaVector<float,float>           s(M);               // sensitivity
-  CudaVector<float,float>           x(M);               // density guess
+  CudaDeviceOnlyMatrix<val_t,val_t> chunk(CHUNKSIZE, M);// system matrix
+  CudaVector<val_t,val_t>           e(CHUNKSIZE);       // simulated measurement
+  CudaVector<val_t,val_t>           y_chunk(CHUNKSIZE); // part of true meas vct
+  CudaVector<val_t,val_t>           yy(CHUNKSIZE);      // "error"
+  CudaVector<val_t,val_t>           c(M);               // correction
+  CudaVector<val_t,val_t>           s(M);               // sensitivity
+  CudaVector<val_t,val_t>           x(M);               // density guess
   for(int voxelId=0; voxelId<M; voxelId++)
     x.set(voxelId, 1.);
 
@@ -257,7 +257,7 @@ int main()
     s.set(voxelId, 0.);
   
   /* Create vector of ones of chunk's size */
-  CudaVector<float,float>           onesChannel(CHUNKSIZE);
+  CudaVector<val_t,val_t>           onesChannel(CHUNKSIZE);
   for(int channelId=0; channelId<CHUNKSIZE; channelId++)
     onesChannel.set(channelId, 1.);
   
@@ -271,7 +271,7 @@ int main()
     
     /* Calculate system matrix chunk */
     chordsCalc_noVis(chunkId, NCHANNELS, CHUNKSIZE, 1,
-                     static_cast<float*>(chunk.data()), grid,
+                     static_cast<val_t*>(chunk.data()), grid,
                      VGRIDSIZE, *setup_devi);
     HANDLE_ERROR( cudaDeviceSynchronize() );
     
@@ -294,10 +294,10 @@ int main()
    * ---------- */
 
   /* Allocate memory for rays */
-  float rays_host[NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(float)];
-  float * rays_devi;
+  val_t rays_host[NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(val_t)];
+  val_t * rays_devi;
   HANDLE_ERROR( cudaMalloc((void**)&rays_devi,
-                NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(float)) );
+                NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(val_t)) );
   
   for(int iteration=0; iteration<NITERATIONS; iteration++)  // for iterations
   {
@@ -328,7 +328,7 @@ int main()
       
       /* Calculate system matrix chunk */
       chordsCalc(chunkId, NCHANNELS, CHUNKSIZE, 1,
-                 static_cast<float*>(chunk.data()),
+                 static_cast<val_t*>(chunk.data()),
 //                 &rays_devi[chunkId*CHUNKSIZE*NTHREADRAYS*6], grid,
                  rays_devi, grid,
                  VGRIDSIZE, *setup_devi);
@@ -402,10 +402,10 @@ int main()
 
   // Visualize grid
   BaseGrid * hostRepr = grid->hostRepr();
-  PlyGrid<Vertex> visGrid("",
-                          Vertex(hostRepr->gridO[0],
-                                 hostRepr->gridO[1],
-                                 hostRepr->gridO[2]),
+  PlyGrid<TemplateVertex<val_t> > visGrid("",
+                          TemplateVertex<val_t>(hostRepr->gridO[0],
+                                                hostRepr->gridO[1],
+                                                hostRepr->gridO[2]),
                           hostRepr->gridN[0]+1,
                           hostRepr->gridN[1]+1,
                           hostRepr->gridN[2]+1,
@@ -420,7 +420,8 @@ int main()
   int   det0N[] = {1, N0Y, N0Z};
   val_t det0C[] = {POS0X, 0, 0};
   val_t detD[]  = {SEGX, SEGY, SEGZ};
-  BetaPlyGrid det0("", det0C, detD, det0N, BetaPlyGrid::AT_CENTER);
+  BetaPlyGrid<val_t> det0(
+        "", det0C, detD, det0N, BetaPlyGrid<val_t>::AT_CENTER);
   PlyWriter det0Writer("ChordsCalc_kernel2_det0.ply");
   det0Writer.write(det0);
   det0Writer.close();
@@ -428,7 +429,7 @@ int main()
   // Visualize det1
   int   det1N[] = {1, N1Y, N1Z};
   val_t det1C[] = {POS1X, 0, 0};
-  BetaPlyGrid det1("", det1C, detD, det1N, BetaPlyGrid::AT_CENTER);
+  BetaPlyGrid<val_t> det1("", det1C, detD, det1N, BetaPlyGrid<val_t>::AT_CENTER);
   PlyWriter det1Writer("ChordsCalc_kernel2_det1.ply");
   det1Writer.write(det1);
   det1Writer.close();
@@ -440,10 +441,10 @@ int main()
   for(int i=0; i<NBLOCKS; i++)
   {
     BetaCompositePlyGeom compositeLines("");
-    BetaPlyLine lines[NTHREADRAYS];
+    BetaPlyLine<val_t> lines[NTHREADRAYS];
     for(int idRay=0; idRay<NTHREADRAYS; idRay++)
     {
-      lines[idRay] = BetaPlyLine("", &rays_host[6*(i*NTHREADRAYS + idRay)]);
+      lines[idRay] = BetaPlyLine<val_t>("", &rays_host[6*(i*NTHREADRAYS + idRay)]);
       compositeLines.add(&lines[idRay]);
     }
 
