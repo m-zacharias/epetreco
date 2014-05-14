@@ -45,7 +45,7 @@ class CudaVG
             cudaMalloc((void**)&_data_devi, sizeof(ConcreteVoxelGrid));
       if(status != cudaSuccess)
       {
-        std::cerr << "Grid::Grid(...) : cudaMalloc(...) failed" << std::endl;
+        std::cerr << "CudaVG::CudaVG(...) : cudaMalloc(...) failed" << std::endl;
         exit(EXIT_FAILURE);
       }
       _devi_data_changed = false;
@@ -94,7 +94,7 @@ class CudaVG
                        cudaMemcpyDeviceToHost);
       if(status != cudaSuccess)
       {
-        std::cerr << "Grid::update_host_data() : cudaMemcpy(...) failed"
+        std::cerr << "CudaVG::update_host_data() : cudaMemcpy(...) failed"
                   << std::endl;
         exit(EXIT_FAILURE);
       }
@@ -109,7 +109,7 @@ class CudaVG
                        cudaMemcpyHostToDevice);
       if(status != cudaSuccess)
       {
-        std::cerr << "Grid::update_devi_data() : cudaMemcpy(...) failed"
+        std::cerr << "CudaVG::update_devi_data() : cudaMemcpy(...) failed"
                   << std::endl;
         exit(EXIT_FAILURE);
       }
@@ -117,37 +117,136 @@ class CudaVG
     }
 };
 
-template<typename ConcreteMeasurementSetup>
+
+
+template<typename T, typename ConcreteMeasurementSetup>
+class CudaMS
+{
+  public:
+    
+    CudaMS(
+          T   pos0x, T   pos1x,
+          int na,    int n0z,   int n0y,  int n1z, int n1y,
+          T   da,    T   segx,  T   segy, T   segz )
+    {
+      // Allocate host memory
+      _data_host = new ConcreteMeasurementSetup(
+            pos0x, pos1x, na, n0z, n0y, n1z, n1y, da, segx, segy, segz);
+      _host_data_changed = true;
+      
+      // Allocate device memory
+      cudaError_t status;
+      status =
+            cudaMalloc((void**)&_data_devi, sizeof(ConcreteMeasurementSetup));
+      _devi_data_changed = false; 
+      if(status != cudaSuccess)
+      {
+        std::cerr << "CudaMS::CudaMS(...) : cudaMalloc(...) failed" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+      _devi_data_changed = false;
+    }
+
+    ~CudaMS()
+    {
+      delete _data_host;
+      cudaFree(_data_devi);
+    }
+
+    ConcreteMeasurementSetup * deviRepr()
+    {
+      if(_host_data_changed)
+        update_devi_data();
+      
+      _devi_data_changed = true;
+      return _data_devi;
+    }
+
+    ConcreteMeasurementSetup * hostRepr()
+    {
+      if(_devi_data_changed)
+        update_host_data();
+      
+      _host_data_changed = true;
+      return _data_host;
+    }
+
+
+  private:
+    
+    ConcreteMeasurementSetup * _data_host;
+    
+    ConcreteMeasurementSetup * _data_devi;
+
+    bool _host_data_changed;
+
+    bool _devi_data_changed;
+
+    void update_host_data()
+    {
+      cudaError_t status;
+      status =
+            cudaMemcpy(_data_host, _data_devi, sizeof(ConcreteMeasurementSetup),
+                       cudaMemcpyDeviceToHost);
+      if(status != cudaSuccess)
+      {
+        std::cerr << "CudaMS::update_host_data() : cudaMemcpy(...) failed"
+                  << std::endl;
+        exit(EXIT_FAILURE);
+      }
+      _devi_data_changed = false;
+    }
+
+    void update_devi_data()
+    {
+      cudaError_t status;
+      status =
+            cudaMemcpy(_data_devi, _data_host, sizeof(ConcreteMeasurementSetup),
+                       cudaMemcpyHostToDevice);
+      if(status != cudaSuccess)
+      {
+        std::cerr << "CudaMS::update_devi_data() : cudaMemcpy(...) failed"
+                  << std::endl;
+        exit(EXIT_FAILURE);
+      }
+      _host_data_changed = false;
+    }
+};
+
+
+
 void chordsCalc(
       int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
       float * const chords,
       float * const rays,
       CudaVG<float, DefaultVoxelGrid<float> > * const grid,
       int const vgridSize,
-      ConcreteMeasurementSetup & setup )
+      CudaMS<float, DefaultMeasurementSetup<float> > * const setup )
 {
   chordsCalc<<<chunkSize, nThreads>>>(chords, rays,
                                       grid->deviRepr()->gridO,
                                       grid->deviRepr()->gridD,
                                       grid->deviRepr()->gridN,
                                       chunkId*chunkSize, nChannels, chunkSize, vgridSize,
-                                      &setup);
+                                      setup->deviRepr());
 }
 
-template<typename ConcreteMeasurementSetup>
+
+
 void chordsCalc_noVis(
       int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
       float * const chords,
       CudaVG<float, DefaultVoxelGrid<float> > * const grid,
       int const vgridSize,
-      ConcreteMeasurementSetup & setup )
+      CudaMS<float, DefaultMeasurementSetup<float> > * const setup )
 {
   chordsCalc_noVis<<<chunkSize, nThreads>>>(chords,
                                             grid->deviRepr()->gridO,
                                             grid->deviRepr()->gridD,
                                             grid->deviRepr()->gridN,
                                             chunkId*chunkSize, nChannels,
-                                            chunkSize, vgridSize, &setup);
+                                            chunkSize, vgridSize,
+                                            setup->deviRepr());
 }
 
 
@@ -163,18 +262,14 @@ int main()
   /* Create objects */
   SAYLINE(__LINE__-1);
   CudaVG<val_t, DefaultVoxelGrid<val_t> > * grid =
-        new CudaVG<val_t, DefaultVoxelGrid<val_t> >(-1.5,    -0.5,  -2.0,
-                                                     1.0,     1.0,   1.0,
-                                                     GRIDNX, GRIDNY, GRIDNZ);
-  DefaultMeasurementSetup<val_t> * setup_host =
-        new DefaultMeasurementSetup<val_t>(POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
-                                           DA, SEGX, SEGY, SEGZ );
-  DefaultMeasurementSetup<val_t> * setup_devi;
-  HANDLE_ERROR( cudaMalloc((void**)&setup_devi,
-                           sizeof(DefaultMeasurementSetup<val_t>)) );
-  HANDLE_ERROR( cudaMemcpy(setup_devi, setup_host,
-                           sizeof(DefaultMeasurementSetup<val_t>),
-                           cudaMemcpyHostToDevice) );
+        new CudaVG<val_t, DefaultVoxelGrid<val_t> >(
+              -1.5,    -0.5,  -2.0,
+              1.0,     1.0,   1.0,
+              GRIDNX, GRIDNY, GRIDNZ);
+  CudaMS<val_t, DefaultMeasurementSetup<val_t> > * setup =
+        new CudaMS<val_t, DefaultMeasurementSetup<val_t> >(
+                POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
+                DA, SEGX, SEGY, SEGZ);
   CudaTransform<val_t,val_t>        trafo;
   CudaDeviceOnlyMatrix<val_t,val_t> SM(N, M);       // system matrix
   CudaVector<val_t,val_t>           xx(M);          // true density
@@ -191,7 +286,7 @@ int main()
   /* Calculate system matrix */
   SAYLINE(__LINE__-1);
   chordsCalc_noVis(0, N, N, 1, static_cast<val_t*>(SM.data()), grid,
-                   VGRIDSIZE, *setup_devi);
+                   VGRIDSIZE, setup);
   HANDLE_ERROR( cudaDeviceSynchronize() );
 
   std::cout << "System matrix:" << std::endl
@@ -261,7 +356,7 @@ int main()
     /* Calculate system matrix chunk */
     chordsCalc_noVis(chunkId, NCHANNELS, CHUNKSIZE, 1,
                      static_cast<val_t*>(chunk.data()), grid,
-                     VGRIDSIZE, *setup_devi);
+                     VGRIDSIZE, setup);
     HANDLE_ERROR( cudaDeviceSynchronize() );
     
     /* Add column sums to sensitivity */
@@ -320,7 +415,7 @@ int main()
                  static_cast<val_t*>(chunk.data()),
 //                 &rays_devi[chunkId*CHUNKSIZE*NTHREADRAYS*6], grid,
                  rays_devi, grid,
-                 VGRIDSIZE, *setup_devi);
+                 VGRIDSIZE, setup);
       HANDLE_ERROR( cudaDeviceSynchronize() );
       
       std::cout << "|" << std::endl
