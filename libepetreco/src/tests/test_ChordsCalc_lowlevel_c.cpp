@@ -1,4 +1,4 @@
-#include "ChordsCalc_lowlevel.hpp"
+#include "ChordsCalc_lowlevel_c.hpp"
 
 typedef float val_t;
 int main()

@@ -39,7 +39,7 @@ EXECUTABLES := \
       test_ChordsCalc.out \
       test_SMChunkGetter.out \
       test_DevelChannel.out \
-      test_ChordsCalc_lowlevel.out
+      test_ChordsCalc_lowlevel_c.out
 #      test_cudaSMLine.out
 
 default : $(EXECUTABLES)
