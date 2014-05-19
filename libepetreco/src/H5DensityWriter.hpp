@@ -46,7 +46,7 @@ class H5DensityWriter
      * @param grid Density grid object that provides origin, voxelsize and
      * dimensional voxel number information
      */
-    void write( float * const mem, TGrid grid )
+    void write( float * const mem, TGrid & grid )
     {
 #ifdef DEBUG
       std::cout << "H5DensityWriter::write(Value_t * const mem, TGrid grid)"
