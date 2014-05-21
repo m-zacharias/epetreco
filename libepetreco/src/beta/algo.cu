@@ -42,12 +42,19 @@ int main()
               -1.5,    -0.5,  -2.0,
               1.0,     1.0,   1.0,
               GRIDNX, GRIDNY, GRIDNZ);
+  
   CudaMS<val_t, DefaultMeasurementSetup<val_t> > * setup =
         new CudaMS<val_t, DefaultMeasurementSetup<val_t> >(
                 POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
                 DA, SEGX, SEGY, SEGZ);
+  
   CudaTransform<val_t,val_t>        trafo;
+  
   CudaDeviceOnlyMatrix<val_t,val_t> SM(N, M);       // system matrix
+  for(int cnlId=0; cnlId<N; cnlId++)
+    for(int vxlId=0; vxlId<M; vxlId++)
+      SM.set(cnlId, vxlId, 0.);
+
   CudaVector<val_t,val_t>           xx(M);          // true density
   for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
   {
@@ -55,7 +62,11 @@ int main()
     if(voxelId == 9 || voxelId == 3)
       xx.set(voxelId, 1.);
   }
+  
   CudaVector<val_t,val_t>           y(N);           // true measurement
+  for(int cnlId=0; cnlId<N; cnlId++)
+    y.set(cnlId, 0.);
+
   val_t one(1.);
   val_t zero(0.);
   
@@ -99,11 +110,30 @@ int main()
 
   /* Create objects */
   CudaDeviceOnlyMatrix<val_t,val_t> chunk(CHUNKSIZE, M);// system matrix
+  for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    for(int vxlId=0; vxlId<M; vxlId++)
+      chunk.set(cnlId, vxlId, 0.);
+
   CudaVector<val_t,val_t>           e(CHUNKSIZE);       // simulated measurement
+  for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    e.set(cnlId, 0.);
+
   CudaVector<val_t,val_t>           y_chunk(CHUNKSIZE); // part of true meas vct
+  for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    y_chunk.set(cnlId, 0.);
+  
   CudaVector<val_t,val_t>           yy(CHUNKSIZE);      // "error"
+  for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    yy.set(cnlId, 0.);
+  
   CudaVector<val_t,val_t>           c(M);               // correction
+  for(int vxlId=0; vxlId<CHUNKSIZE; vxlId++)
+    c.set(vxlId, 0.);
+  
   CudaVector<val_t,val_t>           s(M);               // sensitivity
+  for(int vxlId=0; vxlId<CHUNKSIZE; vxlId++)
+    s.set(vxlId, 0.);
+  
   CudaVector<val_t,val_t>           x(M);               // density guess
   for(int voxelId=0; voxelId<M; voxelId++)
     x.set(voxelId, 1.);

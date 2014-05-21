@@ -17,7 +17,8 @@ default : \
       $(EXECUTABLES)
 
 clean :
-	rm $(EXECUTABLES)
+	rm $(EXECUTABLES) \
+     ./*.ply
 
 
 
