@@ -1,3 +1,6 @@
+#ifndef DEFINES
+#define DEFINES
+
 #define N0Z 13        // 1st detector's number of segments in z
 #define N0Y 13        // 1st detector's number of segments in y
 #define N1Z 13        // 2nd detector's number of segments in z
@@ -25,10 +28,14 @@
 #define RANDOM_SEED 1234
 #define NTHREADRAYS 100
 
+#endif  // #define DEFINES
+
+
+
 #include "CUDA_HandleError.hpp"
 #include "FileTalk.hpp"
 
-//#include "ChordsCalc_kernelWrapper.hpp"
+#include "real_defines.h"
 #include "ChordsCalc_kernel2.cu"
 #include "MeasurementSetup.hpp"
 #include "VoxelGrid.hpp"
