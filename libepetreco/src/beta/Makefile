@@ -8,6 +8,7 @@ INC = -I../ -I../../ -I$(HDF5_INC) -I../Ply/
 LIB = -L$(HDF5_LIB) -lhdf5 -lhdf5_cpp -lcublas -L../../ -lepetreco
 
 EXECUTABLES := \
+      noZeros_algo.out \
       real_algo.out \
       algo.out
 
@@ -21,14 +22,17 @@ clean :
      ./*.ply
 
 
-
-real_algo.out : \
-      real_algo.cu
-	CPLUS_INCLUDE_PATH=;\
+%.out : \
+      ./%.cu
+	CPLUS_INCLUDE_PATH= ; \
   $(CUC) $(CUCFLAGS) $(INC) $(LIB) $^ -o $@
 
-algo.out : \
-      algo.cu
-	CPLUS_INCLUDE_PATH=;\
-  $(CUC) $(CUCFLAGS) $(INC) $(LIB) $^ -o $@
-
+#real_algo.out : \
+#      real_algo.cu
+#	CPLUS_INCLUDE_PATH=;\
+#  $(CUC) $(CUCFLAGS) $(INC) $(LIB) $^ -o $@
+#
+#algo.out : \
+#      algo.cu
+#	CPLUS_INCLUDE_PATH=;\
+#  $(CUC) $(CUCFLAGS) $(INC) $(LIB) $^ -o $@

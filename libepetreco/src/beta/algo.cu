@@ -19,7 +19,7 @@
 #include "visualization.hpp"
 #include "CudaVG.hpp"
 #include "CudaMS.hpp"
-#include "ChordsCalc_kernelWrapper.hpp"
+//#include "ChordsCalc_kernelWrapper.hpp"
 
 #define M VGRIDSIZE // number of voxels
 #define N NCHANNELS // number of channels
