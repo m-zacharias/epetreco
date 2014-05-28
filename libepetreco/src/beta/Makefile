@@ -1,5 +1,6 @@
 CUC = nvcc
-CUCFLAGS = -arch=sm_35 -Xcompiler -Wall -DSPECIAL
+CUCFLAGS = -arch=sm_20 -Xcompiler -Wall
+#CUCFLAGS = -arch=sm_20 -Xcompiler -Wall -DCHORDSCALC_DEBUG
 
 CPPC = g++
 CPPCFLAGS = -Wall
@@ -8,7 +9,6 @@ INC = -I../ -I../../ -I$(HDF5_INC) -I../Ply/
 LIB = -L$(HDF5_LIB) -lhdf5 -lhdf5_cpp -lcublas -L../../ -lepetreco
 
 EXECUTABLES := \
-      noZeros_algo.out \
       real_algo.out \
       algo.out
 

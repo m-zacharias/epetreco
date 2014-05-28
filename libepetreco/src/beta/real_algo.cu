@@ -1,3 +1,7 @@
+/* Reconstruction program for real measurement data.  The reconstruction method
+ * is Summed Backprojection.
+ */
+
 #ifndef DEFINES
 #define DEFINES
 
@@ -14,15 +18,36 @@
 #define SEGZ 0.004    // z edge length of one detector segment [m]
 #define NCHANNELS NA*N0Z*N0Y*N1Z*N1Y
 
-#define GRIDNX 4      // x dimension of voxel grid
-#define GRIDNY 4      // y dimension of voxel grid
-#define GRIDNZ 4      // z dimension od voxel grid
-#define GRIDOX -0.05  // x origin of voxel grid [m]
-#define GRIDOY -0.05  // y origin of voxel grid [m]
-#define GRIDOZ -0.05  // z origin of voxel grid [m]
-#define GRIDDX  0.025 // x edge length of one voxel [m]
-#define GRIDDY  0.025 // y edge length of one voxel [m]
-#define GRIDDZ  0.025 // z edge length of one voxel [m]
+//#define GRIDNX 4      // x dimension of voxel grid
+//#define GRIDNY 4      // y dimension of voxel grid
+//#define GRIDNZ 4      // z dimension od voxel grid
+//#define GRIDOX -0.05  // x origin of voxel grid [m]
+//#define GRIDOY -0.05  // y origin of voxel grid [m]
+//#define GRIDOZ -0.05  // z origin of voxel grid [m]
+//#define GRIDDX  0.025 // x edge length of one voxel [m]
+//#define GRIDDY  0.025 // y edge length of one voxel [m]
+//#define GRIDDZ  0.025 // z edge length of one voxel [m]
+//---
+//#define GRIDNX 32       // x dimension of voxel grid
+//#define GRIDNY 32       // y dimension of voxel grid
+//#define GRIDNZ 32       // z dimension od voxel grid
+//#define GRIDOX -0.10    // x origin of voxel grid [m]
+//#define GRIDOY -0.10    // y origin of voxel grid [m]
+//#define GRIDOZ -0.10    // z origin of voxel grid [m]
+//#define GRIDDX  0.00625 // x edge length of one voxel [m]
+//#define GRIDDY  0.00625 // y edge length of one voxel [m]
+//#define GRIDDZ  0.00625 // z edge length of one voxel [m]
+//---
+#define GRIDNX 52     // x dimension of voxel grid
+#define GRIDNY 52     // y dimension of voxel grid
+#define GRIDNZ 52     // z dimension od voxel grid
+#define GRIDOX -0.026 // x origin of voxel grid [m]
+#define GRIDOY -0.026 // y origin of voxel grid [m]
+#define GRIDOZ -0.026 // z origin of voxel grid [m]
+#define GRIDDX  0.001 // x edge length of one voxel [m]
+#define GRIDDY  0.001 // y edge length of one voxel [m]
+#define GRIDDZ  0.001 // z edge length of one voxel [m]
+//---
 #define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
 
 #define RANDOM_SEED 1234
@@ -82,26 +107,6 @@ class WriteableCudaVG : public CudaVG<T, ConcreteVoxelGrid>
 };
 
 
-template<typename TE, typename TI>
-class MyCudaVector : public CudaVector<TE,TI>
-{
-  public:
-    
-    MyCudaVector( int n )
-    : CudaVector<TE,TI>(n) {}
-
-    void * hostData()
-    {
-      return CudaVector<TE,TI>::_raw_host;
-    }
-
-    void set_host_data_changed()
-    {
-      CudaVector<TE,TI>::_host_data_changed = true;
-    }
-};
-
-
 
 //#define CHUNKSIZE 400000
 #define CHUNKSIZE 1000                             // number of lines in one chunk
@@ -112,14 +117,20 @@ typedef float val_t;
 int main( int ac, char ** av )
 {
   /* Start */
-  std::cout << "Test" << std::endl << std::flush;
-  if(ac != 2)
+  if(ac < 2)
   {
-    std::cerr << "Wrong number of arguments. Exspected: 1: measurement_filename"
+    std::cerr << "Wrong number of arguments. Exspected arguments:" << std::endl
+              << "    1.: measurement filename (mandatory)" << std::endl
+              << "    2.: output filename (optional, defaults to \"x.h5\")"
               << std::endl;
     exit(EXIT_FAILURE);
   }
   std::string fn(av[1]);
+  std::string outfn;
+  if(ac >= 3)
+    outfn = std::string(av[2]);
+  else
+    outfn = std::string("x.h5");
   
   WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > * grid =
         new WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> >(
@@ -127,17 +138,16 @@ int main( int ac, char ** av )
               GRIDDX, GRIDDY, GRIDDZ,
               GRIDNX, GRIDNY, GRIDNZ);
 
-//  DefaultVoxelGrid<val_t> * hostRepr = grid->hostRepr();
-  
   CudaMS<val_t, DefaultMeasurementSetup<val_t> > * setup =
         new CudaMS<val_t, DefaultMeasurementSetup<val_t> >(
-                POS0X, POS1X, NA, N0Z, N0Y, N1Z, N1Y,
+                POS0X, POS1X,
+                NA, N0Z, N0Y, N1Z, N1Y,
                 DA, SEGX, SEGY, SEGZ);
   
   CudaTransform<val_t,val_t>  trafo;
   CudaMatrix<val_t,val_t>     chunk(CHUNKSIZE, VGRIDSIZE);  // s m chunk
-  MyCudaVector<val_t,val_t>   y(NCHANNELS);       // measurement
-  MyCudaVector<val_t,val_t>   y_chunk(CHUNKSIZE); // chunk part of meas.
+  CudaVector<val_t,val_t>   y(NCHANNELS);       // measurement
+  CudaVector<val_t,val_t>   y_chunk(CHUNKSIZE); // chunk part of meas.
   CudaVector<val_t,val_t>     x(VGRIDSIZE);       // density guess
   for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
     x.set(voxelId, 1.);
@@ -161,67 +171,63 @@ int main( int ac, char ** av )
    * Iterations
    * ---------- */
   SAYLINES(__LINE__-3, __LINE__-1);
-#define NITERATIONS 1
-  for(int iteration=0; iteration<NITERATIONS; iteration++)  // for iterations
+  /* Set guess elements to null */
+  SAYLINE(__LINE__-1);
+  for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
+    x.set(voxelId, 0.);
+
+  //for(int chunkId=0; chunkId<NCHUNKS; chunkId++)          // for chunks
+  for(int chunkId=0; chunkId<1; chunkId++)          // for chunks
   {
-    /* Set guess elements to null */
+    /* Copy chunk's part of measurement vector */
     SAYLINE(__LINE__-1);
-    for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
-      x.set(voxelId, 0.);
+    for(int channelId=0; channelId<CHUNKSIZE; channelId++)
+      if(chunkId*CHUNKSIZE+channelId < NCHANNELS)
+        y_chunk.set(channelId, y.get(chunkId*CHUNKSIZE+channelId));
+      else
+        y_chunk.set(channelId, 0.);
+    for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+      assert((!isnan(y_chunk.get(cnlId))) && (!isinf(y_chunk.get(cnlId))));
+    //for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    //  std::cout << y_chunk.get(cnlId) << " ";
+    //std::cout << std::endl;
+    
+    /* Set system matrix chunk's elements to null */
+    SAYLINE(__LINE__-1);
+    for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+      for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+        chunk.set(cnlId, vxlId, 0.);
+    HANDLE_ERROR( cudaDeviceSynchronize() );
 
-    //for(int chunkId=0; chunkId<NCHUNKS; chunkId++)          // for chunks
-    for(int chunkId=0; chunkId<1; chunkId++)          // for chunks
+    /* Calculate system matrix chunk */
+    SAYLINE(__LINE__-1);
+    chordsCalc_noVis(chunkId, NCHANNELS, CHUNKSIZE, 1,
+               static_cast<val_t*>(chunk.data()),
+               grid,
+               VGRIDSIZE,
+               setup);
+    HANDLE_ERROR( cudaDeviceSynchronize() );
+    chunk.set_devi_data_changed();
+    for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
     {
-      /* Copy chunk's part of measurement vector */
-      SAYLINE(__LINE__-1);
-      for(int channelId=0; channelId<CHUNKSIZE; channelId++)
-        if(chunkId*CHUNKSIZE+channelId < NCHANNELS)
-          y_chunk.set(channelId, y.get(chunkId*CHUNKSIZE+channelId));
-        else
-          y_chunk.set(channelId, 0.);
-      for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
-        assert((!isnan(y_chunk.get(cnlId))) && (!isinf(y_chunk.get(cnlId))));
-      //for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
-      //  std::cout << y_chunk.get(cnlId) << " ";
-      //std::cout << std::endl;
-      
-      /* Set system matrix chunk's elements to null */
-      SAYLINE(__LINE__-1);
-      for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
-        for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
-          chunk.set(cnlId, vxlId, 0.);
-      HANDLE_ERROR( cudaDeviceSynchronize() );
-
-      /* Calculate system matrix chunk */
-      SAYLINE(__LINE__-1);
-      chordsCalc_noVis(chunkId, NCHANNELS, CHUNKSIZE, 1,
-                 static_cast<val_t*>(chunk.data()),
-                 grid,
-                 VGRIDSIZE,
-                 setup);
-      HANDLE_ERROR( cudaDeviceSynchronize() );
-      chunk.set_devi_data_changed();
-      for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+      for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
       {
-        for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
-        {
-          val_t elem = chunk.get(cnlId, vxlId);
-          assert(!isnan(elem));
-          assert(!isinf(elem));
-          std::cout << elem << " ";
-        }
+        val_t elem = chunk.get(cnlId, vxlId);
+        assert(!isnan(elem));
+        assert(!isinf(elem));
+        //std::cout << elem << " ";
       }
-      std::cout << std::endl;
+    }
+    //std::cout << std::endl;
 
-      /* Back projection */
-      SAYLINE(__LINE__-1);
-      trafo.gemv(BLAS_OP_T,
-                 &one, &chunk,
-                 &y_chunk,
-                 &one, &x);
-      x.set_devi_data_changed();
-    } // for chunks
-  } // for iterations
+    /* Back projection */
+    SAYLINE(__LINE__-1);
+    trafo.gemv(BLAS_OP_T,
+               &one, &chunk,
+               &y_chunk,
+               &one, &x);
+    x.set_devi_data_changed();
+  } // for chunks
 
   ///* Prepare guess data */
   //for(int idx=0; idx<GRIDNX; idx++)
@@ -235,9 +241,9 @@ int main( int ac, char ** av )
   //        x.set(memid, 0.);
   //    }
   
-  for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
-    std::cout << x.get(vxlId) << " ";
-  std::cout << std::endl;
+  //for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+  //  std::cout << x.get(vxlId) << " ";
+  //std::cout << std::endl;
 
   /* Write last guess */
   SAYLINE(__LINE__-1);
@@ -245,7 +251,7 @@ int main( int ac, char ** av )
   for(int memid=0; memid<VGRIDSIZE; memid++)
     guess[memid] = x.get(memid);
 
-  H5DensityWriter<WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > > h5writer(std::string("x.h5"));
+  H5DensityWriter<WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > > h5writer(outfn);
   h5writer.write(guess, *grid);
   
   /* Visualize grid */
