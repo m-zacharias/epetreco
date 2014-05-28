@@ -61,7 +61,8 @@
 #include "FileTalk.hpp"
 
 #include "real_defines.h"
-#include "ChordsCalc_kernel2.cu"
+//#include "ChordsCalc_kernel2.cu"
+#include "ChordsCalc_kernel3.cu"
 #include "MeasurementSetup.hpp"
 #include "VoxelGrid.hpp"
 #include "CudaMS.hpp"
@@ -108,127 +109,260 @@ class WriteableCudaVG : public CudaVG<T, ConcreteVoxelGrid>
 
 
 
+template<typename T>
+struct MeasurementEvent
+{
+  T   _value;
+  int _channel;
+  
+  __host__ __device__
+  MeasurementEvent()
+  : _value(0.), _channel(-1) {}
+
+  __host__ __device__
+  MeasurementEvent( T value_, int channel_)
+  : _value(value_), _channel(channel_) {}
+
+  __host__ __device__
+  MeasurementEvent( MeasurementEvent<T> const & ori )
+  {
+    _value   = ori._value;
+    _channel = ori._channel;
+  }
+  
+  __host__ __device__
+  ~MeasurementEvent()
+  {}
+
+  __host__ __device__
+  void operator=( MeasurementEvent<T> const & rhs )
+  {
+    _value   = rhs._value;
+    _channel = rhs._channel;
+  }
+
+  __host__ __device__
+  T value() const
+  {
+    return _value;
+  }
+
+  __host__ __device__
+  int channel() const
+  {
+    return _channel;
+  }
+};
+
+
+
 //#define CHUNKSIZE 400000
 #define CHUNKSIZE 1000                             // number of lines in one chunk
-#define NCHUNKS (NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE
+//#define UPPERCHUNKID ((NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE)
+#define UPPERCHUNKID 1
 
 typedef float val_t;
 
 int main( int ac, char ** av )
 {
-  /* Start */
+  /* ---------------------------
+   * Treat commandline arguments 
+   * --------------------------- */
+  SAYLINES(__LINE__-3, __LINE__-1);
+  
   if(ac < 2)
   {
     std::cerr << "Wrong number of arguments. Exspected arguments:" << std::endl
               << "    1.: measurement filename (mandatory)" << std::endl
-              << "    2.: output filename (optional, defaults to \"x.h5\")"
+              << "    2.: file output prefix (optional, defaults to \"real_algo_output\")"
               << std::endl;
     exit(EXIT_FAILURE);
   }
   std::string fn(av[1]);
-  std::string outfn;
+  std::string outpre;
   if(ac >= 3)
-    outfn = std::string(av[2]);
+    outpre = std::string(av[2]);
   else
-    outfn = std::string("x.h5");
+    outpre = std::string("real_algo_output");
   
-  WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > * grid =
+
+  /* --------------
+   * Create objects
+   * -------------- */
+  SAYLINES(__LINE__-3, __LINE__-1);
+  
+  /* Voxel grid */
+  WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > *
+                            grid =
+
         new WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> >(
               GRIDOX, GRIDOY, GRIDOZ,
               GRIDDX, GRIDDY, GRIDDZ,
               GRIDNX, GRIDNY, GRIDNZ);
 
-  CudaMS<val_t, DefaultMeasurementSetup<val_t> > * setup =
+  /* Measurement setup */
+  CudaMS<val_t, DefaultMeasurementSetup<val_t> > *
+                            setup =
+        
         new CudaMS<val_t, DefaultMeasurementSetup<val_t> >(
-                POS0X, POS1X,
-                NA, N0Z, N0Y, N1Z, N1Y,
-                DA, SEGX, SEGY, SEGZ);
+              POS0X, POS1X,
+              NA, N0Z, N0Y, N1Z, N1Y,
+              DA, SEGX, SEGY, SEGZ);
   
-  CudaTransform<val_t,val_t>  trafo;
-  CudaMatrix<val_t,val_t>     chunk(CHUNKSIZE, VGRIDSIZE);  // s m chunk
-  CudaVector<val_t,val_t>   y(NCHANNELS);       // measurement
-  CudaVector<val_t,val_t>   y_chunk(CHUNKSIZE); // chunk part of meas.
-  CudaVector<val_t,val_t>     x(VGRIDSIZE);       // density guess
-  for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
-    x.set(voxelId, 1.);
+  /* Transform (math object) */
+  CudaTransform<val_t,val_t>
+                            trafo;
+ 
+  /* System matrix chunk */
+  CudaMatrix<val_t,val_t>   chunk(CHUNKSIZE, VGRIDSIZE);
+  
+  for(int rowId=0; rowId<CHUNKSIZE; rowId++)
+    for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+      chunk.set(rowId, vxlId, 0.);
+  
+  /* Measurement vector */
+  //CudaVector<val_t,val_t>   y(NCHANNELS);
+  
+  CudaVector<val_t, val_t> yValues_chunk(CHUNKSIZE);
+
+  //CudaVector<val_t,val_t>   y_chunk(CHUNKSIZE); // chunk part of meas.
+  CudaVector<MeasurementEvent<val_t>, MeasurementEvent<val_t> > 
+                            y_chunk(CHUNKSIZE); // chunk part of meas.
+
+  for(int listId=0; listId<CHUNKSIZE; listId++)
+    y_chunk.set(listId, MeasurementEvent<val_t>(0., -1));
+  
+  /* Density guess */
+  CudaVector<val_t,val_t>   x(VGRIDSIZE);
+
+  for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+    x.set(vxlId, 0.);
+  
+  /* Helper */
   val_t one(1.);
   val_t zero(0.);
+ 
   
   /* ----------------
    * Read measurement
    * ---------------- */
-  std::cout << NCHANNELS << std::endl;
+  SAYLINES(__LINE__-3, __LINE__-1);
+  
+  std::cout << "Total number of channels:" << std::endl
+            << "    " << NCHANNELS << std::endl;
+  
+  /* Allocate memory for and read raw input data */
   H5Reader h5reader(fn);
   val_t * meas = new val_t[NCHANNELS];
   h5reader.read(meas);
+  
+  /* Count those channels, that have values != 0. */
+  int count(0);
   for(int cnlId=0; cnlId<NCHANNELS; cnlId++)
-    y.set(cnlId, meas[cnlId]);
-  //for(int cnlId=0; cnlId<NCHANNELS; cnlId++)
-  //  std::cout << y.get(cnlId) << "  ";
+    if(meas[cnlId] != 0.)
+      count++;
+
+  int const NEVENTS(count);
+  int const NCHUNKS((NEVENTS+CHUNKSIZE-1)/CHUNKSIZE);
+  
+  std::cout << "Total number of events (non-zero channel values): " << std::endl
+            << "    " << NEVENTS << std::endl;
+  
+  /* Create measurement vector */
+  CudaVector<MeasurementEvent<val_t>, MeasurementEvent<val_t> >
+                            y(NEVENTS);
+
+  int listId(0);
+  for(int cnlId=0; cnlId<NCHANNELS; cnlId++)
+  {
+    if(meas[cnlId] != 0.)
+    {
+       y.set(listId, MeasurementEvent<val_t>(meas[cnlId], cnlId));
+       listId++;
+    }
+  }
+  
+  //for(int listId=0; listId<NEVENTS; listId++)
+  //  std::cout << y.get(cnlId).value() << "  ";
   //std::cout << std::endl;
 
-  /* ----------
-   * Iterations
-   * ---------- */
-  SAYLINES(__LINE__-3, __LINE__-1);
-  /* Set guess elements to null */
-  SAYLINE(__LINE__-1);
-  for(int voxelId=0; voxelId<VGRIDSIZE; voxelId++)
-    x.set(voxelId, 0.);
 
-  //for(int chunkId=0; chunkId<NCHUNKS; chunkId++)          // for chunks
-  for(int chunkId=0; chunkId<1; chunkId++)          // for chunks
+  /* ----------------
+   * Reconstruct
+   * ---------------- */
+  SAYLINES(__LINE__-3, __LINE__-1);
+  
+  /* Iterate over chunks */
+  for(int chunkId=0; (chunkId<UPPERCHUNKID) && (chunkId<NCHUNKS); chunkId++)
   {
     /* Copy chunk's part of measurement vector */
     SAYLINE(__LINE__-1);
-    for(int channelId=0; channelId<CHUNKSIZE; channelId++)
-      if(chunkId*CHUNKSIZE+channelId < NCHANNELS)
-        y_chunk.set(channelId, y.get(chunkId*CHUNKSIZE+channelId));
+    
+    for(int listId=0; listId<CHUNKSIZE; listId++)
+    {
+      MeasurementEvent<val_t> event;
+      if(chunkId*CHUNKSIZE + listId < NEVENTS)
+        event = y.get(chunkId*CHUNKSIZE + listId);
       else
-        y_chunk.set(channelId, 0.);
-    for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
-      assert((!isnan(y_chunk.get(cnlId))) && (!isinf(y_chunk.get(cnlId))));
-    //for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
-    //  std::cout << y_chunk.get(cnlId) << " ";
-    //std::cout << std::endl;
+        event = MeasurementEvent<val_t>(0., -1);
+
+      assert(!isnan(event.value()));
+      assert(!isinf(event.value()));
+      //std::cout << "channel " << event.channel() << ": " event.value()
+      //          << std::endl;
+
+      y_chunk.set(      listId, event);
+      yValues_chunk.set(listId, event.value());
+    } 
     
     /* Set system matrix chunk's elements to null */
     SAYLINE(__LINE__-1);
-    for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    for(int listId=0; listId<CHUNKSIZE; listId++)
       for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
-        chunk.set(cnlId, vxlId, 0.);
+        chunk.set(listId, vxlId, 0.);
     HANDLE_ERROR( cudaDeviceSynchronize() );
 
     /* Calculate system matrix chunk */
     SAYLINE(__LINE__-1);
-    chordsCalc_noVis(chunkId, NCHANNELS, CHUNKSIZE, 1,
-               static_cast<val_t*>(chunk.data()),
-               grid,
-               VGRIDSIZE,
-               setup);
+    chordsCalc_noVis(
+          chunkId, NCHANNELS, CHUNKSIZE, 1,
+          static_cast<val_t*>(chunk.data()),
+          &y_chunk,
+          grid,
+          VGRIDSIZE,
+          setup);
     HANDLE_ERROR( cudaDeviceSynchronize() );
     chunk.set_devi_data_changed();
-    for(int cnlId=0; cnlId<CHUNKSIZE; cnlId++)
+    
+    for(int listId=0; listId<CHUNKSIZE; listId++)
     {
       for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
       {
-        val_t elem = chunk.get(cnlId, vxlId);
+        val_t elem = chunk.get(listId, vxlId);
         assert(!isnan(elem));
         assert(!isinf(elem));
         //std::cout << elem << " ";
       }
+      //std::cout << std::endl;
     }
     //std::cout << std::endl;
 
     /* Back projection */
     SAYLINE(__LINE__-1);
-    trafo.gemv(BLAS_OP_T,
-               &one, &chunk,
-               &y_chunk,
-               &one, &x);
+    trafo.gemv(
+          BLAS_OP_T,
+          &one, &chunk,
+          &yValues_chunk,
+          &one, &x);
     x.set_devi_data_changed();
-  } // for chunks
+  } /* End iterate over chunks */
 
+
+  /* ----------------
+   * File output
+   * ---------------- */
+  SAYLINES(__LINE__-3, __LINE__-1);
+  
   ///* Prepare guess data */
   //for(int idx=0; idx<GRIDNX; idx++)
   //  for(int idy=0; idy<GRIDNY; idy++)
@@ -251,7 +385,9 @@ int main( int ac, char ** av )
   for(int memid=0; memid<VGRIDSIZE; memid++)
     guess[memid] = x.get(memid);
 
-  H5DensityWriter<WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > > h5writer(outfn);
+  H5DensityWriter<WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > >
+        h5writer(outpre + std::string("_x.h5"));
+  
   h5writer.write(guess, *grid);
   
   /* Visualize grid */
@@ -269,7 +405,7 @@ int main( int ac, char ** av )
                           hostRepr->gridD[0],
                           hostRepr->gridD[1],
                           hostRepr->gridD[2]);
-  PlyWriter writer("algo_grid.ply");
+  PlyWriter writer(outpre + std::string("_grid.ply"));
   writer.write(visGrid);
   writer.close();
 
@@ -279,7 +415,7 @@ int main( int ac, char ** av )
   val_t detD[]  = {SEGX, SEGY, SEGZ};
   BetaPlyGrid<val_t> det0(
         "", det0C, detD, det0N, BetaPlyGrid<val_t>::AT_CENTER);
-  PlyWriter det0Writer("ChordsCalc_kernel2_det0.ply");
+  PlyWriter det0Writer(outpre + std::string("_det0.ply"));
   det0Writer.write(det0);
   det0Writer.close();
 
@@ -287,7 +423,7 @@ int main( int ac, char ** av )
   int   det1N[] = {1, N1Y, N1Z};
   val_t det1C[] = {POS1X, 0, 0};
   BetaPlyGrid<val_t> det1("", det1C, detD, det1N, BetaPlyGrid<val_t>::AT_CENTER);
-  PlyWriter det1Writer("ChordsCalc_kernel2_det1.ply");
+  PlyWriter det1Writer(outpre + std::string("_det1.ply"));
   det1Writer.write(det1);
   det1Writer.close();
 

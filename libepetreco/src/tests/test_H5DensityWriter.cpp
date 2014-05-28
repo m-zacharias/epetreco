@@ -42,14 +42,33 @@ class MyGrid
 
 int main()
 {
-  MyGrid grid(.1,.2,.3,1.,2.,3.,3,4,5);
+  /* Specify numbers of voxels in each direction */
+  int const nx( 5); int const ny( 6); int const nz( 7);
+
+  /* Specify indices of active voxel in each direction */
+  int const idx(1); int const idy(2); int const idz(3);
+  
+  /* Create grid object */
+  MyGrid grid(0.1, 0.2, 0.3,
+              1.0, 2.0, 3.0,
+              nx,  ny,  nz);
+  
+  /* Create writer object */
   H5DensityWriter<MyGrid> writer(std::string("test_H5DensityWriter_output.h5"));
-  float * mem = new float[3*4*5];
-  for(int i=0; i<3*4*5; i++)
-    mem[i] = i*10.1;
+  
+  /* Allocate memory for voxel data */
+  float * mem = new float[nx*ny*nz];
+  
+  /* Set activity in voxels */
+  for(int linId=0; linId<nx*ny*nz; linId++)
+    mem[linId] = 0.;
+
+  mem[idx*ny*nz + idy*nz + idz] = 1.;
+
+  /* Write voxel data */
   writer.write(mem, grid);
 
+  /* Free memory and return */
   delete mem;
-
   return 0;
 }
