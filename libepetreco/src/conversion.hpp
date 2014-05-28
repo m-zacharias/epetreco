@@ -43,4 +43,10 @@ float convert2internal( float const val )
   return val;
 }
 
+template<typename T>
+T convert2internal( T const val )
+{
+  return val;
+}
+
 #endif  // #define CONVERSION_HPP
