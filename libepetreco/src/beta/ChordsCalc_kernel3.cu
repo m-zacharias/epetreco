@@ -72,10 +72,12 @@ void getTransformation(
   trafo[0*4 + 2] = sin*edges[2];
   trafo[0*4 + 3] = cos*(pos[0]-.5*edges[0])\
                   +sin*(pos[2]-.5*edges[2]);
+  
   trafo[1*4 + 0] = 0.;
   trafo[1*4 + 1] = edges[1];
   trafo[1*4 + 2] = 0.;
   trafo[1*4 + 3] = pos[1]-.5*edges[1];
+  
   trafo[2*4 + 0] =-sin*edges[0];
   trafo[2*4 + 1] = 0.;
   trafo[2*4 + 2] = cos*edges[2];
@@ -94,12 +96,14 @@ void getTransformation(
 template<typename T, typename ConcreteMeasurementSetup>
 __device__
 void getRay(
-      T * const ray,
-      curandState & state,
-      int const * const dimChannelId,
-      ConcreteMeasurementSetup const & setup )
+      T * const                         ray,
+      curandState &                     state,
+      int const * const                 dimChannelId,
+      ConcreteMeasurementSetup const &  setup )
 {
-  int id = blockDim.x * blockIdx.x + threadIdx.x;
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+/**/int id = blockDim.x * blockIdx.x + threadIdx.x;
+#endif
 
   // Get geometrical properties of the channel
   T pos0[3];
@@ -172,17 +176,27 @@ void getRay(
 #endif
   
   // Transform to obtain start, end
-  for(int i=0; i<3; i++)
+  for(int rowId=0; rowId<3; rowId++)
   {
-    ray[i]   = 0.;
-    ray[i+3] = 0.;
+    ray[rowId]   = 0.;
+    ray[rowId+3] = 0.;
 
-    for(int j=0; j<4; j++)
+    for(int colId=0; colId<4; colId++)
     {
-      ray[i]   += trafo0[i*4 + j] * rand[j];
-      ray[i+3] += trafo1[i*4 + j] * rand[j+4];
+      ray[rowId]   += trafo0[rowId*4 + colId] * rand[colId];
+      ray[rowId+3] += trafo1[rowId*4 + colId] * rand[colId+4];
     }
   }
+#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+/**/if(id == PRINT_KERNEL)
+/**/{
+/**/  printf("    -----\n");
+/**/  printf("    start: %05.3f,  %05.3f,  %05.3f\n",
+/**/          ray[0], ray[1], ray[2]); 
+/**/  printf("      end: %05.3f,  %05.3f,  %05.3f\n",
+/**/          ray[3], ray[4], ray[5]); 
+/**/}
+#endif
 }
 
 
@@ -218,10 +232,10 @@ void chordsCalc(
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
 #if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
-    if(globalId == PRINT_KERNEL)
-    {
-      printf("\nchordsCalc(...):\n");
-    }
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\nchordsCalc(...):\n");
+/**/}
 #endif
   /* Global id of channel */
   int const rowId(blockIdx.x);                // index of row in current system
@@ -240,16 +254,13 @@ void chordsCalc(
   setup->sepChannelId(dimChannelId, linChannelId);
 
 #if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
-//  if(globalId == PRINT_KERNEL)
-//  {
-//    printf("\n");
-//    printf("channelSetDims: %i,  %i,  %i,  %i,  %i\n",
-//           channelSetDims[0], channelSetDims[1], channelSetDims[2],
-//           channelSetDims[3], channelSetDims[4]);
-//    printf("linChannelId: %i,  dimChannelId: %i,  %i,  %i,  %i,  %i\n",
-//           linChannelId, dimChannelId[0], dimChannelId[1], dimChannelId[2],
-//           dimChannelId[3], dimChannelId[4]);
-//  }
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("linChannelId: %i,  dimChannelId: %i,  %i,  %i,  %i,  %i\n",
+/**/         linChannelId, dimChannelId[0], dimChannelId[1], dimChannelId[2],
+/**/         dimChannelId[3], dimChannelId[4]);
+/**/}
 #endif
 
   for(int iRay=0; iRay<NTHREADRAYS; iRay++)
@@ -270,7 +281,8 @@ void chordsCalc(
     
     // Write ray 
     for(int dim=0; dim<6; dim++)
-      rays[6*(linChannelId*NTHREADRAYS + iRay) + dim] = ray[dim];
+      //rays[6*(linChannelId*NTHREADRAYS + iRay) + dim] = ray[dim];
+      rays[6*(rowId*NTHREADRAYS + iRay) + dim] = ray[dim];
 
     // ##################
     // ### INITIALIZATION

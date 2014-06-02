@@ -1,6 +1,8 @@
 #ifndef MEASEREMENTSETUP_HPP
 #define MEASEREMENTSETUP_HPP
 
+#include "pi.h"
+
 template<typename T, typename ConcreteMeasurementSetup>
 class MeasurementSetup
 {
@@ -276,8 +278,10 @@ class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSet
       edges[0] = this->segx();
       edges[1] = this->segy();
       edges[2] = this->segz();
-      sin_[0]  = sin(sepChannelId[0]*this->da());
-      cos_[0]  = cos(sepChannelId[0]*this->da());
+      //sin_[0]  = sin(sepChannelId[0]*this->da()); // !!!!!
+      sin_[0]  = sin(sepChannelId[0]*this->da()/180.*PI);
+      //cos_[0]  = cos(sepChannelId[0]*this->da()); // !!!!!
+      cos_[0]  = cos(sepChannelId[0]*this->da()/180.*PI); // !!!!!
     }
 };
 

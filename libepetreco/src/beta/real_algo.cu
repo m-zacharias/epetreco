@@ -224,11 +224,8 @@ int main( int ac, char ** av )
       chunk.set(rowId, vxlId, 0.);
   
   /* Measurement vector */
-  //CudaVector<val_t,val_t>   y(NCHANNELS);
-  
   CudaVector<val_t, val_t>  yValues_chunk(CHUNKSIZE);
 
-  //CudaVector<val_t,val_t>   y_chunk(CHUNKSIZE); // chunk part of meas.
   CudaVector<MeasurementEvent<val_t>, MeasurementEvent<val_t> > 
                             y_chunk(CHUNKSIZE); // chunk part of meas.
 
@@ -284,7 +281,8 @@ int main( int ac, char ** av )
        listId++;
     }
   }
-  
+
+#ifdef DEBUG  
   /* Print measurement vector */
   SAYLINE(__LINE__-1);
   std::cout << "y:"
@@ -299,12 +297,19 @@ int main( int ac, char ** av )
               << std::setw(15) << ss.str() << " "
               << std::endl;
   }
+#endif  // DEBUG
 
 
   /* ----------------
    * Reconstruct
    * ---------------- */
   SAYLINES(__LINE__-3, __LINE__-1);
+
+  /* Allocate memory for rays */
+  val_t   rays_host[NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(val_t)];
+  val_t * rays_devi;
+  HANDLE_ERROR( cudaMalloc((void**)&rays_devi,
+                NCHUNKS*CHUNKSIZE*NTHREADRAYS*6*sizeof(val_t)) );
   
   /* Iterate over chunks */
   for(int chunkId=0; (chunkId<UPPERCHUNKID) && (chunkId<NCHUNKS); chunkId++)
@@ -329,6 +334,7 @@ int main( int ac, char ** av )
       yValues_chunk.set(listId, event.value());
     }
     
+#ifdef DEBUG 
     /* Print measurement vector */
     SAYLINE(__LINE__-1);
     std::cout << std::left
@@ -346,6 +352,7 @@ int main( int ac, char ** av )
                 << std::setw(15) << elem     << " "
                 << std::endl;
     }
+#endif  // DEBUG
     
     /* Set system matrix chunk's elements to null */
     SAYLINE(__LINE__-1);
@@ -356,9 +363,17 @@ int main( int ac, char ** av )
 
     /* Calculate system matrix chunk */
     SAYLINE(__LINE__-1);
-    chordsCalc_noVis(
+    //chordsCalc_noVis(
+    //      chunkId, NCHANNELS, CHUNKSIZE, 1,
+    //      static_cast<val_t*>(chunk.data()),
+    //      &y_chunk,
+    //      grid,
+    //      VGRIDSIZE,
+    //      setup);
+    chordsCalc(
           chunkId, NCHANNELS, CHUNKSIZE, 1,
           static_cast<val_t*>(chunk.data()),
+          rays_devi,
           &y_chunk,
           grid,
           VGRIDSIZE,
@@ -376,6 +391,7 @@ int main( int ac, char ** av )
       }
     }
 
+#ifdef DEBUG
     /* Print system matrix chunk */
     SAYLINE(__LINE__-1);
     std::cout << "chunk:" << std::endl;
@@ -397,6 +413,7 @@ int main( int ac, char ** av )
         std::cout << std::endl;
       }
     }
+#endif  // DEBUG
 
     /* Back projection */
     SAYLINE(__LINE__-1);
@@ -407,6 +424,7 @@ int main( int ac, char ** av )
           &one, &x);
     x.set_devi_data_changed();
 
+#ifdef DEBUG
     /* Print x */
     SAYLINE(__LINE__-1);
     std::cout << "x:" << std::endl;
@@ -414,6 +432,7 @@ int main( int ac, char ** av )
       if(x.get(vxlId) != 0.)
         std::cout << "  " << x.get(vxlId);
     std::cout << std::endl;
+#endif  // DEBUG
   } /* End iterate over chunks */
 
 
@@ -422,22 +441,6 @@ int main( int ac, char ** av )
    * ---------------- */
   SAYLINES(__LINE__-3, __LINE__-1);
   
-  ///* Prepare guess data */
-  //for(int idx=0; idx<GRIDNX; idx++)
-  //  for(int idy=0; idy<GRIDNY; idy++)
-  //    for(int idz=0; idz<GRIDNZ; idz++)
-  //    {
-  //      int memid = getLinVoxelId(idx,idy,idz,grid->hostRepr()->gridN);
-  //      if(idz==0)
-  //        x.set(memid, 1.);
-  //      else
-  //        x.set(memid, 0.);
-  //    }
-  
-  //for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
-  //  std::cout << x.get(vxlId) << " ";
-  //std::cout << std::endl;
-
   /* Write last guess */
   SAYLINE(__LINE__-1);
   val_t * guess = new val_t[VGRIDSIZE];
@@ -485,6 +488,28 @@ int main( int ac, char ** av )
   PlyWriter det1Writer(outpre + std::string("_det1.ply"));
   det1Writer.write(det1);
   det1Writer.close();
+
+  /* Visualize rays */
+  HANDLE_ERROR( cudaMemcpy(rays_host, rays_devi,
+                           6*NCHUNKS*CHUNKSIZE*NTHREADRAYS*sizeof(val_t),
+                           cudaMemcpyDeviceToHost) );
+  for(int i=0; i<NEVENTS; i++)
+  {
+    BetaCompositePlyGeom compositeLines("");
+    BetaPlyLine<val_t> lines[NTHREADRAYS];
+    for(int idRay=0; idRay<NTHREADRAYS; idRay++)
+    {
+      lines[idRay] = BetaPlyLine<val_t>("", &rays_host[6*(i*NTHREADRAYS + idRay)]);
+      compositeLines.add(&lines[idRay]);
+    }
+
+    std::stringstream fn("");
+    fn << outpre << "_rays-" << i << ".ply";
+    PlyWriter raysWriter(fn.str());
+    raysWriter.write(compositeLines);
+    raysWriter.close();
+  }
+
 
   return 0;
 }
