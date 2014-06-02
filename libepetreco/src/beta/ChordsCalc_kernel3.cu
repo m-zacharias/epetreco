@@ -224,10 +224,12 @@ void chordsCalc(
     }
 #endif
   /* Global id of channel */
-  int const linChannelId(y[blockIdx.x].channel()); // linearized channel id is
-                                                    //  read explictly from y
-                                                    //  (chunk)
-  if(linChannelId >= nChannels)
+  int const rowId(blockIdx.x);                // index of row in current system
+                                              //  matrix chunk
+  int const linChannelId(y[rowId].channel()); // global linearized channel index 
+                                              //  - read explictly from current
+                                              //  measurement chunk
+  if(linChannelId >= nChannels || linChannelId < 0)
     return;
 
   T ray[6];
@@ -464,7 +466,6 @@ void chordsCalc(
 #endif
         assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
         
-        int rowId  = linChannelId % chunkSize;
         int rowDim = vgridSize;
         int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
         int colDim = chunkSize;
@@ -529,8 +530,12 @@ void chordsCalc_noVis(
     }
 #endif
   /* Global id of channel */
-  int const linChannelId = (y[blockIdx.x]).channel();
-  if(linChannelId >= nChannels)
+  int const rowId(blockIdx.x);                // index of row in current system
+                                              //  matrix chunk
+  int const linChannelId(y[rowId].channel()); // global linearized channel index 
+                                              //  - read explictly from current
+                                              //  measurement chunk
+  if(linChannelId >= nChannels || linChannelId < 0)
     return;
 
   T ray[6];
@@ -749,7 +754,6 @@ void chordsCalc_noVis(
 #endif
         assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
         
-        int rowId  = linChannelId % chunkSize;
         int rowDim = vgridSize;
         int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
         int colDim = chunkSize;

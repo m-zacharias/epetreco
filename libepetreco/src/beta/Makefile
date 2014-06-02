@@ -19,7 +19,8 @@ default : \
 
 clean :
 	rm $(EXECUTABLES) \
-     ./*.ply
+     ./*.ply \
+     ./*.h5
 
 
 %.out : \

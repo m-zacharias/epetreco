@@ -71,6 +71,9 @@
 #include "H5Reader.hpp"
 #include "H5DensityWriter.hpp"
 #include "visualization.hpp"
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
 
 
@@ -157,9 +160,9 @@ struct MeasurementEvent
 
 
 //#define CHUNKSIZE 400000
-#define CHUNKSIZE 1000                             // number of lines in one chunk
-//#define UPPERCHUNKID ((NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE)
-#define UPPERCHUNKID 1
+#define CHUNKSIZE 100                             // number of lines in one chunk
+#define UPPERCHUNKID ((NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE)
+//#define UPPERCHUNKID 1
 
 typedef float val_t;
 
@@ -223,7 +226,7 @@ int main( int ac, char ** av )
   /* Measurement vector */
   //CudaVector<val_t,val_t>   y(NCHANNELS);
   
-  CudaVector<val_t, val_t> yValues_chunk(CHUNKSIZE);
+  CudaVector<val_t, val_t>  yValues_chunk(CHUNKSIZE);
 
   //CudaVector<val_t,val_t>   y_chunk(CHUNKSIZE); // chunk part of meas.
   CudaVector<MeasurementEvent<val_t>, MeasurementEvent<val_t> > 
@@ -282,9 +285,20 @@ int main( int ac, char ** av )
     }
   }
   
-  //for(int listId=0; listId<NEVENTS; listId++)
-  //  std::cout << y.get(cnlId).value() << "  ";
-  //std::cout << std::endl;
+  /* Print measurement vector */
+  SAYLINE(__LINE__-1);
+  std::cout << "y:"
+            << std::endl;
+  for(int listId=0; listId<NEVENTS; listId++)
+  {
+    MeasurementEvent<val_t> event = y.get(listId);
+    std::stringstream ss("");
+    ss << "listId " << listId << ": ("
+       << event.channel() << ": " << event.value() << ")";
+    std::cout << std::right
+              << std::setw(15) << ss.str() << " "
+              << std::endl;
+  }
 
 
   /* ----------------
@@ -308,12 +322,30 @@ int main( int ac, char ** av )
 
       assert(!isnan(event.value()));
       assert(!isinf(event.value()));
-      //std::cout << "channel " << event.channel() << ": " event.value()
+      //std::cout << "channel " << event.channel() << ": " << event.value()
       //          << std::endl;
 
       y_chunk.set(      listId, event);
       yValues_chunk.set(listId, event.value());
-    } 
+    }
+    
+    /* Print measurement vector */
+    SAYLINE(__LINE__-1);
+    std::cout << std::left
+              << std::setw(16) << "y_chunk:"
+              << std::setw(16) << "yValues_chunk:"
+              << std::endl;
+    for(int listId=0; listId<CHUNKSIZE; listId++)
+    {
+      MeasurementEvent<val_t> event = y_chunk.get(listId);
+      val_t                   elem  = yValues_chunk.get(listId);
+      std::stringstream ss("");
+      ss << "(" << event.channel() << ": " << event.value() << ")";
+      std::cout << std::right
+                << std::setw(15) << ss.str() << " "
+                << std::setw(15) << elem     << " "
+                << std::endl;
+    }
     
     /* Set system matrix chunk's elements to null */
     SAYLINE(__LINE__-1);
@@ -341,11 +373,30 @@ int main( int ac, char ** av )
         val_t elem = chunk.get(listId, vxlId);
         assert(!isnan(elem));
         assert(!isinf(elem));
-        //std::cout << elem << " ";
       }
-      //std::cout << std::endl;
     }
-    //std::cout << std::endl;
+
+    /* Print system matrix chunk */
+    SAYLINE(__LINE__-1);
+    std::cout << "chunk:" << std::endl;
+    for(int listId=0; listId<CHUNKSIZE; listId++)
+    {
+      int count(0);
+      for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+        if(chunk.get(listId, vxlId) != 0.) count++;
+
+      if(count > 0)
+      {
+        std::cout << "  listId " << listId << ":  ";
+        for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+        {
+          val_t elem = chunk.get(listId, vxlId);
+          if(elem != 0.)
+            std::cout << elem << "  ";
+        }
+        std::cout << std::endl;
+      }
+    }
 
     /* Back projection */
     SAYLINE(__LINE__-1);
@@ -355,6 +406,14 @@ int main( int ac, char ** av )
           &yValues_chunk,
           &one, &x);
     x.set_devi_data_changed();
+
+    /* Print x */
+    SAYLINE(__LINE__-1);
+    std::cout << "x:" << std::endl;
+    for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
+      if(x.get(vxlId) != 0.)
+        std::cout << "  " << x.get(vxlId);
+    std::cout << std::endl;
   } /* End iterate over chunks */
 
 
