@@ -246,10 +246,11 @@ void chordsCalc(
   if(linChannelId >= nChannels || linChannelId < 0)
     return;
 
-  T ray[6];
+  /* Initialize random state (for making rays) */
   curandState kernelRandState;
   curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
   
+  /* Get geometrical indices of channel */
   int dimChannelId[5];
   setup->sepChannelId(dimChannelId, linChannelId);
 
@@ -263,6 +264,7 @@ void chordsCalc(
 /**/}
 #endif
 
+  T ray[6];
   for(int iRay=0; iRay<NTHREADRAYS; iRay++)
   {
     // Get ray
@@ -433,7 +435,6 @@ void chordsCalc(
 /**/}
 #endif
     int chordId = 0;
-//    while(aCurr < aMax)
     while(   id[0]<gridN[0]
           && id[1]<gridN[1]
           && id[2]<gridN[2]

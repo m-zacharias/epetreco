@@ -10,6 +10,7 @@ LIB = -L$(HDF5_LIB) -lhdf5 -lhdf5_cpp -lcublas -L../../ -lepetreco
 
 EXECUTABLES := \
       real_algo.out \
+      test_angular_index_counting.out \
       algo.out
 
 
