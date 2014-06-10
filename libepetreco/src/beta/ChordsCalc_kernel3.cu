@@ -228,7 +228,9 @@ void chordsCalc(
       int const                         nChannels,
       int const                         chunkSize,
       int const                         vgridSize,
-      ConcreteMeasurementSetup const *  setup )
+      ConcreteMeasurementSetup const *  setup,
+      int const                         randomSeed,
+      int const                         nThreadRays )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
 #if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
@@ -248,7 +250,7 @@ void chordsCalc(
 
   /* Initialize random state (for making rays) */
   curandState kernelRandState;
-  curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
+  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
   
   /* Get geometrical indices of channel */
   int dimChannelId[5];
@@ -265,7 +267,7 @@ void chordsCalc(
 #endif
 
   T ray[6];
-  for(int iRay=0; iRay<NTHREADRAYS; iRay++)
+  for(int iRay=0; iRay<nThreadRays; iRay++)
   {
     // Get ray
     getRay(ray, kernelRandState, dimChannelId, *setup);
@@ -283,8 +285,8 @@ void chordsCalc(
     
     // Write ray 
     for(int dim=0; dim<6; dim++)
-      //rays[6*(linChannelId*NTHREADRAYS + iRay) + dim] = ray[dim];
-      rays[6*(rowId*NTHREADRAYS + iRay) + dim] = ray[dim];
+      //rays[6*(linChannelId*nThreadRays + iRay) + dim] = ray[dim];
+      rays[6*(rowId*nThreadRays + iRay) + dim] = ray[dim];
 
     // ##################
     // ### INITIALIZATION
@@ -533,7 +535,9 @@ void chordsCalc_noVis(
       int const                         nChannels,
       int const                         chunkSize,
       int const                         vgridSize,
-      ConcreteMeasurementSetup const *  setup )
+      ConcreteMeasurementSetup const *  setup,
+      int const                         randomSeed,
+      int const                         nThreadRays )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
 #if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
@@ -553,9 +557,9 @@ void chordsCalc_noVis(
 
   T ray[6];
   curandState kernelRandState;
-  curand_init(RANDOM_SEED, linChannelId, 0, &kernelRandState);
+  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
 
-  for(int iRay=0; iRay<NTHREADRAYS; iRay++)
+  for(int iRay=0; iRay<nThreadRays; iRay++)
   {
     // Get ray
     int dimChannelId[5];
@@ -798,13 +802,18 @@ void chordsCalc_noVis(
 
 template<typename T, typename G, typename S, typename EventVector>
 void chordsCalc(
-      int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
-      T * const chords,
-      T * const rays,
+      int const           chunkId,
+      int const           nChannels,
+      int const           chunkSize,
+      int const           nThreads,
+      T * const           chords,
+      T * const           rays,
       EventVector * const y,
-      G * const grid,
-      int const vgridSize,
-      S * const setup )
+      G * const           grid,
+      int const           vgridSize,
+      S * const           setup,
+      int const           randomSeed,
+      int const           nThreadRays )
 {
   chordsCalc<<<chunkSize, nThreads>>>(
         chords, rays,
@@ -813,7 +822,9 @@ void chordsCalc(
         grid->deviRepr()->gridD,
         grid->deviRepr()->gridN,
         chunkId*chunkSize, nChannels, chunkSize, vgridSize,
-        setup->deviRepr());
+        setup->deviRepr(),
+        randomSeed,
+        nThreadRays);
   HANDLE_ERROR( cudaGetLastError() );
 }
 
@@ -821,12 +832,17 @@ void chordsCalc(
 
 template<typename T, typename G, typename S, typename EventVector>
 void chordsCalc_noVis(
-      int const chunkId, int const nChannels, int const chunkSize, int const nThreads,
-      T * const chords,
+      int const           chunkId,
+      int const           nChannels,
+      int const           chunkSize,
+      int const           nThreads,
+      T * const           chords,
       EventVector * const y,
-      G * const grid,
-      int const vgridSize,
-      S * const setup )
+      G * const           grid,
+      int const           vgridSize,
+      S * const           setup,
+      int const           randomSeed,
+      int const           nThreadRays )
 {
   chordsCalc_noVis<<<chunkSize, nThreads>>>(
         chords,
@@ -836,7 +852,9 @@ void chordsCalc_noVis(
         grid->deviRepr()->gridN,
         chunkId*chunkSize, nChannels,
         chunkSize, vgridSize,
-        setup->deviRepr());
+        setup->deviRepr(),
+        randomSeed,
+        nThreadRays);
   HANDLE_ERROR( cudaGetLastError() );
 }
 

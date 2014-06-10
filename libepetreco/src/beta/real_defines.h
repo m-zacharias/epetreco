@@ -1,6 +1,5 @@
-#ifndef DEFINES
-#define DEFINES
-
+#ifndef MEASUREMENTSETUP_DEFINES
+#define MEASUREMENTSETUP_DEFINES
 
 #define N0Z 13      // 1st detector's number of segments in z
 #define N0Y 13      // 1st detector's number of segments in y
@@ -15,6 +14,13 @@
 #define SEGZ 4.     // z edge length of one detector segment [mm]
 #define NCHANNELS NA*N0Z*N0Y*N1Z*N1Y
 
+#endif  // #ifndef MEASUREMENTSETUP_DEFINES
+
+
+
+#ifndef VOXELGRID_DEFINES
+#define VOXELGRID_DEFINES
+
 #define GRIDNX 10   // x dimension of voxel grid
 #define GRIDNY 10   // y dimension of voxel grid
 #define GRIDNZ 10   // z dimension od voxel grid
@@ -26,8 +32,9 @@
 #define GRIDDZ 70.  // z edge length of one voxel [mm]
 #define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
 
-#define RANDOM_SEED 1234
-#define NTHREADRAYS 100
+#endif  // #define VOXELGRID_DEFINES
 
 
-#endif  // #define DEFINES
+//#define RANDOM_SEED 1234
+//#define NTHREADRAYS 100
+

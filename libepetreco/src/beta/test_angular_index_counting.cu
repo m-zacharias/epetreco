@@ -2,8 +2,8 @@
  * is Summed Backprojection.
  */
 
-#ifndef DEFINES
-#define DEFINES
+#ifndef MEASUREMENTSETUP_DEFINES
+#define MEASUREMENTSETUP_DEFINES
 
 #define N0Z 13        // 1st detector's number of segments in z
 #define N0Y 13        // 1st detector's number of segments in y
@@ -16,8 +16,14 @@
 #define SEGX 0.02     // x edge length of one detector segment [m]
 #define SEGY 0.004    // y edge length of one detector segment [m]
 #define SEGZ 0.004    // z edge length of one detector segment [m]
-//---
 #define NCHANNELS NA*N0Z*N0Y*N1Z*N1Y
+
+#endif  // #define MEASUREMENTSETUP_DEFINES
+
+
+
+#ifndef VOXELGRID_DEFINES
+#define VOXELGRID_DEFINES
 
 #define GRIDNX 4      // x dimension of voxel grid
 #define GRIDNY 4      // y dimension of voxel grid
@@ -28,21 +34,19 @@
 #define GRIDDX  0.025 // x edge length of one voxel [m]
 #define GRIDDY  0.025 // y edge length of one voxel [m]
 #define GRIDDZ  0.025 // z edge length of one voxel [m]
-//---
 #define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
 
-#define RANDOM_SEED 1234
-#define NTHREADRAYS 100
+#endif  // #define VOXELGRID_DEFINES
 
-#endif  // #define DEFINES
+
+
+#include "real_defines.h"
 
 
 
 #include "CUDA_HandleError.hpp"
 #include "FileTalk.hpp"
 
-#include "real_defines.h"
-//#include "ChordsCalc_kernel2.cu"
 #include "ChordsCalc_kernel3.cu"
 #include "MeasurementSetup.hpp"
 #include "VoxelGrid.hpp"
@@ -144,6 +148,8 @@ struct MeasurementEvent
 #define CHUNKSIZE 100                             // number of lines in one chunk
 #define UPPERCHUNKID ((NCHANNELS+CHUNKSIZE-1)/CHUNKSIZE)
 //#define UPPERCHUNKID 1
+#define RANDOM_SEED 1234
+#define NTHREADRAYS 100
 
 typedef float val_t;
 
@@ -341,7 +347,9 @@ int main( int ac, char ** av )
           &y_chunk,
           grid,
           VGRIDSIZE,
-          setup);
+          setup,
+          RANDOM_SEED,
+          NTHREADRAYS);
     HANDLE_ERROR( cudaDeviceSynchronize() );
     chunk.set_devi_data_changed();
     
