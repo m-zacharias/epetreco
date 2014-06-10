@@ -1,5 +1,4 @@
-#TEST_FILES_DIR="../../../unversioned_material/"
-TEST_FILES_DIR="./test_input/"
+TEST_FILES_DIR="../beta/test_input/"
 TEST_FILES="epet_POS102_testA.mess.h5 epet_POS102_testB.mess.h5 epet_POS102_testC.mess.h5 epet_POS102_testD.mess.h5 epet_POS102_testE.mess.h5"
 CHUNKSIZE=100
 RANDOM_SEED=1234

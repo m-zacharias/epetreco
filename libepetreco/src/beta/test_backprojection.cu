@@ -532,7 +532,7 @@ int main( int ac, char ** av )
     }
 
     std::stringstream fn("");
-    fn << outpre << "_rays-" << i << ".ply";
+    fn << outpre << "_rays-" << std::setw(3) << std::setfill('0') << i << ".ply";
     PlyWriter raysWriter(fn.str());
     raysWriter.write(compositeLines);
     raysWriter.close();
