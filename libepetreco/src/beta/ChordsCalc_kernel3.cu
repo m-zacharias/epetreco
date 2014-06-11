@@ -1,6 +1,8 @@
 #ifndef CHORDSCALC_KERNEL
 #define CHORDSCALC_KERNEL
 
+#define DEBUG_MACRO ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+
 #include "ChordsCalc_lowlevel.hpp"
 #include "CUDA_HandleError.hpp"
 //#include "MeasurementSetup.hpp"
@@ -101,7 +103,7 @@ void getRay(
       int const * const                 dimChannelId,
       ConcreteMeasurementSetup const &  setup )
 {
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/int id = blockDim.x * blockIdx.x + threadIdx.x;
 #endif
 
@@ -111,7 +113,7 @@ void getRay(
   T edges[3];
   T sin, cos;
   setup.getGeomProps(pos0, pos1, edges, &sin, &cos, dimChannelId);
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf("getRay(...):\n");
@@ -125,7 +127,7 @@ void getRay(
   // Get transformation matrices
   T trafo0[12];
   getTransformation(trafo0, pos0, edges, sin, cos);
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf( "    -----\n");
@@ -141,7 +143,7 @@ void getRay(
 
   T trafo1[12];
   getTransformation(trafo1, pos1, edges, sin, cos);
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf( "    -----\n");
@@ -164,7 +166,7 @@ void getRay(
   }
   rand[3] = 1.;
   rand[7] = 1.;
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf( "    -----\n");
@@ -187,7 +189,7 @@ void getRay(
       ray[rowId+3] += trafo1[rowId*4 + colId] * rand[colId+4];
     }
   }
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(id == PRINT_KERNEL)
 /**/{
 /**/  printf("    -----\n");
@@ -233,7 +235,7 @@ void chordsCalc(
       int const                         nThreadRays )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\nchordsCalc(...):\n");
@@ -256,7 +258,7 @@ void chordsCalc(
   int dimChannelId[5];
   setup->sepChannelId(dimChannelId, linChannelId);
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -272,7 +274,7 @@ void chordsCalc(
     // Get ray
     getRay(ray, kernelRandState, dimChannelId, *setup);
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -291,7 +293,7 @@ void chordsCalc(
     // ##################
     // ### INITIALIZATION
     // ##################
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -303,7 +305,7 @@ void chordsCalc(
     T aDimmin[3];
     T aDimmax[3];
     bool  crosses[3];
-//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+//#if DEBUG_MACRO
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  for(int dim=0; dim<3; dim++)
@@ -319,7 +321,7 @@ void chordsCalc(
     getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
     getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
     getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
-//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+//#if DEBUG_MACRO
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
@@ -376,7 +378,7 @@ void chordsCalc(
     bool aNextExists;
     MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("aMin:        %f\n", aMin);
@@ -390,7 +392,7 @@ void chordsCalc(
             float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
                                        )
                           );
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("phiFromAlpha: %f  ",
@@ -400,7 +402,7 @@ void chordsCalc(
 /**/  }
 #endif
     } // for(dim)
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("\n");
@@ -411,7 +413,7 @@ void chordsCalc(
     // Initialize current parameter
     T aCurr = aMin;
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("aMin:    %05.3f\n", aMin);
@@ -429,7 +431,7 @@ void chordsCalc(
     // ##################
     // ###  ITERATIONS
     // ##################
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -444,7 +446,7 @@ void chordsCalc(
           && id[1]>=0
           && id[2]>=0)
     {
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 ///**/  printf("aCurr: %05.2f\n", aCurr);
@@ -469,7 +471,7 @@ void chordsCalc(
 
         // If this axis' plane is crossed ...
         //      ... write chord length at voxel index
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/    syncthreads();
 /**/    if(globalId == PRINT_KERNEL)
 /**/    {
@@ -540,7 +542,7 @@ void chordsCalc_noVis(
       int const                         nThreadRays )
 {
   int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
     if(globalId == PRINT_KERNEL)
     {
       printf("\nchordsCalc(...):\n");
@@ -565,7 +567,7 @@ void chordsCalc_noVis(
     int dimChannelId[5];
     setup->sepChannelId(dimChannelId, linChannelId);
     getRay(ray, kernelRandState, dimChannelId, *setup);
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -579,7 +581,7 @@ void chordsCalc_noVis(
     // ##################
     // ### INITIALIZATION
     // ##################
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -591,7 +593,7 @@ void chordsCalc_noVis(
     T aDimmin[3];
     T aDimmax[3];
     bool  crosses[3];
-//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+//#if DEBUG_MACRO
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  for(int dim=0; dim<3; dim++)
@@ -607,7 +609,7 @@ void chordsCalc_noVis(
     getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
     getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
     getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
-//#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+//#if DEBUG_MACRO
 ///**/if(globalId == PRINT_KERNEL)
 ///**/{
 ///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
@@ -664,7 +666,7 @@ void chordsCalc_noVis(
     bool aNextExists;
     MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("aMin:        %f\n", aMin);
@@ -678,7 +680,7 @@ void chordsCalc_noVis(
             float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
                                        )
                           );
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/  if(globalId == PRINT_KERNEL)
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
@@ -689,7 +691,7 @@ void chordsCalc_noVis(
 /**/  }
 #endif
     } // for(dim)
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/  if(globalId == PRINT_KERNEL)
 /**/  {
 /**/    printf("\n");
@@ -700,7 +702,7 @@ void chordsCalc_noVis(
     // Initialize current parameter
     T aCurr = aMin;
 
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("aMin:    %05.3f\n", aMin);
@@ -718,7 +720,7 @@ void chordsCalc_noVis(
     // ##################
     // ###  ITERATIONS
     // ##################
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 /**/  printf("\n");
@@ -734,7 +736,7 @@ void chordsCalc_noVis(
           && id[1]>=0
           && id[2]>=0)
     {
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
 ///**/  printf("aCurr: %05.2f\n", aCurr);
@@ -759,7 +761,7 @@ void chordsCalc_noVis(
 
         // If this axis' plane is crossed ...
         //      ... write chord length at voxel index
-#if ((defined DEBUG || defined CHORDSCALC_DEBUG) && (NO_CHORDSCALC_DEBUG==0))
+#if DEBUG_MACRO
 /**/    syncthreads();
 /**/    if(globalId == PRINT_KERNEL)
 /**/    {
@@ -857,5 +859,7 @@ void chordsCalc_noVis(
         nThreadRays);
   HANDLE_ERROR( cudaGetLastError() );
 }
+
+#undef DEBUG_MACRO
 
 #endif  // #ifndef CHORDSCALC_KERNEL
