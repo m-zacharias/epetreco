@@ -203,21 +203,339 @@ void getRay(
 
 
 
+
 /**
- * @brief Kernel function for calculation of chords (=intersection line of ray
- *        with one voxel)
+ * @brief Initialize chordsCalc kernel function.
  *
- * @param chords Result memory
- * @param linearVoxelId Result memory, linear voxel index
- * @param rays Result memory
- * @param linChannelId Linear index of channel that is calculated
- * @param gridO Grid origin
- * @param gridD Grid voxels edge lengths
- * @param gridN Grid dimensions
+ * - set globalId
+ * - set rowId
+ * - set linChannelId
+ * - set dimChannelId
+ * - initialize kernelRandState
  */
-template< typename T,
-          typename Event,
-          typename ConcreteMeasurementSetup>
+template<
+      typename ConcreteMeasurementSetup
+    , typename Event
+>
+__device__ __forceinline__
+void _chordsCalcInitKernel
+(
+      int &                             globalId,
+      int &                             rowId,
+      int &                             linChannelId,
+      curandState &                     kernelRandState,
+      int * const                       dimChannelId, 
+
+      int const                         nChannels,
+
+      ConcreteMeasurementSetup const *  setup,
+      Event const * const               y,
+      int const                         randomSeed
+)
+{
+  /* Global id of channel */
+  globalId     = blockDim.x * blockIdx.x + threadIdx.x;
+  rowId        = blockIdx.x;          // index of row in current system
+                                      //   matrix chunk (!)
+  linChannelId = y[rowId].channel();  // global (!) linearized channel index 
+                                      //   - read explictly from current
+                                      //   measurement chunk
+  if(linChannelId >= nChannels || linChannelId < 0)
+    return;
+#if DEBUG_MACRO
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\nchordsCalc(...):\n");
+/**/}
+#endif
+
+  /* Initialize random state (for making rays) */
+  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
+  
+  /* Get geometrical indices of channel */
+  setup->sepChannelId(dimChannelId, linChannelId);
+
+#if DEBUG_MACRO
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("linChannelId: %i,  dimChannelId: %i,  %i,  %i,  %i,  %i\n",
+/**/         linChannelId, dimChannelId[0], dimChannelId[1], dimChannelId[2],
+/**/         dimChannelId[3], dimChannelId[4]);
+/**/}
+#endif
+}
+
+
+
+/**
+ * @brief Initialize variables for Siddon algorithm.
+ * 
+ * - determine which planes are crossed (crosses)
+ * - calculate length of ray (length)
+ * - calculate alpha parameter update values for each dimension (aDimup)
+ * - calculate plane index update values for each dimension (idDimup)
+ * - initialize next alpha values for each dimension (aDimnext)
+ * - initialize array of current voxel's indices (id)
+ * - determine alpha parameter of next intersection (aNext, aNextExists)
+ * - initialize current alpha parameter (aCurr)
+ */
+template<
+      typename T
+>
+__device__ __forceinline__
+void _chordsCalcInitSiddon
+(
+      bool      crosses[3],
+      T &       length,
+      T         aDimup[3],
+      int       idDimup[3],
+      T         aDimnext[3],
+      int       id[3],
+      T &       aNext,
+      bool &    aNextExists,
+      T &       aCurr,
+      
+      T const   ray[6],
+      T const   gridO[3],
+      T const   gridD[3],
+      int const gridN[3]
+)
+{
+#if DEBUG_MACRO
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("### INITIALIZATION\n");
+/**/}
+#endif
+
+  // Get intersection minima for all axes, get intersection info
+//#if DEBUG_MACRO
+///**/if(globalId == PRINT_KERNEL)
+///**/{
+///**/  for(int dim=0; dim<3; dim++)
+///**/  {
+///**/    printf("alpha[%i](%i): %f\n", dim, 0,
+///**/            alphaFromId(0,          dim, ray, gridO, gridD, gridN));
+///**/
+///**/    printf("alpha[%i](%i): %f\n", dim, gridN[dim],
+///**/            alphaFromId(gridN[dim], dim, ray, gridO, gridD, gridN));
+///**/  }
+///**/}
+//#endif
+  T aDimmin[3];
+  T aDimmax[3];
+  getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
+  getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
+  getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
+//#if DEBUG_MACRO
+///**/if(globalId == PRINT_KERNEL)
+///**/{
+///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
+///**/          aDimmin[0], aDimmin[1], aDimmin[2] );
+///**/  printf("aDimmax:  %6f,  %6f,  %6f\n",
+///**/          aDimmax[0], aDimmax[1], aDimmax[2] );
+///**/  printf("crosses:  %i,  %i,  %i\n",
+///**/          crosses[0], crosses[1], crosses[2] );
+///**/}
+//#endif
+  
+  // Get parameter of the entry and exit points
+  T     aMin;
+  T     aMax;
+  bool  aMinGood;
+  bool  aMaxGood;
+  getAlphaMin(  &aMin, &aMinGood, aDimmin, crosses);
+  getAlphaMax(  &aMax, &aMaxGood, aDimmax, crosses);
+  
+  // Do entry and exit points lie in beween ray start and end points?
+  aMinGood &= (aMin >= 0. && aMin <= 1.);
+  aMaxGood &= (aMax >= 0. && aMax <= 1.);
+  
+  // Is grid intersected at all, does ray start and end outside the grid?
+  // - otherwise return
+  if(aMin>aMax || !aMinGood || !aMaxGood) return;
+
+  // Get length of ray
+  length = getLength(ray);
+  
+  // Get parameter update values 
+  getAlphaDimup(  aDimup, ray, gridD);
+  
+  // Get id update values
+  getIdDimup( idDimup, ray);
+  
+  // Initialize array of next parameters
+  for(int dim=0; dim<3; dim++)
+  {
+    aDimnext[dim] = aDimmin[dim];
+    while(aDimnext[dim]<=aMin)
+      aDimnext[dim] += aDimup[dim];
+  }
+
+  // Initialize array of voxel indices
+  MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
+
+#if DEBUG_MACRO
+/**/  if(globalId == PRINT_KERNEL)
+/**/  {
+/**/    printf("aMin:        %f\n", aMin);
+/**/    printf("aNext:       %f\n", aNext);
+/**/    printf("aNextExists: %i\n", aNextExists);
+/**/  }
+#endif
+  for(int dim=0; dim<3; dim++)
+  {
+    id[dim] = floor(phiFromAlpha(
+          T(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
+                                     )
+                        );
+#if DEBUG_MACRO
+/**/  if(globalId == PRINT_KERNEL)
+/**/  {
+/**/    printf("phiFromAlpha: %f  ",
+/**/           phiFromAlpha(float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN));
+/**/    printf("id[%i]: %02i  ",
+/**/           dim, id[dim]);
+/**/  }
+#endif
+  } // for(dim)
+#if DEBUG_MACRO
+/**/  if(globalId == PRINT_KERNEL)
+/**/  {
+/**/    printf("\n");
+/**/  }
+#endif
+
+  // Initialize current parameter
+  aCurr = aMin;
+
+#if DEBUG_MACRO
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("aMin:    %05.3f\n", aMin);
+///**/  printf("aMax:    %05.3f\n", aMax);
+/**/  printf("aMax:    %f\n", aMax);
+/**/  printf("aDimup:  %05.3f,  %05.3f,  %05.3f\n",
+             aDimup[0], aDimup[1], aDimup[2]);
+/**/  printf("idDimup: %02i,  %02i,  %02i\n",
+             idDimup[0], idDimup[1], idDimup[2]);
+/**/  printf("length:  %05.3f\n", length);
+/**/}
+#endif
+}
+
+
+
+template<
+      typename T
+>
+__device__ __forceinline__
+void _chordsCalcSiddonCycles
+(
+      T *         chords,
+      T &         aCurr,
+      T &         aNext,
+      bool &      aNextExists,
+      T           aDimnext[3],
+      int         id[3],
+
+      int const   vgridSize,
+      int const   chunkSize,
+      int const   rowId,
+      bool const  crosses[3],
+      T const     aDimup[3],
+      int const   idDimup[3],
+      int const   gridN[3],
+      T const     length
+)
+{
+#if DEBUG_MACRO
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+/**/  printf("\n");
+/**/  printf("### ITERATIONS\n");
+/**/}
+#endif
+  int chordId = 0;
+  while(   id[0]<gridN[0]
+        && id[1]<gridN[1]
+        && id[2]<gridN[2]
+        && id[0]>=0
+        && id[1]>=0
+        && id[2]>=0)
+  {
+#if DEBUG_MACRO
+/**/if(globalId == PRINT_KERNEL)
+/**/{
+///**/  printf("aCurr: %05.2f\n", aCurr);
+/**/  printf("aCurr: %f\n", aCurr);
+/**/  printf("aCurr-aMax: %e\n", aCurr-aMax);
+/**/  printf("aCurr<aMax: %i\n", aCurr<aMax);
+/**/}
+#endif
+    assert(chordId<VGRIDSIZE);
+
+    // Get parameter of next intersection
+    MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
+    
+    bool anyAxisCrossed = false; 
+    // For all axes...
+    for(int dim=0; dim<3; dim++)
+    {
+      // Is this axis' plane crossed at the next parameter of intersection?
+      //bool dimCrossed = (aDimnext[dim] == aNext);
+      bool dimCrossed = (aDimnext[dim] == aNext && aNextExists);
+      anyAxisCrossed |= dimCrossed;
+
+      // If this axis' plane is crossed ...
+      //      ... write chord length at voxel index
+#if DEBUG_MACRO
+/**/    syncthreads();
+/**/    if(globalId == PRINT_KERNEL)
+/**/    {
+/**/      printf("kernel: %i, a: %5.3f\n",
+/**/             globalId,
+/**/             (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+/**/    }
+/**/    syncthreads();
+#endif
+      assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
+      
+      int rowDim = vgridSize;
+      int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
+      int colDim = chunkSize;
+      int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
+      atomicAdd(&chords[linMtxId],
+                (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+
+      //atomicAdd(&chords[  linChannelId * VGRIDSIZE
+      //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
+      //          (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+      
+      //      ... increase chord index (writing index)
+      chordId       +=  (int)(dimCrossed);
+      
+      //      ... update current parameter
+      aCurr          = (int)(!dimCrossed) * aCurr
+                      + (int)(dimCrossed) * aDimnext[dim];
+      //      ... update this axis' paramter to next plane
+      aDimnext[dim] +=  (int)(dimCrossed) * aDimup[dim];
+      //      ... update this axis' voxel index
+      id[dim]       +=  (int)(dimCrossed) * idDimup[dim];
+
+    } // for(dim)
+  } // while(aCurr)
+}      
+
+
+
+template<
+      typename T
+    , typename Event
+    , typename ConcreteMeasurementSetup
+>
 __global__
 void chordsCalc(
       T * const                         chords,
@@ -234,45 +552,40 @@ void chordsCalc(
       int const                         randomSeed,
       int const                         nThreadRays )
 {
-  int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\nchordsCalc(...):\n");
-/**/}
-#endif
-  /* Global id of channel */
-  int const rowId(blockIdx.x);                // index of row in current system
-                                              //  matrix chunk
-  int const linChannelId(y[rowId].channel()); // global linearized channel index 
-                                              //  - read explictly from current
-                                              //  measurement chunk
-  if(linChannelId >= nChannels || linChannelId < 0)
-    return;
+  // ##############################
+  // ### INITIALIZE KERNEL INSTANCE
+  // ##############################
 
-  /* Initialize random state (for making rays) */
-  curandState kernelRandState;
-  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
+  int           globalId; 
+  int           rowId;
+  int           linChannelId;
+  curandState   kernelRandState;
+  int           dimChannelId[5]; 
   
-  /* Get geometrical indices of channel */
-  int dimChannelId[5];
-  setup->sepChannelId(dimChannelId, linChannelId);
+  _chordsCalcInitKernel(
+        globalId, 
+        rowId,
+        linChannelId,
+        kernelRandState,
+        dimChannelId,
 
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\n");
-/**/  printf("linChannelId: %i,  dimChannelId: %i,  %i,  %i,  %i,  %i\n",
-/**/         linChannelId, dimChannelId[0], dimChannelId[1], dimChannelId[2],
-/**/         dimChannelId[3], dimChannelId[4]);
-/**/}
-#endif
+        nChannels,
+
+        setup,
+        y,
+        randomSeed
+  );
 
   T ray[6];
   for(int iRay=0; iRay<nThreadRays; iRay++)
   {
     // Get ray
     getRay(ray, kernelRandState, dimChannelId, *setup);
+
+    // Write ray 
+    for(int dim=0; dim<6; dim++)
+      //rays[6*(linChannelId*nThreadRays + iRay) + dim] = ray[dim];
+      rays[6*(rowId*nThreadRays + iRay) + dim] = ray[dim];
 
 #if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
@@ -284,248 +597,72 @@ void chordsCalc(
 /**/          ray[3], ray[4], ray[5]);
 /**/}
 #endif
+
+
+    // #########################################
+    // ### INITIALIZE SIDDON ALGORITHM VARIABLES
+    // #########################################
     
-    // Write ray 
-    for(int dim=0; dim<6; dim++)
-      //rays[6*(linChannelId*nThreadRays + iRay) + dim] = ray[dim];
-      rays[6*(rowId*nThreadRays + iRay) + dim] = ray[dim];
-
-    // ##################
-    // ### INITIALIZATION
-    // ##################
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\n");
-/**/  printf("### INITIALIZATION\n");
-/**/}
-#endif
-
-    // Get intersection minima for all axes, get intersection info
-    T aDimmin[3];
-    T aDimmax[3];
     bool  crosses[3];
-//#if DEBUG_MACRO
-///**/if(globalId == PRINT_KERNEL)
-///**/{
-///**/  for(int dim=0; dim<3; dim++)
-///**/  {
-///**/    printf("alpha[%i](%i): %f\n", dim, 0,
-///**/            alphaFromId(0,          dim, ray, gridO, gridD, gridN));
-///**/
-///**/    printf("alpha[%i](%i): %f\n", dim, gridN[dim],
-///**/            alphaFromId(gridN[dim], dim, ray, gridO, gridD, gridN));
-///**/  }
-///**/}
-//#endif
-    getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
-    getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
-    getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
-//#if DEBUG_MACRO
-///**/if(globalId == PRINT_KERNEL)
-///**/{
-///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
-///**/          aDimmin[0], aDimmin[1], aDimmin[2] );
-///**/  printf("aDimmax:  %6f,  %6f,  %6f\n",
-///**/          aDimmax[0], aDimmax[1], aDimmax[2] );
-///**/  printf("crosses:  %i,  %i,  %i\n",
-///**/          crosses[0], crosses[1], crosses[2] );
-///**/}
-//#endif
+    T     length;
+    T     aDimup[3];
+    int   idDimup[3];
+    T     aDimnext[3];
+    int   id[3];
+    T     aNext;
+    bool  aNextExists;
+    T     aCurr;
+    
+    _chordsCalcInitSiddon(
+          crosses,
+          length,
+          aDimup,
+          idDimup,
+          aDimnext,
+          id,
+          aNext,
+          aNextExists,
+          aCurr,
+          
+          ray,
+          gridO,
+          gridD,
+          gridN
+    );
   
-    // Get parameter of the entry and exit points
-    T aMin;
-    T aMax;
-    bool  aMinGood;
-    bool  aMaxGood;
-    getAlphaMin(  &aMin, &aMinGood, aDimmin, crosses);
-    getAlphaMax(  &aMax, &aMaxGood, aDimmax, crosses);
-    // Do entry and exit points lie in beween ray start and end points?
-    aMinGood &= (aMin >= 0. && aMin <= 1.);
-    aMaxGood &= (aMax >= 0. && aMax <= 1.);
-    // Is grid intersected at all, does ray start and end outside the grid?
-    // - otherwise return
-    //if(aMin>aMax || !aMinGood || !aMaxGood) return;
-    if(aMin>aMax || !aMinGood || !aMaxGood)
-    {
-      //printf("fail\n");
-      return;
-    }
 
-    // Get length of ray
-    T const length(getLength(ray));
-    
-    // Get parameter update values 
-    T aDimup[3];
-    getAlphaDimup(  aDimup, ray, gridD);
-    
-    // Get id update values
-    int idDimup[3];
-    getIdDimup( idDimup, ray);
-    
-    // Initialize array of next parameters
-    T aDimnext[3];
-    for(int dim=0; dim<3; dim++)
-    {
-      aDimnext[dim] = aDimmin[dim];
-      while(aDimnext[dim]<=aMin)
-        aDimnext[dim] += aDimup[dim];
-    }
+    // #####################################################
+    // ### SIDDON ALGORITHM CYCLES (FOLLOW RAY THROUGH GRID)
+    // #####################################################
+   
+    _chordsCalcSiddonCycles(
+          chords,
+          aCurr,
+          aNext,
+          aNextExists,
+          aDimnext,
+          id,
+          
+          vgridSize,
+          chunkSize,
+          rowId,
+          crosses,
+          aDimup,
+          idDimup,
+          gridN,
+          length
+    );
 
-    // Initialize array of voxel indices
-    int id[3];
-    T aNext;
-    bool aNextExists;
-    MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
-
-#if DEBUG_MACRO
-/**/  if(globalId == PRINT_KERNEL)
-/**/  {
-/**/    printf("aMin:        %f\n", aMin);
-/**/    printf("aNext:       %f\n", aNext);
-/**/    printf("aNextExists: %i\n", aNextExists);
-/**/  }
-#endif
-    for(int dim=0; dim<3; dim++)
-    {
-      id[dim] = floor(phiFromAlpha(
-            float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
-                                       )
-                          );
-#if DEBUG_MACRO
-/**/  if(globalId == PRINT_KERNEL)
-/**/  {
-/**/    printf("phiFromAlpha: %f  ",
-/**/           phiFromAlpha(float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN));
-/**/    printf("id[%i]: %02i  ",
-/**/           dim, id[dim]);
-/**/  }
-#endif
-    } // for(dim)
-#if DEBUG_MACRO
-/**/  if(globalId == PRINT_KERNEL)
-/**/  {
-/**/    printf("\n");
-/**/  }
-#endif
-
-
-    // Initialize current parameter
-    T aCurr = aMin;
-
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("aMin:    %05.3f\n", aMin);
-///**/  printf("aMax:    %05.3f\n", aMax);
-/**/  printf("aMax:    %f\n", aMax);
-/**/  printf("aDimup:  %05.3f,  %05.3f,  %05.3f\n",
-             aDimup[0], aDimup[1], aDimup[2]);
-/**/  printf("idDimup: %02i,  %02i,  %02i\n",
-             idDimup[0], idDimup[1], idDimup[2]);
-/**/  printf("length:  %05.3f\n", length);
-/**/}
-#endif
-    
-    
-    // ##################
-    // ###  ITERATIONS
-    // ##################
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\n");
-/**/  printf("### ITERATIONS\n");
-/**/}
-#endif
-    int chordId = 0;
-    while(   id[0]<gridN[0]
-          && id[1]<gridN[1]
-          && id[2]<gridN[2]
-          && id[0]>=0
-          && id[1]>=0
-          && id[2]>=0)
-    {
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-///**/  printf("aCurr: %05.2f\n", aCurr);
-/**/  printf("aCurr: %f\n", aCurr);
-/**/  printf("aCurr-aMax: %e\n", aCurr-aMax);
-/**/  printf("aCurr<aMax: %i\n", aCurr<aMax);
-/**/}
-#endif
-      assert(chordId<VGRIDSIZE);
-
-      // Get parameter of next intersection
-      MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
-      
-      bool anyAxisCrossed = false; 
-      // For all axes...
-      for(int dim=0; dim<3; dim++)
-      {
-        // Is this axis' plane crossed at the next parameter of intersection?
-        //bool dimCrossed = (aDimnext[dim] == aNext);
-        bool dimCrossed = (aDimnext[dim] == aNext && aNextExists);
-        anyAxisCrossed |= dimCrossed;
-
-        // If this axis' plane is crossed ...
-        //      ... write chord length at voxel index
-#if DEBUG_MACRO
-/**/    syncthreads();
-/**/    if(globalId == PRINT_KERNEL)
-/**/    {
-/**/      printf("kernel: %i, a: %5.3f\n",
-/**/             globalId,
-/**/             (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-/**/    }
-/**/    syncthreads();
-#endif
-        assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
-        
-        int rowDim = vgridSize;
-        int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
-        int colDim = chunkSize;
-        int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
-        atomicAdd(&chords[linMtxId],
-                  (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-
-        //atomicAdd(&chords[  linChannelId * VGRIDSIZE
-        //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
-        //          (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-        
-        //      ... increase chord index (writing index)
-        chordId       +=  (int)(dimCrossed);
-        
-        //      ... update current parameter
-        aCurr          = (int)(!dimCrossed) * aCurr
-                        + (int)(dimCrossed) * aDimnext[dim];
-        //      ... update this axis' paramter to next plane
-        aDimnext[dim] +=  (int)(dimCrossed) * aDimup[dim];
-        //      ... update this axis' voxel index
-        id[dim]       +=  (int)(dimCrossed) * idDimup[dim];
-
-      } // for(dim)
-    } // while(aCurr)
   } // for(iRay)
 }
 
 
 
-/**
- * @brief Kernel function for calculation of chords (=intersection line of ray
- *        with one voxel)
- *
- * @param chords Result memory
- * @param linearVoxelId Result memory, linear voxel index
- * @param linChannelId Linear index of channel that is calculated
- * @param gridO Grid origin
- * @param gridD Grid voxels edge lengths
- * @param gridN Grid dimensions
- */
-template< typename T,
-          typename Event,
-          typename ConcreteMeasurementSetup>
+template<
+      typename T
+    , typename Event
+    , typename ConcreteMeasurementSetup
+>
 __global__
 void chordsCalc_noVis(
       T * const                         chords,
@@ -541,32 +678,36 @@ void chordsCalc_noVis(
       int const                         randomSeed,
       int const                         nThreadRays )
 {
-  int const globalId(blockDim.x * blockIdx.x + threadIdx.x);
-#if DEBUG_MACRO
-    if(globalId == PRINT_KERNEL)
-    {
-      printf("\nchordsCalc(...):\n");
-    }
-#endif
-  /* Global id of channel */
-  int const rowId(blockIdx.x);                // index of row in current system
-                                              //  matrix chunk
-  int const linChannelId(y[rowId].channel()); // global linearized channel index 
-                                              //  - read explictly from current
-                                              //  measurement chunk
-  if(linChannelId >= nChannels || linChannelId < 0)
-    return;
+  // ##############################
+  // ### INITIALIZE KERNEL INSTANCE
+  // ##############################
+
+  int           globalId; 
+  int           rowId;
+  int           linChannelId;
+  curandState   kernelRandState;
+  int           dimChannelId[5]; 
+  
+  _chordsCalcInitKernel(
+        globalId, 
+        rowId,
+        linChannelId,
+        kernelRandState,
+        dimChannelId,
+
+        nChannels,
+
+        setup,
+        y,
+        randomSeed
+  );
 
   T ray[6];
-  curandState kernelRandState;
-  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
-
   for(int iRay=0; iRay<nThreadRays; iRay++)
   {
     // Get ray
-    int dimChannelId[5];
-    setup->sepChannelId(dimChannelId, linChannelId);
     getRay(ray, kernelRandState, dimChannelId, *setup);
+
 #if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
@@ -577,226 +718,61 @@ void chordsCalc_noVis(
 /**/          ray[3], ray[4], ray[5]);
 /**/}
 #endif
-    
-    // ##################
-    // ### INITIALIZATION
-    // ##################
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\n");
-/**/  printf("### INITIALIZATION\n");
-/**/}
-#endif
 
-    // Get intersection minima for all axes, get intersection info
-    T aDimmin[3];
-    T aDimmax[3];
+
+    // #########################################
+    // ### INITIALIZE SIDDON ALGORITHM VARIABLES
+    // #########################################
+    
     bool  crosses[3];
-//#if DEBUG_MACRO
-///**/if(globalId == PRINT_KERNEL)
-///**/{
-///**/  for(int dim=0; dim<3; dim++)
-///**/  {
-///**/    printf("alpha[%i](%i): %f\n", dim, 0,
-///**/            alphaFromId(0,          dim, ray, gridO, gridD, gridN));
-///**/
-///**/    printf("alpha[%i](%i): %f\n", dim, gridN[dim],
-///**/            alphaFromId(gridN[dim], dim, ray, gridO, gridD, gridN));
-///**/  }
-///**/}
-//#endif
-    getAlphaDimmin(   aDimmin, ray, gridO, gridD, gridN);
-    getAlphaDimmax(   aDimmax, ray, gridO, gridD, gridN);
-    getCrossesPlanes( crosses, ray, gridO, gridD, gridN);
-//#if DEBUG_MACRO
-///**/if(globalId == PRINT_KERNEL)
-///**/{
-///**/  printf("aDimmin:  %6f,  %6f,  %6f\n",
-///**/          aDimmin[0], aDimmin[1], aDimmin[2] );
-///**/  printf("aDimmax:  %6f,  %6f,  %6f\n",
-///**/          aDimmax[0], aDimmax[1], aDimmax[2] );
-///**/  printf("crosses:  %i,  %i,  %i\n",
-///**/          crosses[0], crosses[1], crosses[2] );
-///**/}
-//#endif
+    T     length;
+    T     aDimup[3];
+    int   idDimup[3];
+    T     aDimnext[3];
+    int   id[3];
+    T     aNext;
+    bool  aNextExists;
+    T     aCurr;
+    
+    _chordsCalcInitSiddon(
+          crosses,
+          length,
+          aDimup,
+          idDimup,
+          aDimnext,
+          id,
+          aNext,
+          aNextExists,
+          aCurr,
+          
+          ray,
+          gridO,
+          gridD,
+          gridN
+    );
   
-    // Get parameter of the entry and exit points
-    T aMin;
-    T aMax;
-    bool  aMinGood;
-    bool  aMaxGood;
-    getAlphaMin(  &aMin, &aMinGood, aDimmin, crosses);
-    getAlphaMax(  &aMax, &aMaxGood, aDimmax, crosses);
-    // Do entry and exit points lie in beween ray start and end points?
-    aMinGood &= (aMin >= 0. && aMin <= 1.);
-    aMaxGood &= (aMax >= 0. && aMax <= 1.);
-    // Is grid intersected at all, does ray start and end outside the grid?
-    // - otherwise return
-    //if(aMin>aMax || !aMinGood || !aMaxGood) return;
-    if(aMin>aMax || !aMinGood || !aMaxGood)
-    {
-      //printf("fail\n");
-      return;
-    }
 
-    // Get length of ray
-    T const length(getLength(ray));
-    
-    // Get parameter update values 
-    T aDimup[3];
-    getAlphaDimup(  aDimup, ray, gridD);
-    
-    // Get id update values
-    int idDimup[3];
-    getIdDimup( idDimup, ray);
-    
-    // Initialize array of next parameters
-    T aDimnext[3];
-    for(int dim=0; dim<3; dim++)
-    {
-      aDimnext[dim] = aDimmin[dim];
-      while(aDimnext[dim]<=aMin)
-        aDimnext[dim] += aDimup[dim];
-    }
-
-    // Initialize array of voxel indices
-    int id[3];
-    T aNext;
-    bool aNextExists;
-    MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
-
-#if DEBUG_MACRO
-/**/  if(globalId == PRINT_KERNEL)
-/**/  {
-/**/    printf("aMin:        %f\n", aMin);
-/**/    printf("aNext:       %f\n", aNext);
-/**/    printf("aNextExists: %i\n", aNextExists);
-/**/  }
-#endif
-    for(int dim=0; dim<3; dim++)
-    {
-      id[dim] = floor(phiFromAlpha(
-            float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN
-                                       )
-                          );
-#if DEBUG_MACRO
-/**/  if(globalId == PRINT_KERNEL)
-/**/  if(globalId == PRINT_KERNEL)
-/**/  {
-/**/    printf("phiFromAlpha: %f  ",
-/**/           phiFromAlpha(float(0.5)*(aMin + aNext), dim, ray, gridO, gridD, gridN));
-/**/    printf("id[%i]: %02i  ",
-/**/           dim, id[dim]);
-/**/  }
-#endif
-    } // for(dim)
-#if DEBUG_MACRO
-/**/  if(globalId == PRINT_KERNEL)
-/**/  {
-/**/    printf("\n");
-/**/  }
-#endif
-
-
-    // Initialize current parameter
-    T aCurr = aMin;
-
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("aMin:    %05.3f\n", aMin);
-///**/  printf("aMax:    %05.3f\n", aMax);
-/**/  printf("aMax:    %f\n", aMax);
-/**/  printf("aDimup:  %05.3f,  %05.3f,  %05.3f\n",
-             aDimup[0], aDimup[1], aDimup[2]);
-/**/  printf("idDimup: %02i,  %02i,  %02i\n",
-             idDimup[0], idDimup[1], idDimup[2]);
-/**/  printf("length:  %05.3f\n", length);
-/**/}
-#endif
-    
-    
-    // ##################
-    // ###  ITERATIONS
-    // ##################
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-/**/  printf("\n");
-/**/  printf("### ITERATIONS\n");
-/**/}
-#endif
-    int chordId = 0;
-//    while(aCurr < aMax)
-    while(   id[0]<gridN[0]
-          && id[1]<gridN[1]
-          && id[2]<gridN[2]
-          && id[0]>=0
-          && id[1]>=0
-          && id[2]>=0)
-    {
-#if DEBUG_MACRO
-/**/if(globalId == PRINT_KERNEL)
-/**/{
-///**/  printf("aCurr: %05.2f\n", aCurr);
-/**/  printf("aCurr: %f\n", aCurr);
-/**/  printf("aCurr-aMax: %e\n", aCurr-aMax);
-/**/  printf("aCurr<aMax: %i\n", aCurr<aMax);
-/**/}
-#endif
-      assert(chordId<VGRIDSIZE);
-
-      // Get parameter of next intersection
-      MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
-      
-      bool anyAxisCrossed = false; 
-      // For all axes...
-      for(int dim=0; dim<3; dim++)
-      {
-        // Is this axis' plane crossed at the next parameter of intersection?
-        //bool dimCrossed = (aDimnext[dim] == aNext);
-        bool dimCrossed = (aDimnext[dim] == aNext && aNextExists);
-        anyAxisCrossed |= dimCrossed;
-
-        // If this axis' plane is crossed ...
-        //      ... write chord length at voxel index
-#if DEBUG_MACRO
-/**/    syncthreads();
-/**/    if(globalId == PRINT_KERNEL)
-/**/    {
-/**/      printf("kernel: %i, a: %5.3f\n",
-/**/             globalId,
-/**/             (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-/**/    }
-/**/    syncthreads();
-#endif
-        assert(((int)(dimCrossed) * (aDimnext[dim]-aCurr)*length) >= 0);
-        
-        int rowDim = vgridSize;
-        int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
-        int colDim = chunkSize;
-        int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
-        atomicAdd(&chords[linMtxId],
-                  (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-
-        //atomicAdd(&chords[  linChannelId * VGRIDSIZE
-        //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
-        //          (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-        
-        //      ... increase chord index (writing index)
-        chordId       +=  (int)(dimCrossed);
-        
-        //      ... update current parameter
-        aCurr          = (int)(!dimCrossed) * aCurr
-                        + (int)(dimCrossed) * aDimnext[dim];
-        //      ... update this axis' paramter to next plane
-        aDimnext[dim] +=  (int)(dimCrossed) * aDimup[dim];
-        //      ... update this axis' voxel index
-        id[dim]       +=  (int)(dimCrossed) * idDimup[dim];
-
-      } // for(dim)
-    } // while(aCurr)
+    // #####################################################
+    // ### SIDDON ALGORITHM CYCLES (FOLLOW RAY THROUGH GRID)
+    // #####################################################
+   
+    _chordsCalcSiddonCycles(
+          chords,
+          aCurr,
+          aNext,
+          aNextExists,
+          aDimnext,
+          id,
+          
+          vgridSize,
+          chunkSize,
+          rowId,
+          crosses,
+          aDimup,
+          idDimup,
+          gridN,
+          length
+    );
   } // for(iRay)
 }
 
