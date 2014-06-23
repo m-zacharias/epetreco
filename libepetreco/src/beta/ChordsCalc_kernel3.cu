@@ -458,7 +458,6 @@ void _chordsCalcSiddonCycles
 /**/  printf("### ITERATIONS\n");
 /**/}
 #endif
-  int chordId = 0;
   while(   id[0]<gridN[0]
         && id[1]<gridN[1]
         && id[2]<gridN[2]
@@ -475,7 +474,6 @@ void _chordsCalcSiddonCycles
 /**/  printf("aCurr<aMax: %i\n", aCurr<aMax);
 /**/}
 #endif
-    assert(chordId<VGRIDSIZE);
 
     // Get parameter of next intersection
     MinFunctor<3>()(&aNext, &aNextExists, aDimnext, crosses);
@@ -507,15 +505,13 @@ void _chordsCalcSiddonCycles
       int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
       int colDim = chunkSize;
       int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
+
       atomicAdd(&chords[linMtxId],
                 (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
 
       //atomicAdd(&chords[  linChannelId * VGRIDSIZE
       //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
       //          (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
-      
-      //      ... increase chord index (writing index)
-      chordId       +=  (int)(dimCrossed);
       
       //      ... update current parameter
       aCurr          = (int)(!dimCrossed) * aCurr
@@ -525,6 +521,8 @@ void _chordsCalcSiddonCycles
       //      ... update this axis' voxel index
       id[dim]       +=  (int)(dimCrossed) * idDimup[dim];
 
+      if(id[dim] >= gridN[dim]) break;
+      if(id[dim] <  0)          break;
     } // for(dim)
   } // while(aCurr)
 }      
