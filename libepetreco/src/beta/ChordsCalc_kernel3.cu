@@ -218,7 +218,7 @@ template<
     , typename Event
 >
 __device__ __forceinline__
-void _chordsCalcInitKernel
+bool _chordsCalcInitKernel
 (
       int &                             globalId,
       int &                             rowId,
@@ -240,8 +240,11 @@ void _chordsCalcInitKernel
   linChannelId = y[rowId].channel();  // global (!) linearized channel index 
                                       //   - read explictly from current
                                       //   measurement chunk
+  
+  /* If this kernel got no valid data to work with: return false */
   if(linChannelId >= nChannels || linChannelId < 0)
-    return;
+    return false;
+
 #if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
@@ -264,6 +267,9 @@ void _chordsCalcInitKernel
 /**/         dimChannelId[3], dimChannelId[4]);
 /**/}
 #endif
+  
+  /* Return: kernel successfully initialized, got valid data to work with */
+  return true;
 }
 
 
@@ -451,6 +457,30 @@ void _chordsCalcSiddonCycles
       T const     length
 )
 {
+//  /* Print arguments and return */
+//  if(blockIdx.x*blockDim.x+threadIdx.x == 0)
+//  {
+//    printf("aCurr: %5.3f, aNext: %5.3f, aNextExists: %i\n",
+//           aCurr, aNext, aNextExists);
+//    printf("aDimnext: %5.3f, %5.3f, %5.3f\n",
+//           aDimnext[0], aDimnext[1], aDimnext[2]);
+//    printf("id: %i, %i, %i\n",
+//           id[0], id[1], id[2]);
+//    printf("vgridSize: %i, chunkSize: %i, rowId: %i\n",
+//           vgridSize, chunkSize, rowId);
+//    printf("crosses: %i, %i, %i\n",
+//           crosses[0], crosses[1], crosses[2]);
+//    printf("aDimup: %5.3f, %5.3f, %5.3f\n",
+//           aDimup[0], aDimup[1], aDimup[2]);
+//    printf("idDimup: %i, %i, %i\n",
+//           idDimup[0], idDimup[1], idDimup[2]);
+//    printf("gridN: %i, %i, %i\n",
+//           gridN[0], gridN[1], gridN[2]);
+//    printf("length: %5.3f\n\n",
+//           length);
+//    return;
+//  }
+
 #if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
@@ -505,9 +535,29 @@ void _chordsCalcSiddonCycles
       int colId  = getLinVoxelId(id[0], id[1], id[2], gridN);
       int colDim = chunkSize;
       int linMtxId = getLinMtxId(rowId, rowDim, colId, colDim);
+      
+///* !!! */syncthreads();
+///* !!! */if(linMtxId>=rowDim*colDim)
+/////* !!! */if(blockIdx.x*blockDim.x+threadIdx.x == 0)
+///* !!! */{
+///* !!! */  printf("kernel: %i, block: %i",
+///* !!! */         threadIdx.x, blockIdx.x);
+///* !!! */  printf("id[0]: %i, id[1]: %i, id[2]: %i\n",
+///* !!! */         id[0], id[1], id[2]);
+///* !!! */  printf("rowDim: %i, colId: %i, colDim: %i, rowId: %i\n",
+///* !!! */         rowDim, colId, colDim, rowId);
+///* !!! */  printf("linMtxId: %i\n\n", linMtxId);
+///* !!! */}
+///* !!! */syncthreads();
+////      if((threadIdx.x == 0) && (blockIdx.x == 114))
+////        printf("linMtxId: %i\n", linMtxId);
+
+//      assert(linMtxId<=chunkSize*vgridSize);
 
       atomicAdd(&chords[linMtxId],
                 (int)(dimCrossed) * (aDimnext[dim]-aCurr)*length);
+
+//      atomicAdd(&chords[linMtxId], 1.);
 
       //atomicAdd(&chords[  linChannelId * VGRIDSIZE
       //                  + getLinVoxelId(id[0], id[1], id[2], gridN)],
@@ -560,19 +610,20 @@ void chordsCalc(
   curandState   kernelRandState;
   int           dimChannelId[5]; 
   
-  _chordsCalcInitKernel(
-        globalId, 
-        rowId,
-        linChannelId,
-        kernelRandState,
-        dimChannelId,
+  if(!_chordsCalcInitKernel(
+            globalId, 
+            rowId,
+            linChannelId,
+            kernelRandState,
+            dimChannelId,
 
-        nChannels,
+            nChannels,
 
-        setup,
-        y,
-        randomSeed
-  );
+            setup,
+            y,
+            randomSeed
+      ))
+    return;
 
   T ray[6];
   for(int iRay=0; iRay<nThreadRays; iRay++)
@@ -686,19 +737,20 @@ void chordsCalc_noVis(
   curandState   kernelRandState;
   int           dimChannelId[5]; 
   
-  _chordsCalcInitKernel(
-        globalId, 
-        rowId,
-        linChannelId,
-        kernelRandState,
-        dimChannelId,
+  if(!_chordsCalcInitKernel(
+            globalId, 
+            rowId,
+            linChannelId,
+            kernelRandState,
+            dimChannelId,
 
-        nChannels,
+            nChannels,
 
-        setup,
-        y,
-        randomSeed
-  );
+            setup,
+            y,
+            randomSeed
+      ))
+    return;
 
   T ray[6];
   for(int iRay=0; iRay<nThreadRays; iRay++)
