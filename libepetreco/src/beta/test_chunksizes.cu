@@ -1,80 +1,8 @@
 /* Reconstruction program for real measurement data.  The reconstruction method
  * is Summed Backprojection.
  */
-
-#ifndef MEASUREMENTSETUP_DEFINES
-#define MEASUREMENTSETUP_DEFINES
-
-#define N0Z 13        // 1st detector's number of segments in z
-#define N0Y 13        // 1st detector's number of segments in y
-#define N1Z 13        // 2nd detector's number of segments in z
-#define N1Y 13        // 2nd detector's number of segments in y
-#define NA  180       // number of angular positions
-#define DA  2.        // angular step
-#define POS0X -0.457  // position of 1st detector's center in x [m]
-#define POS1X  0.457  // position of 2nd detector's center in x [m]
-#define SEGX 0.02     // x edge length of one detector segment [m]
-#define SEGY 0.004    // y edge length of one detector segment [m]
-#define SEGZ 0.004    // z edge length of one detector segment [m]
-#define NCHANNELS NA*N0Z*N0Y*N1Z*N1Y
-
-#endif  // #define MEASUREMENTSETUP_DEFINES
-
-
-
-//#ifndef VOXELGRID_DEFINES
-//#define VOXELGRID_DEFINES
-//
-//#define GRIDNX 4      // x dimension of voxel grid
-//#define GRIDNY 4      // y dimension of voxel grid
-//#define GRIDNZ 4      // z dimension od voxel grid
-//#define GRIDOX -0.05  // x origin of voxel grid [m]
-//#define GRIDOY -0.05  // y origin of voxel grid [m]
-//#define GRIDOZ -0.05  // z origin of voxel grid [m]
-//#define GRIDDX  0.025 // x edge length of one voxel [m]
-//#define GRIDDY  0.025 // y edge length of one voxel [m]
-//#define GRIDDZ  0.025 // z edge length of one voxel [m]
-//#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
-//
-//#endif  // #define VOXELGRID_DEFINES
-//---
-//#ifndef VOXELGRID_DEFINES
-//#define VOXELGRID_DEFINES
-//
-//#define GRIDNX 32       // x dimension of voxel grid
-//#define GRIDNY 32       // y dimension of voxel grid
-//#define GRIDNZ 32       // z dimension od voxel grid
-//#define GRIDOX -0.10    // x origin of voxel grid [m]
-//#define GRIDOY -0.10    // y origin of voxel grid [m]
-//#define GRIDOZ -0.10    // z origin of voxel grid [m]
-//#define GRIDDX  0.00625 // x edge length of one voxel [m]
-//#define GRIDDY  0.00625 // y edge length of one voxel [m]
-//#define GRIDDZ  0.00625 // z edge length of one voxel [m]
-//#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
-//
-//#endif  // #define VOXELGRID_DEFINES
-//---
-#ifndef VOXELGRID_DEFINES
-#define VOXELGRID_DEFINES
-
-#define GRIDNX 52     // x dimension of voxel grid
-#define GRIDNY 52     // y dimension of voxel grid
-#define GRIDNZ 52     // z dimension od voxel grid
-#define GRIDOX -0.026 // x origin of voxel grid [m]
-#define GRIDOY -0.026 // y origin of voxel grid [m]
-#define GRIDOZ -0.026 // z origin of voxel grid [m]
-#define GRIDDX  0.001 // x edge length of one voxel [m]
-#define GRIDDY  0.001 // y edge length of one voxel [m]
-#define GRIDDZ  0.001 // z edge length of one voxel [m]
-#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
-
-#endif  // #define VOXELGRID_DEFINES
-
-
-
-#include "real_defines.h"
-
-
+#include "real_measurementsetup_defines.h"
+#include "voxelgrid52_defines.h"
 
 #include "CUDA_HandleError.hpp"
 #include "FileTalk.hpp"
@@ -93,6 +21,14 @@
 #include <sstream>
 #include <cstdlib>
 
+
+#ifdef VERBOSE
+#define VSAYLINE( x )     { SAYLINE( x); }
+#define VSAYLINES( x, y ) { SAYLINES(x,y); }
+#else
+#define VSAYLINE( x )     {}
+#define VSAYLINES( x, y ) {}
+#endif
 
 
 template<typename T, typename ConcreteVoxelGrid>
@@ -183,11 +119,10 @@ typedef float val_t;
 
 int main( int ac, char ** av )
 {
-  std::cout << VGRIDSIZE << std::endl;
   /* ---------------------------
    * Treat commandline arguments 
    * --------------------------- */
-  SAYLINES(__LINE__-3, __LINE__-1);
+  VSAYLINES(__LINE__-3, __LINE__-1);
   
   if(ac < 5)
   {
@@ -215,7 +150,7 @@ int main( int ac, char ** av )
   /* --------------
    * Create objects
    * -------------- */
-  SAYLINES(__LINE__-3, __LINE__-1);
+  VSAYLINES(__LINE__-3, __LINE__-1);
   
   /* Voxel grid */
   WriteableCudaVG<val_t, DefaultVoxelGrid<val_t> > *
@@ -284,7 +219,7 @@ int main( int ac, char ** av )
   /* ----------------
    * Read measurement
    * ---------------- */
-  SAYLINES(__LINE__-3, __LINE__-1);
+  VSAYLINES(__LINE__-3, __LINE__-1);
   
   std::cout << "Total number of channels:" << std::endl
             << "    " << NCHANNELS << std::endl;
@@ -341,15 +276,15 @@ int main( int ac, char ** av )
   /* ----------------
    * Reconstruct
    * ---------------- */
-  SAYLINES(__LINE__-3, __LINE__-1);
+  VSAYLINES(__LINE__-3, __LINE__-1);
 
   /* Iterate over chunks */
-  SAYLINE(__LINE__-1);
+  VSAYLINE(__LINE__-1);
   //for(int chunkId=0; (chunkId<UPPERCHUNKID) && (chunkId<NCHUNKS); chunkId++)
   for(int chunkId=0; chunkId<NCHUNKS; chunkId++)
   {
     /* Copy chunk's part of measurement vector */
-    SAYLINE(__LINE__-1);
+    VSAYLINE(__LINE__-1);
     
     for(int listId=0; listId<chunkSize; listId++)
     {
@@ -387,7 +322,7 @@ int main( int ac, char ** av )
 #endif  // DEBUG
     
     /* Set system matrix chunk's elements to null */
-    SAYLINE(__LINE__-1);
+    VSAYLINE(__LINE__-1);
 #ifdef WITH_CUDAMATRIX
     for(int listId=0; listId<chunkSize; listId++)
       for(int vxlId=0; vxlId<VGRIDSIZE; vxlId++)
@@ -403,7 +338,7 @@ int main( int ac, char ** av )
 #endif
 
     /* Calculate system matrix chunk */
-    SAYLINE(__LINE__-1);
+    VSAYLINE(__LINE__-1);
     chordsCalc_noVis(
           chunkId, NCHANNELS, chunkSize, 1,
 #ifdef WITH_CUDAMATRIX
@@ -469,7 +404,7 @@ int main( int ac, char ** av )
 
 #ifdef WITH_CUDAMATRIX
     /* Back projection */
-    SAYLINE(__LINE__-1);
+    VSAYLINE(__LINE__-1);
     trafo.gemv(
           BLAS_OP_T,
           &one, &chunk,
@@ -493,10 +428,10 @@ int main( int ac, char ** av )
   /* ----------------
    * File output
    * ---------------- */
-  SAYLINES(__LINE__-3, __LINE__-1);
+  VSAYLINES(__LINE__-3, __LINE__-1);
   
   /* Write last guess */
-  SAYLINE(__LINE__-1);
+  VSAYLINE(__LINE__-1);
   val_t * guess = new val_t[VGRIDSIZE];
   for(int memid=0; memid<VGRIDSIZE; memid++)
     guess[memid] = x.get(memid);
@@ -508,9 +443,9 @@ int main( int ac, char ** av )
   
   /* Visualize grid */
   std::cout << cudaGetErrorString(cudaDeviceSynchronize()) << std::endl;
-  SAYLINE(__LINE__-1);
+  VSAYLINE(__LINE__-1);
   DefaultVoxelGrid<val_t> * hostRepr = grid->hostRepr();
-  SAYLINE(__LINE__-1);
+  VSAYLINE(__LINE__-1);
   PlyGrid<TemplateVertex<val_t> > visGrid("",
                           TemplateVertex<val_t>(hostRepr->gridO[0],
                                                 hostRepr->gridO[1],

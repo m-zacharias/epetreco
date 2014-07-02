@@ -2,79 +2,8 @@
  * is Summed Backprojection.
  */
 
-#ifndef MEASUREMENTSETUP_DEFINES
-#define MEASUREMENTSETUP_DEFINES
-
-#define N0Z 13        // 1st detector's number of segments in z
-#define N0Y 13        // 1st detector's number of segments in y
-#define N1Z 13        // 2nd detector's number of segments in z
-#define N1Y 13        // 2nd detector's number of segments in y
-#define NA  180       // number of angular positions
-#define DA  2.        // angular step
-#define POS0X -0.457  // position of 1st detector's center in x [m]
-#define POS1X  0.457  // position of 2nd detector's center in x [m]
-#define SEGX 0.02     // x edge length of one detector segment [m]
-#define SEGY 0.004    // y edge length of one detector segment [m]
-#define SEGZ 0.004    // z edge length of one detector segment [m]
-#define NCHANNELS NA*N0Z*N0Y*N1Z*N1Y
-
-#endif  // #define MEASUREMENTSETUP_DEFINES
-
-
-
-//#ifndef VOXELGRID_DEFINES
-//#define VOXELGRID_DEFINES
-//
-//#define GRIDNX 4      // x dimension of voxel grid
-//#define GRIDNY 4      // y dimension of voxel grid
-//#define GRIDNZ 4      // z dimension od voxel grid
-//#define GRIDOX -0.05  // x origin of voxel grid [m]
-//#define GRIDOY -0.05  // y origin of voxel grid [m]
-//#define GRIDOZ -0.05  // z origin of voxel grid [m]
-//#define GRIDDX  0.025 // x edge length of one voxel [m]
-//#define GRIDDY  0.025 // y edge length of one voxel [m]
-//#define GRIDDZ  0.025 // z edge length of one voxel [m]
-//#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
-//
-//#endif  // #define VOXELGRID_DEFINES
-//---
-//#ifndef VOXELGRID_DEFINES
-//#define VOXELGRID_DEFINES
-//
-//#define GRIDNX 32       // x dimension of voxel grid
-//#define GRIDNY 32       // y dimension of voxel grid
-//#define GRIDNZ 32       // z dimension od voxel grid
-//#define GRIDOX -0.10    // x origin of voxel grid [m]
-//#define GRIDOY -0.10    // y origin of voxel grid [m]
-//#define GRIDOZ -0.10    // z origin of voxel grid [m]
-//#define GRIDDX  0.00625 // x edge length of one voxel [m]
-//#define GRIDDY  0.00625 // y edge length of one voxel [m]
-//#define GRIDDZ  0.00625 // z edge length of one voxel [m]
-//#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
-//
-//#endif  // #define VOXELGRID_DEFINES
-//---
-#ifndef VOXELGRID_DEFINES
-#define VOXELGRID_DEFINES
-
-#define GRIDNX 52     // x dimension of voxel grid
-#define GRIDNY 52     // y dimension of voxel grid
-#define GRIDNZ 52     // z dimension od voxel grid
-#define GRIDOX -0.026 // x origin of voxel grid [m]
-#define GRIDOY -0.026 // y origin of voxel grid [m]
-#define GRIDOZ -0.026 // z origin of voxel grid [m]
-#define GRIDDX  0.001 // x edge length of one voxel [m]
-#define GRIDDY  0.001 // y edge length of one voxel [m]
-#define GRIDDZ  0.001 // z edge length of one voxel [m]
-#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ
-
-#endif  // #define VOXELGRID_DEFINES
-
-
-
-#include "real_defines.h"
-
-
+#include "real_measurementsetup_defines.h"
+#include "voxelgrid52_define.h"
 
 #include "CUDA_HandleError.hpp"
 #include "FileTalk.hpp"
