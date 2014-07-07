@@ -3,7 +3,7 @@
  */
 
 #include "real_measurementsetup_defines.h"
-#include "voxelgrid52_define.h"
+#include "voxelgrid52_defines.h"
 
 #include "CUDA_HandleError.hpp"
 #include "FileTalk.hpp"
