@@ -250,20 +250,28 @@ struct multFunctor
 template<typename TE, typename TI>
 void CudaTransform<TE,TI>::normalize( Vector_t * x, Scalar_t * norm )
 {
+  // Get number of elements in vector
   int size = x->getN();
+  // Device vector of same number of ones
   thrust::device_vector<TI> one(size, 1.);
 
+  // Cast vector data to pointer to CudaTransform internal type
   TI * xDevi   = static_cast<TI *>       ( x->data() );
+  // Thrust device pointer to CudaTransfomr internal type from above pointer
   thrust::device_ptr<TI> xDeviPtr( xDevi );
+  // Cast thrust device vector of ones to pointer to CudaTransform internal type
   TI * oneDevi = thrust::raw_pointer_cast( &one[0] );
 
+  // Norm of vector prior to normalization (old norm)
   TI isNorm;
 
+  // 1.: Calculate old norm via cublas dot product
   _cublasStatus = cublas_dot<TI>(_cublasHandle,
                                   size,
                                   xDevi, 1,
                                   oneDevi, 1,
                                   &isNorm );
+  // 2.: Normalize via thrust elementwise transform operation
   thrust::transform(
         xDeviPtr, xDeviPtr+size, xDeviPtr, multFunctor<TI>(*norm/isNorm));
 
