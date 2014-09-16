@@ -17,6 +17,28 @@ class H5Reader
 #ifdef DEBUG
       std::cout << "H5Reader::H5Reader(std::string)" << std::endl;
 #endif
+      // Open file, dataset
+      H5::Exception::dontPrint();
+      _file = 0;
+      _is_open = true;
+      try
+      {
+        _file                   = new H5::H5File(_filename.c_str(), H5F_ACC_RDWR);
+      }
+      catch(const H5::FileIException &)
+      {
+        _is_open = false;
+      }
+    }
+
+    ~H5Reader()
+    {
+      delete _file;
+    }
+
+    bool is_open() const
+    {
+      return _is_open;
     }
 
     void read( Value_t * mem )
@@ -24,9 +46,10 @@ class H5Reader
 #ifdef DEBUG
       std::cout << "H5Reader::read(Value_t*)" << std::endl;
 #endif
-      // Open file, dataset
-      H5::H5File * file       = new H5::H5File(_filename.c_str(), H5F_ACC_RDWR);
-      H5::DataSet dataset     = file->openDataSet(_datasetname.c_str());
+      if(!is_open())
+        throw H5::FileIException();
+      
+      H5::DataSet dataset     = _file->openDataSet(_datasetname.c_str());
       
 //      // Select dataset hyperslab
 //      H5::DataSpace dataspace = dataset.getSpace();
@@ -43,7 +66,6 @@ class H5Reader
 //      dataset.read(mem, H5::PredType::NATIVE_FLOAT, memspace, dataspace);
       dataset.read(mem, H5::PredType::NATIVE_FLOAT);
 
-      delete file;
 //      delete[] dims;
 //      delete[] offset;
     }
@@ -52,6 +74,8 @@ class H5Reader
   private:
     
     std::string _filename, _datasetname;
+    H5::H5File * _file;
+    bool _is_open;
 };
 
 #endif  // #ifndef H5READER_HPP

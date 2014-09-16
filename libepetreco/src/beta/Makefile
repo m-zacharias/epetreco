@@ -7,8 +7,16 @@ CUCFLAGS = -arch=sm_20 $(FLAGS) -Xcompiler -Wall
 CPPC = g++
 CPPCFLAGS = -Wall $(FLAGS)
 
-INC = -I../ -I../../ -I$(HDF5_INC) -I../Ply/
-LIB = -L$(HDF5_LIB) -lhdf5 -lhdf5_cpp -lcublas -L../../ -lepetreco
+INC = -I../\
+      -I../../\
+      -I$(HDF5_INC)\
+      -I../Ply/
+
+LIB = -L$(HDF5_LIB)\
+      -lhdf5 -lhdf5_cpp\
+      -lcublas\
+      -L../../\
+      -lepetreco
 
 EXECUTABLES := \
       test_backprojection.out \

@@ -224,8 +224,15 @@ int main( int ac, char ** av )
   std::cout << "Total number of channels:" << std::endl
             << "    " << NCHANNELS << std::endl;
   
-  /* Allocate memory for and read raw input data */
+  /* Open measurement file */
   H5Reader h5reader(fn);
+  
+  /* Allocate memory for and read raw input data */
+  if(!h5reader.is_open())
+  {
+    std::cerr << "Could not open file '" << fn << "'." << std::endl;
+    exit(EXIT_FAILURE);
+  }
   val_t * meas = new val_t[NCHANNELS];
   h5reader.read(meas);
   
