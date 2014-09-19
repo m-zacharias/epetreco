@@ -208,10 +208,24 @@ void getRay(
  * @brief Initialize chordsCalc kernel function.
  *
  * - set globalId
+ *   ------------
+ *   id of thread that is unique for this kernel call
+ *
  * - set rowId
+ *   ---------
+ *   this thread's id of row in current system matrix chunk(!)
+ *
  * - set linChannelId
+ *   ----------------
+ *   linearized id of channel that is unique and explicit for the whole
+ *   measurement
+ *
  * - set dimChannelId
+ *   ----------------
+ *   geometrical ids of channel
+ *
  * - initialize kernelRandState
+ *   --------------------------
  */
 template<
       typename ConcreteMeasurementSetup
@@ -233,14 +247,10 @@ bool _chordsCalcInitKernel
       int const                         randomSeed
 )
 {
-  /* Global id of channel */
   globalId     = blockDim.x * blockIdx.x + threadIdx.x;
-  rowId        = blockIdx.x;          // index of row in current system
-                                      //   matrix chunk (!)
-  linChannelId = y[rowId].channel();  // global (!) linearized channel index 
-                                      //   - read explictly from current
-                                      //   measurement chunk
-  
+  rowId        = blockIdx.x;
+  linChannelId = y[rowId].channel();
+    
   /* If this kernel got no valid data to work with: return false */
   if(linChannelId >= nChannels || linChannelId < 0)
     return false;
@@ -252,12 +262,12 @@ bool _chordsCalcInitKernel
 /**/}
 #endif
 
-  /* Initialize random state (for making rays) */
-  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
-  
   /* Get geometrical indices of channel */
   setup->sepChannelId(dimChannelId, linChannelId);
 
+  /* Initialize random state (for making rays) */
+  curand_init(randomSeed, linChannelId, 0, &kernelRandState);
+  
 #if DEBUG_MACRO
 /**/if(globalId == PRINT_KERNEL)
 /**/{
