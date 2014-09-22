@@ -34,6 +34,7 @@ EXECUTABLES := \
       test_CudaTransform5.out \
       test_CudaTransform_DeviceOnly.out \
       test_CudaDeviceOnlyMatrix.out \
+      test_CudaMatrix.out \
       test_H5Reader.out \
       test_H5DensityWriter.out \
       test_ChordsCalc.out \

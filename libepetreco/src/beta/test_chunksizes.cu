@@ -11,7 +11,7 @@
 #include "MeasurementSetup.hpp"
 #include "VoxelGrid.hpp"
 #include "CudaMS.hpp"
-#include "CudaVG.hpp"
+#include "WriteableCudaVG.hpp"
 #include "CudaTransform.hpp"
 #include "H5Reader.hpp"
 #include "H5DensityWriter.hpp"
@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cstdlib>
+#include "MeasurementEvent.hpp"
 
 
 #ifdef VERBOSE
@@ -29,88 +30,6 @@
 #define VSAYLINE( x )     {}
 #define VSAYLINES( x, y ) {}
 #endif
-
-
-template<typename T, typename ConcreteVoxelGrid>
-class WriteableCudaVG : public CudaVG<T, ConcreteVoxelGrid>
-{
-  public:
-
-    WriteableCudaVG(
-          T const   gridO0, T const   gridO1, T const   gridO2,
-          T const   gridD0, T const   gridD1, T const   gridD2,
-          int const gridN0, int const gridN1, int const gridN2 )
-    : CudaVG<T, ConcreteVoxelGrid>(
-          gridO0, gridO1, gridO2,
-          gridD0, gridD1, gridD2,
-          gridN0, gridN1, gridN2) {}
-
-    void getOrigin( float * origin )
-    {
-      for(int dim=0; dim<3; dim++)
-        origin[dim] = this->hostRepr()->gridO[dim];
-    }
-
-    void getVoxelSize( float * voxelSize )
-    {
-      for(int dim=0; dim<3; dim++)
-        voxelSize[dim] = this->hostRepr()->gridD[dim];
-    }
-
-    void getNumberOfVoxels( int * numberOfVoxels )
-    {
-      for(int dim=0; dim<3; dim++)
-        numberOfVoxels[dim] = this->hostRepr()->gridN[dim];
-    }
-};
-
-
-
-template<typename T>
-struct MeasurementEvent
-{
-  T   _value;
-  int _channel;
-  
-  __host__ __device__
-  MeasurementEvent()
-  : _value(0.), _channel(-1) {}
-
-  __host__ __device__
-  MeasurementEvent( T value_, int channel_)
-  : _value(value_), _channel(channel_) {}
-
-  __host__ __device__
-  MeasurementEvent( MeasurementEvent<T> const & ori )
-  {
-    _value   = ori._value;
-    _channel = ori._channel;
-  }
-  
-  __host__ __device__
-  ~MeasurementEvent()
-  {}
-
-  __host__ __device__
-  void operator=( MeasurementEvent<T> const & rhs )
-  {
-    _value   = rhs._value;
-    _channel = rhs._channel;
-  }
-
-  __host__ __device__
-  T value() const
-  {
-    return _value;
-  }
-
-  __host__ __device__
-  int channel() const
-  {
-    return _channel;
-  }
-};
-
 
 
 #define UPPERCHUNKID 1
@@ -131,7 +50,8 @@ int main( int ac, char ** av )
               << "    2.: chunkSize (mandatory)" << std::endl
               << "    3.: randomSeed (mandatory)" << std::endl
               << "    4.: nThreadRays (mandatory)" << std::endl
-              << "    5.: file output prefix (optional, defaults to \"real_algo_output\")"
+              << "    5.: nThreadsPerBlock (mandatory)" << std::endl
+              << "    6.: file output prefix (optional, defaults to \"real_algo_output\")"
               << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -139,10 +59,11 @@ int main( int ac, char ** av )
   int const   chunkSize(atoi(av[2]));
   int const   randomSeed(atoi(av[3]));
   int const   nThreadRays(atoi(av[4]));
+  int const   nThreadsPerBlock(atoi(av[5]));
 
   std::string outpre;
-  if(ac >= 6)
-    outpre = std::string(av[5]);
+  if(ac >= 7)
+    outpre = std::string(av[6]);
   else
     outpre = std::string("real_algo_output");
   
@@ -347,7 +268,7 @@ int main( int ac, char ** av )
     /* Calculate system matrix chunk */
     VSAYLINE(__LINE__-1);
     chordsCalc_noVis(
-          chunkId, NCHANNELS, chunkSize, 1,
+          chunkId, NCHANNELS, chunkSize, nThreadsPerBlock,
 #ifdef WITH_CUDAMATRIX
           static_cast<val_t*>(chunk.data()),
 #else
