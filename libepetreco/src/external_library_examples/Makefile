@@ -7,22 +7,24 @@ LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
 
 CUC = nvcc
 CUCFLAGS = -arch=sm_35
-CUCINC = -I$(CUDA_ROOT)/include -I$(SRC)
-CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
+CUCINC = -I$(CUDA_ROOT)/include/ -I$(SRC)
+CUCLIB = -lcudart -lcublas -lcusparse
 
 EXAMPLES := \
       example1_H5read.out \
       example2_H5read.out \
       example_H5write.out \
       example_H5CompoundType.out \
+      example_cuda_get-shared-memory-size.out \
+      example_cuda_thread-buffer-benchmark.out \
       example_cublas_MatrixVectorMult.out \
       example_cublas_MatrixVectorMult2.out \
       example_cublasxt_MatrixVectorMult.out \
       example_thrust_zipIterator.out \
       example_curand.out \
-      example_cuda_memory.out \
-      example_cuda_double-buffering.out
-
+      example_curand_condensed.out \
+      example_cusparse.out \
+      example_cusparse2.out
 default : $(EXAMPLES)
 
 example%.out : \
