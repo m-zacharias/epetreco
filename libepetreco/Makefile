@@ -6,12 +6,12 @@ CPPC = g++
 override CPPCFLAGS += -Wall
 CPPO = -c
 INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
-LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
+LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
 
 CUC = nvcc
 CUCFLAGS = -arch=sm_20
-CUCINC = -I$(CUDA_ROOT)/include -I$(SRC)
-CUCLIB = -L$(CUDA_ROOT)/lib -lcublas
+CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC)
+CUCLIB = -L$(CUDA_ROOT)/lib -L./ -lcublas -lepetreco
 
 # ##############################################################################
 # ### PUT ALL DEFAULT TARGETS HERE
@@ -41,7 +41,10 @@ EXECUTABLES := \
       test_SMChunkGetter.out \
       test_DevelChannel.out \
       test_ChordsCalc_lowlevel_c.out \
-      test_CudaSMLine.out
+      test_CudaSMLine.out \
+      test_getWorkqueue.out \
+      test_MeasurementSetupLinIndex.out \
+      test_MeasurementSetupTrafo2CartCoord.out
 
 default : $(EXECUTABLES)
 
@@ -120,3 +123,23 @@ PlyWriter.o : \
       $(PLY)/PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
 
+
+
+# build tests
+build-tests: .build-tests-post
+
+.build-tests-pre:
+# Add your pre 'build-tests' code here...
+
+.build-tests-post: .build-tests-impl
+# Add your post 'build-tests' code here...
+
+
+# run tests
+test: .test-post
+
+.test-pre:
+# Add your pre 'test' code here...
+
+.test-post: .test-impl
+# Add your post 'test' code here...

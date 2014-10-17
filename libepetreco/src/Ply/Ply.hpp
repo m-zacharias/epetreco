@@ -7,5 +7,6 @@
 #include "PlyGrid.hpp"
 #include "PlyRectangle.hpp"
 #include "PlyWriter.hpp"
+#include "PlyScene.hpp"
 
 #endif  // #ifndef PLY_HPP

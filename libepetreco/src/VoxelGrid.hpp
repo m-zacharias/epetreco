@@ -11,23 +11,61 @@ class VoxelGrid
                int const gridN0, int const gridN1, int const gridN2 )
     {}
     
-//    __host__ __device__
-//    void getGridO( T * const gridO ) const
-//    {
-//      return static_cast<ConcreteVoxelGrid*>(this)->getGridO(gridO);
-//    }
-//    
-//    __host__ __device__
-//    void getGridD( T * const gridD ) const
-//    {
-//      return static_cast<ConcreteVoxelGrid*>(this)->getGridD(gridD);
-//    }
-//    
-//    __host__ __device__
-//    void getGridN( int * const gridN ) const
-//    {
-//      return static_cast<ConcreteVoxelGrid*>(this)->getGridN(gridN);
-//    }
+    T gridox() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->gridox();
+    }
+
+    T gridoy() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->gridoy();
+    }
+
+    T gridoz() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->gridoz();
+    }
+    
+    T griddx() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->griddx();
+    }
+
+    T griddy() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->griddy();
+    }
+
+    T griddz() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->griddz();
+    }
+    
+    int gridnx() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->gridnx();
+    }
+
+    int gridny() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->gridny();
+    }
+
+    int gridnz() const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->gridnz();
+    }
+
+    int linVoxelId( int const * const sepVoxelId ) const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->linVoxelId(sepVoxelId);
+    }
+    
+    void sepVoxelId( int * const sepVoxelId, int const linVoxelId ) const
+    {
+        return static_cast<ConcreteVoxelGrid*>(this)->
+                sepVoxelId(sepVoxelId, linVoxelId);
+    }
 };
 
 
@@ -53,23 +91,67 @@ class DefaultVoxelGrid : public VoxelGrid<T, DefaultVoxelGrid<T> >
     T   gridD[3];
     int gridN[3];
     
-//    __host__ __device__
-//    void getGridO( T * const gridO ) const
-//    {
-//      for(int dim=0; dim<3; dim++) gridO[dim] = _gridO[dim];
-//    }
-//    
-//    __host__ __device__
-//    void getGridD( T * const gridD ) const
-//    {
-//      for(int dim=0; dim<3; dim++) gridD[dim] = _gridD[dim];
-//    }
-//    
-//    __host__ __device__
-//    void getGridN( int * const gridN ) const
-//    {
-//      for(int dim=0; dim<3; dim++) gridN[dim] = _gridN[dim];
-//    }
+    T gridox() const
+    {
+        return gridO[0];
+    }
+    
+    T gridoy() const
+    {
+        return gridO[1];
+    }
+    
+    T gridoz() const
+    {
+        return gridO[2];
+    }
+    
+    T griddx() const
+    {
+        return gridD[0];
+    }
+    
+    T griddy() const
+    {
+        return gridD[1];
+    }
+    
+    T griddz() const
+    {
+        return gridD[2];
+    }
+    
+    int gridnx() const
+    {
+        return gridN[0];
+    }
+    
+    int gridny() const
+    {
+        return gridN[1];
+    }
+    
+    int gridnz() const
+    {
+        return gridN[2];
+    }
+    
+    int linVoxelId( int const * const sepVoxelId ) const
+    {
+        return   sepVoxelId[0]
+               + sepVoxelId[1]*gridN[0]
+               + sepVoxelId[2]*gridN[0]*gridN[1];
+    }
+    
+    void sepVoxelId( int * const sepVoxelId, int const linVoxelId ) const
+    {
+        int tmp = linVoxelId;
+        sepVoxelId[2] = tmp/gridN[1]/gridN[0];
+        tmp = tmp%(gridN[1]*gridN[0]);
+        sepVoxelId[1] = tmp/gridN[0];
+        tmp = tmp%gridN[0];
+        sepVoxelId[2] = tmp;
+    }
 };
 
 #endif  // #define VOXELGRID_HPP
