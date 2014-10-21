@@ -6,12 +6,12 @@ CPPC = g++
 override CPPCFLAGS += -Wall
 CPPO = -c
 INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
-LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
+LIB = -L$(HDF5_ROOT)/lib -L./ -lhdf5 -lhdf5_cpp -lepetreco
 
 CUC = nvcc
 CUCFLAGS = -arch=sm_20
-CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC)
-CUCLIB = -L$(CUDA_ROOT)/lib -L./ -lcublas -lepetreco
+CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
+CUCLIB = -L$(CUDA_ROOT)/lib -L./ -lcublas -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
 
 # ##############################################################################
 # ### PUT ALL DEFAULT TARGETS HERE
@@ -44,7 +44,9 @@ EXECUTABLES := \
       test_CudaSMLine.out \
       test_getWorkqueue.out \
       test_MeasurementSetupLinIndex.out \
-      test_MeasurementSetupTrafo2CartCoord.out
+      test_MeasurementSetupTrafo2CartCoord.out \
+      test_getWorkqueue.out \
+      test_getWorkqueue-backprojection.out
 
 default : $(EXECUTABLES)
 

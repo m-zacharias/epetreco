@@ -4,6 +4,7 @@
 #include "H5Cpp.h"
 #include <string>
 #include <iostream>
+#include <cstdlib>
 
 class H5Reader
 {
@@ -70,6 +71,25 @@ class H5Reader
 //      delete[] offset;
     }
 
+    int sizeOfFile() {
+      if(!is_open())
+        throw H5::FileIException();
+      
+      // Open dataset
+      H5::DataSet     dataset = _file->openDataSet(_datasetname.c_str());
+      // Open dataspace of dataset
+      H5::DataSpace   dataspace = dataset.getSpace();
+      // Get ndims of dataspace
+      const int ndims = dataspace.getSimpleExtentNdims();
+      
+      // Get dims
+      hsize_t dims[ndims];
+      dataspace.getSimpleExtentDims(dims, NULL);
+      hsize_t linDim(1);
+      for(int i=0; i<ndims; i++)
+        linDim *= dims[i];
+      return linDim;
+    }
 
   private:
     

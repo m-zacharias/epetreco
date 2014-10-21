@@ -146,11 +146,11 @@ class DefaultVoxelGrid : public VoxelGrid<T, DefaultVoxelGrid<T> >
     void sepVoxelId( int * const sepVoxelId, int const linVoxelId ) const
     {
         int tmp = linVoxelId;
-        sepVoxelId[2] = tmp/gridN[1]/gridN[0];
-        tmp = tmp%(gridN[1]*gridN[0]);
-        sepVoxelId[1] = tmp/gridN[0];
-        tmp = tmp%gridN[0];
-        sepVoxelId[2] = tmp;
+        sepVoxelId[2] = tmp/ (gridN[0]*gridN[1]);
+        tmp          %=      (gridN[0]*gridN[1]);
+        sepVoxelId[1] = tmp/ (gridN[0]);
+        tmp          %=      (gridN[0]);
+        sepVoxelId[0] = tmp;
     }
 };
 
