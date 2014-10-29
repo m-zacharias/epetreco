@@ -69,7 +69,6 @@ int getWorkqueueEntry(int * const returnCnlId, int * const returnVxlId,
     
     
     // If is candidate ...
-//    if(true) {
     if(distance(pix0Center, pix1Center, vxlCenter)<sumRadii) {
       // ... save cnlId, vxlId; inkrement ids; return 1
       *returnCnlId = cnlId;
