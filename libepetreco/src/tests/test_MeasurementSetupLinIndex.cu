@@ -34,13 +34,14 @@ void test1() {
   
   // Test all indices
   for(int i=0; i<NA*N0Z*N0Y*N1Z*N1Y; i++) {
-    int id0z = f_id0z(i, &setup);
-    int id0y = f_id0y(i, &setup);
-    int id1z = f_id1z(i, &setup);
-    int id1y = f_id1y(i, &setup);
-    int ida  = f_ida(i, &setup);
+    int id0z  = f_id0z(i, &setup);
+    int id0y  = f_id0y(i, &setup);
+    int id1z  = f_id1z(i, &setup);
+    int id1y  = f_id1y(i, &setup);
+    int ida   = f_ida(i, &setup);
+    int linId = f_linId(id0z, id0y, id1z, id1y, ida, &setup);
     
-    assert(f_linId(id0z, id0y, id1z, id1y, ida, &setup) == i);
+    assert(linId == i);
   }
 }
 

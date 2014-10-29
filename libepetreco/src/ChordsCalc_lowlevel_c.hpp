@@ -327,50 +327,6 @@ getChords(
 }
 
 
-//template<typename val_t>
-//int
-//getNChords(
-//      val_t ray[],
-//      val_t gridO[], val_t gridD[], int gridN[] )
-//{
-////  if(!valid(ray, grid))
-////  {
-////    std::cerr << "ChordsCalc<...>" << std::endl
-////              << "::calculateChordLengths(...) : "
-////              << "Error: Ray_t starts/ends within the grid"
-////              << std::endl;
-////    throw 1;
-////  }
-//  
-//  val_t   amin,     amax;
-//  bool    min_good, max_good;
-//  getAlphaMin(ray, gridO, gridD, gridN, &amin, &min_good);
-//  getAlphaMax(ray, gridO, gridD, gridN, &amax, &max_good);
-//  
-////  if(min_good && max_good && amin<amax)
-////  {
-////    int N = 0;
-////    for(int dim=0; dim<3; dim++)
-////    {
-////      N += getIdDimmax(ray, grid, dim);
-////      N -= getIdDimmin(ray, grid, dim);
-////      N += 1;
-////    }
-////    return N;
-////  }
-////  else
-////    return 0;
-//  int N = 0;
-//  for(int dim=0; dim<3; dim++)
-//  {
-//    N += getIdDimmax(ray, gridO, gridD, gridN, dim);
-//    N -= getIdDimmin(ray, gridO, gridD, gridN, dim);
-//    N += 1;
-//  }
-//
-//  return (int)(min_good && max_good) * N;
-//} 
-
 
 /**
  * @brief Function template that for a given ray and a given grid determines for

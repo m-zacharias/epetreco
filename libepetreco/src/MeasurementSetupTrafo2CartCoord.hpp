@@ -20,13 +20,17 @@
 #include "MeasurementSetup.hpp"
 #include <cmath>
 
-template<typename T, typename ConcreteMSTrafo2CartCoordFirstPixel,
-         typename ConcreteMS>
+template<
+      typename T
+    , typename ConcreteMSTrafo2CartCoordFirstPixel
+    , typename ConcreteMS >
 class MeasurementSetupTrafo2CartCoordFirstPixel {
   public:
-    void operator()(T * const cart_coords, T const * const box_coords,
-               int const id0z, int const id0y, int const ida,
-               ConcreteMS const * const meas) {
+    __host__ __device__
+    void operator()(
+          T * const cart_coords, T const * const box_coords,
+          int const id0z, int const id0y, int const ida,
+          ConcreteMS const * const meas ) {
       return static_cast<ConcreteMSTrafo2CartCoordFirstPixel*>(this)->
               operator()(cart_coords, box_coords,
                          id0z, id0y, ida,
@@ -34,16 +38,20 @@ class MeasurementSetupTrafo2CartCoordFirstPixel {
     }
 };
 
-template<typename T, typename ConcreteMS>
+template<
+      typename T
+    , typename ConcreteMS >
 class DefaultMeasurementSetupTrafo2CartCoordFirstPixel
 : public MeasurementSetupTrafo2CartCoordFirstPixel<
              T,
              DefaultMeasurementSetupTrafo2CartCoordFirstPixel<T, ConcreteMS>,
              ConcreteMS> {
   public:
-    void operator()(T * const cart_coords, T const * const box_coords,
-             int const id0z, int const id0y, int const ida,
-             ConcreteMS const * const meas) {
+    __host__ __device__
+    void operator()(
+          T * const cart_coords, T const * const box_coords,
+          int const id0z, int const id0y, int const ida,
+          ConcreteMS const * const meas ) {
       // get pixel edge leghts
       T edges[3];
       edges[0] = meas->segx();
@@ -96,13 +104,17 @@ class DefaultMeasurementSetupTrafo2CartCoordFirstPixel
     }
 };
 
-template<typename T, typename ConcreteMSTrafo2CartCoordSecndPixel,
-         typename ConcreteMS>
+template<
+      typename T
+    , typename ConcreteMSTrafo2CartCoordSecndPixel
+    , typename ConcreteMS >
 class MeasurementSetupTrafo2CartCoordSecndPixel {
   public:
-    void operator()(T * const cart_coords, T const * const box_coords,
-             int const id1z, int const id1y, int const ida,
-             ConcreteMS const * const meas) {
+    __host__ __device__
+    void operator()(
+          T * const cart_coords, T const * const box_coords,
+          int const id1z, int const id1y, int const ida,
+          ConcreteMS const * const meas ) {
       return static_cast<ConcreteMSTrafo2CartCoordSecndPixel*>(this)->
               operator()(cart_coords, box_coords,
                          id1z, id1y, ida,
@@ -110,16 +122,20 @@ class MeasurementSetupTrafo2CartCoordSecndPixel {
     }
 };
 
-template<typename T, typename ConcreteMS>
+template<
+      typename T
+    , typename ConcreteMS >
 class DefaultMeasurementSetupTrafo2CartCoordSecndPixel
 : public MeasurementSetupTrafo2CartCoordSecndPixel<
              T,
              DefaultMeasurementSetupTrafo2CartCoordSecndPixel<T, ConcreteMS>,
              ConcreteMS> {
   public:
-    void operator()(T * const cart_coords, T const * const box_coords,
-             int const id1z, int const id1y, int const ida,
-             ConcreteMS const * const meas) {
+    __host__ __device__
+    void operator()(
+          T * const cart_coords, T const * const box_coords,
+          int const id1z, int const id1y, int const ida,
+          ConcreteMS const * const meas ) {
       // get pixel edge leghts
       T edges[3];
       edges[0] = meas->segx();

@@ -9,7 +9,7 @@ INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
 LIB = -L$(HDF5_ROOT)/lib -L./ -lhdf5 -lhdf5_cpp -lepetreco
 
 CUC = nvcc
-CUCFLAGS = -arch=sm_20
+override CUCFLAGS += -arch=sm_20
 CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
 CUCLIB = -L$(CUDA_ROOT)/lib -L./ -lcublas -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
 
@@ -42,11 +42,12 @@ EXECUTABLES := \
       test_DevelChannel.out \
       test_ChordsCalc_lowlevel_c.out \
       test_CudaSMLine.out \
-      test_getWorkqueue.out \
       test_MeasurementSetupLinIndex.out \
       test_MeasurementSetupTrafo2CartCoord.out \
       test_getWorkqueue.out \
-      test_getWorkqueue-backprojection.out
+      test_getWorkqueue-backprojection.out \
+      test_getSystemMatrixElement.out \
+      test_VoxelGridLinIndex.out
 
 default : $(EXECUTABLES)
 

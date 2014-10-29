@@ -24,7 +24,8 @@ EXAMPLES := \
       example_curand.out \
       example_curand_condensed.out \
       example_cusparse.out \
-      example_cusparse2.out
+      example_cusparse2.out \
+      example_cuda-constant-memory.out
 default : $(EXAMPLES)
 
 example%.out : \

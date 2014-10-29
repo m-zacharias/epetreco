@@ -152,6 +152,9 @@ class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSet
 
   public:
     
+    DefaultMeasurementSetup()
+    {}
+    
     DefaultMeasurementSetup(
           T   pos0x, T   pos1x,
           int na,    int n0z,   int n0y,  int n1z, int n1y,
@@ -160,6 +163,12 @@ class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSet
       _n1y(n1y), _da(da), _segx(segx), _segy(segy), _segz(segz)
     {}
 
+    DefaultMeasurementSetup( DefaultMeasurementSetup const & o )
+    : _pos0x(o._pos0x), _pos1x(o._pos1x),
+      _na(o._na), _n0z(o._n0z), _n0y(o._n0y), _n1z(o._n1z), _n1y(o._n1y),
+      _da(o._da), _segx(o._segx), _segy(o._segy), _segz(o._segz)
+    {}
+    
     ~DefaultMeasurementSetup()
     {}
     

@@ -1,0 +1,35 @@
+../libepetreco/src/beta/test_input/epet_POS102_testA.mess.h5 :
+-----
+ida id0z id0y id1z id1y : val
+0 6 6 6 6  :  1.0
+*****
+../libepetreco/src/beta/test_input/epet_POS102_testB.mess.h5 :
+-----
+ida id0z id0y id1z id1y : val
+0 6 6 6 6  :  1.0
+22 6 6 6 6  :  2.0
+33 6 6 6 6  :  4.0
+50 6 6 6 6  :  8.0
+*****
+../libepetreco/src/beta/test_input/epet_POS102_testC.mess.h5 :
+-----
+ida id0z id0y id1z id1y : val
+0 6 0 6 0  :  1.0
+0 6 2 6 2  :  2.0
+0 6 4 6 4  :  4.0
+0 6 8 6 8  :  8.0
+*****
+../libepetreco/src/beta/test_input/epet_POS102_testD.mess.h5 :
+-----
+ida id0z id0y id1z id1y : val
+0 6 0 6 12  :  1.0
+0 6 12 6 0  :  1.0
+*****
+../libepetreco/src/beta/test_input/epet_POS102_testE.mess.h5 :
+-----
+ida id0z id0y id1z id1y : val
+0 6 6 6 6  :  1.0
+22 6 6 6 6  :  1.0
+34 6 6 6 6  :  1.0
+50 6 6 6 6  :  1.0
+*****

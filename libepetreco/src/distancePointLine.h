@@ -8,6 +8,8 @@
 #ifndef DISTANCEPOINTLINE_H
 #define	DISTANCEPOINTLINE_H
 
+#include <iomanip>
+
 template<typename T>
 inline T absolute( T const * const a )
 {
@@ -34,9 +36,23 @@ T distance( T const * const a, T const * const b,
     ab[1] = b[1]-a[1];
     ab[2] = b[2]-a[2];
     
-    return absolute(ap)*
-            sin(acos(scalarProduct(ab,ap)/absolute(ab)/absolute(ap)));
-}
+    T sp = scalarProduct(ab,ap);
+    T abs_ab = absolute(ab);
+    T abs_ap = absolute(ap);
+    
+    T test = scalarProduct(ab,ap)/(absolute(ab)*absolute(ap));
+    
+    if(!((test>=0.) && (test<=1.))) {
+      std::cerr << std::scientific << std::setw(20) << "test not in range! " << test-1. << std::endl;
+      return 0.;
+    } else if(!((acos(test)>=0.) && (acos(test)<=M_PI))) {
+      std::cerr << "acos(test) not in range! " << acos(test) << std::endl;
+      return 0;
+    } else {
+      return absolute(ap)*
+              sin(acos(scalarProduct(ab,ap)/absolute(ab)/absolute(ap)));
+    }
+  }
 
 //template<typename T>
 //T distance( T const * const a, T const * const b,
