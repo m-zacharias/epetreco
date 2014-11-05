@@ -1,7 +1,7 @@
 #ifndef MEASEREMENTSETUP_HPP
 #define MEASEREMENTSETUP_HPP
 
-#include "pi.h"
+//#include "pi.h"
 
 template<typename T, typename ConcreteMeasurementSetup>
 class MeasurementSetup
@@ -74,52 +74,52 @@ class MeasurementSetup
       return static_cast<ConcreteMeasurementSetup*>(this)->segz();
     }
 
-    /**
-     * @brief Break linear channel index up into separate indices of channel
-     *        configuration.
-     *
-     * @param sepChannelId Result memory (int[5])
-     * @param linChannelId Linear index of channel
-     */
-    __host__ __device__ void sepChannelId(
-          int * const sepChannelId_, int const linChannelId ) const
-    {
-      return static_cast<ConcreteMeasurementSetup*>(this)->
-            sepChannelId(sepChannelId_, linChannelId);
-    }
+//    /**
+//     * @brief Break linear channel index up into separate indices of channel
+//     *        configuration.
+//     *
+//     * @param sepChannelId Result memory (int[5])
+//     * @param linChannelId Linear index of channel
+//     */
+//    __host__ __device__ void sepChannelId(
+//          int * const sepChannelId_, int const linChannelId ) const
+//    {
+//      return static_cast<ConcreteMeasurementSetup*>(this)->
+//            sepChannelId(sepChannelId_, linChannelId);
+//    }
 
-    /**
-     * @brief Linearized index of channel.
-     *
-     * @param sepChannelId Separate indices of channel configuration
-     */
-    __host__ __device__ int linChannelId(
-          int const * const sepChannelId ) const
-    {
-      return static_cast<ConcreteMeasurementSetup*>(this)->
-            linChannelId(sepChannelId);
-    }
+//    /**
+//     * @brief Linearized index of channel.
+//     *
+//     * @param sepChannelId Separate indices of channel configuration
+//     */
+//    __host__ __device__ int linChannelId(
+//          int const * const sepChannelId ) const
+//    {
+//      return static_cast<ConcreteMeasurementSetup*>(this)->
+//            linChannelId(sepChannelId);
+//    }
     
-    /**
-     * @brief Get a channel's geometrical properties.
-     *
-     * @param pos0 Result memory (val_t[3]), position of detector0 segment's center
-     * @param pos1 Result memory (val_t[3]), position of detector1 segment's center
-     * @param edges Result memory (val_t[3]), lengths of detector segments' edges
-     * @param sin_ Result memory (val_t *), sine of angle
-     * @param cos_ Result memory (val_t *), cosine of angle
-     * @param 5DChannelId Indices of channel configuration
-     * @param setup Measurement setup description
-     */
-    __host__ __device__ void getGeomProps(
-          T * const pos0,  T * const pos1,
-          T * const edges,
-          T * const sin_,  T * const cos_,
-          int const * const          sepChannelId ) const
-    {
-      return static_cast<ConcreteMeasurementSetup*>(this)->
-            getGeomProps(pos0, pos1, edges, sin_, cos_, sepChannelId);
-    }
+//    /**
+//     * @brief Get a channel's geometrical properties.
+//     *
+//     * @param pos0 Result memory (val_t[3]), position of detector0 segment's center
+//     * @param pos1 Result memory (val_t[3]), position of detector1 segment's center
+//     * @param edges Result memory (val_t[3]), lengths of detector segments' edges
+//     * @param sin_ Result memory (val_t *), sine of angle
+//     * @param cos_ Result memory (val_t *), cosine of angle
+//     * @param 5DChannelId Indices of channel configuration
+//     * @param setup Measurement setup description
+//     */
+//    __host__ __device__ void getGeomProps(
+//          T * const pos0,  T * const pos1,
+//          T * const edges,
+//          T * const sin_,  T * const cos_,
+//          int const * const          sepChannelId ) const
+//    {
+//      return static_cast<ConcreteMeasurementSetup*>(this)->
+//            getGeomProps(pos0, pos1, edges, sin_, cos_, sepChannelId);
+//    }
 };
 
 template<typename T>
@@ -139,15 +139,15 @@ class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSet
     T   _segy;
     T   _segz;
 
-    __host__ __device__
-    void getDims( int * const dims ) const
-    {
-      dims[0] = _na;
-      dims[1] = _n0z;
-      dims[2] = _n0y;
-      dims[3] = _n1z;
-      dims[4] = _n1y;
-    }
+//    __host__ __device__
+//    void getDims( int * const dims ) const
+//    {
+//      dims[0] = _na;
+//      dims[1] = _n0z;
+//      dims[2] = _n0y;
+//      dims[3] = _n1z;
+//      dims[4] = _n1y;
+//    }
 
 
   public:
@@ -238,60 +238,60 @@ class DefaultMeasurementSetup : public MeasurementSetup<T, DefaultMeasurementSet
       return _segz;
     }
     
-    __host__ __device__
-    void sepChannelId(
-          int * const sepChannelId_, int const linChannelId ) const
-    {
-      int dims[5];
-      getDims(dims);
+//    __host__ __device__
+//    void sepChannelId(
+//          int * const sepChannelId_, int const linChannelId ) const
+//    {
+//      int dims[5];
+//      getDims(dims);
+//
+//      int temp( linChannelId );
+//      sepChannelId_[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular id
+//      temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
+//      sepChannelId_[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
+//      temp %= (dims[4]*dims[3]*dims[2]);
+//      sepChannelId_[2] = temp / (dims[4]*dims[3]);                 // det0y index
+//      temp %= (dims[4]*dims[3]);
+//      sepChannelId_[3] = temp / (dims[4]);                         // det1z index
+//      temp %= (dims[4]);
+//      sepChannelId_[4] = temp;                                     // det1y index
+//    }
 
-      int temp( linChannelId );
-      sepChannelId_[0] = temp / (dims[4]*dims[3]*dims[2]*dims[1]); // angular id
-      temp %= (dims[4]*dims[3]*dims[2]*dims[1]);
-      sepChannelId_[1] = temp / (dims[4]*dims[3]*dims[2]);         // det0z index
-      temp %= (dims[4]*dims[3]*dims[2]);
-      sepChannelId_[2] = temp / (dims[4]*dims[3]);                 // det0y index
-      temp %= (dims[4]*dims[3]);
-      sepChannelId_[3] = temp / (dims[4]);                         // det1z index
-      temp %= (dims[4]);
-      sepChannelId_[4] = temp;                                     // det1y index
-    }
-
-    __host__ __device__
-    int linChannelId(
-          int const * const sepChannelId ) const
-    {
-      int dims[5];
-      getDims(dims);
-
-      return   sepChannelId[0] * dims[1]*dims[2]*dims[3]*dims[4]
-             + sepChannelId[1] *         dims[2]*dims[3]*dims[4]
-             + sepChannelId[2] *                 dims[3]*dims[4]
-             + sepChannelId[3] *                         dims[4]
-             + sepChannelId[4];
-    }
+//    __host__ __device__
+//    int linChannelId(
+//          int const * const sepChannelId ) const
+//    {
+//      int dims[5];
+//      getDims(dims);
+//
+//      return   sepChannelId[0] * dims[1]*dims[2]*dims[3]*dims[4]
+//             + sepChannelId[1] *         dims[2]*dims[3]*dims[4]
+//             + sepChannelId[2] *                 dims[3]*dims[4]
+//             + sepChannelId[3] *                         dims[4]
+//             + sepChannelId[4];
+//    }
     
-    __host__ __device__
-    void getGeomProps(
-          T * const pos0, T * const pos1,
-          T * const edges,
-          T * const sin_, T * const cos_,
-          int const * const sepChannelId ) const
-    {
-      pos0[0]  = this->pos0x();
-      pos0[1]  = (sepChannelId[2]-0.5*this->n0y()+0.5)*this->segy();
-      pos0[2]  = (sepChannelId[1]-0.5*this->n0z()+0.5)*this->segz();
-      pos1[0]  = this->pos1x();
-      pos1[1]  = (sepChannelId[4]-0.5*this->n1y()+0.5)*this->segy();
-      pos1[2]  = (sepChannelId[3]-0.5*this->n1z()+0.5)*this->segz();
-      edges[0] = this->segx();
-      edges[1] = this->segy();
-      edges[2] = this->segz();
-      //sin_[0]  = sin(sepChannelId[0]*this->da()); // !!!!!
-      sin_[0]  = sin(sepChannelId[0]*this->da()/180.*PI);
-      //cos_[0]  = cos(sepChannelId[0]*this->da()); // !!!!!
-      cos_[0]  = cos(sepChannelId[0]*this->da()/180.*PI); // !!!!!
-    }
+//    __host__ __device__
+//    void getGeomProps(
+//          T * const pos0, T * const pos1,
+//          T * const edges,
+//          T * const sin_, T * const cos_,
+//          int const * const sepChannelId ) const
+//    {
+//      pos0[0]  = this->pos0x();
+//      pos0[1]  = (sepChannelId[2]-0.5*this->n0y()+0.5)*this->segy();
+//      pos0[2]  = (sepChannelId[1]-0.5*this->n0z()+0.5)*this->segz();
+//      pos1[0]  = this->pos1x();
+//      pos1[1]  = (sepChannelId[4]-0.5*this->n1y()+0.5)*this->segy();
+//      pos1[2]  = (sepChannelId[3]-0.5*this->n1z()+0.5)*this->segz();
+//      edges[0] = this->segx();
+//      edges[1] = this->segy();
+//      edges[2] = this->segz();
+//      //sin_[0]  = sin(sepChannelId[0]*this->da()); // !!!!!
+//      sin_[0]  = sin(sepChannelId[0]*this->da()/180.*PI);
+//      //cos_[0]  = cos(sepChannelId[0]*this->da()); // !!!!!
+//      cos_[0]  = cos(sepChannelId[0]*this->da()/180.*PI); // !!!!!
+//    }
 };
 
 #endif  // #define MEASEREMENTSETUP_HPP

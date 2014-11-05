@@ -17,6 +17,10 @@
 #include "voxelgrid52_defines.h"
 #include <iostream>
 
+#include "typedefs.hpp"
+
+#define QUEUELENGTH 1024*1024*15
+
 typedef float                              val_t;
 typedef DefaultVoxelGrid<val_t>            VG;
 typedef DefaultMeasurementSetup<val_t>     MS;
@@ -58,7 +62,7 @@ private:
   VG * _grid;
 };
 
-void test2( std::string fn, int const n ) {
+void test2( std::string const fn, std::string const on, int const n ) {
   VG grid =
     VG(
       GRIDOX, GRIDOY, GRIDOZ,
@@ -79,11 +83,13 @@ void test2( std::string fn, int const n ) {
   int listId(0); int vxlId(0);
   int nFound;
   
-  nFound = getWorkqueueEntries<val_t,
-                               ML, VG, MS,
-                               Id0z, Id0y, Id1z, Id1y, Ida,
-                               Trafo0, Trafo1> (
-             n, wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
+  nFound = getWorkqueueEntries<
+        val_t,
+        ML, 
+        VG, Idx, Idy, Idz,
+        MS, Id0z, Id0y, Id1z, Id1y, Ida,
+        Trafo0, Trafo1> (
+        n, wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
   
   // Create grid memory for backprojection
   int const gridsize(grid.gridnx()*grid.gridny()*grid.gridnz());
@@ -98,20 +104,24 @@ void test2( std::string fn, int const n ) {
     mem[vxlId] += 1.0;
   }
   
-  H5DensityWriter<GridAdapter<val_t> > writer("test_getWorkqueue-backprojection_out.h5");
+  H5DensityWriter<GridAdapter<val_t> > writer(on);
   GridAdapter<val_t> ga(&grid);
   writer.write(mem, ga);
 }
 
-int main() {
-  std::string fn;
-  int n;
-  std::cout << "Enter filename of measurement data: ";
-  std::cin >> fn;
-  std::cout << "Look for how many workqueue entries?: ";
-  std::cin >> n;
+int main(int argc, char** argv) {
+  int const nargs(2);
+  if(argc!=nargs+1) {
+    std::cerr << "Error: Wrong number of arguments. Exspected: "
+              << nargs << ":" << std::endl
+              << "  filename of measurement" << std::endl
+              << "  filename of output" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  std::string const fn(argv[1]);
+  std::string const on(argv[2]);
 
-  test2(fn, n);
+  test2(fn, on, QUEUELENGTH);
   
   return 0;
 }

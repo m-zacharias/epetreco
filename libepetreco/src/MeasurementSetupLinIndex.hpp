@@ -36,11 +36,32 @@ struct DefaultMeasurementSetupLinId
   int operator()(
         int const id0z, int const id0y, int const id1z, int const id1y,
         int const ida, ConcreteMeasurementSetup const * const meas ) {
-    return   id0z
-           + id0y * (meas->n0z())
-           + id1z * (meas->n0z())*(meas->n0y())
-           + id1y * (meas->n0z())*(meas->n0y())*(meas->n1z())
-           + ida  * (meas->n0z())*(meas->n0y())*(meas->n1z())*(meas->n1y());
+      return ida  * (meas->n1y()*meas->n1z()*meas->n0y()*meas->n0z())
+           + id0z * (meas->n1y()*meas->n1z()*meas->n0y())
+           + id0y * (meas->n1y()*meas->n1z())
+           + id1z * (meas->n1y())
+           + id1y;
+  }
+};
+
+template<typename ConcreteMSIda, typename ConcreteMeasurementSetup>
+struct MeasurementSetupIda {
+  __host__ __device__
+  int operator()(
+        int const linId, ConcreteMeasurementSetup const * const meas ) {
+    return static_cast<ConcreteMSIda*>(this)->
+            operator()(linId, meas);
+  }
+};
+
+template<typename ConcreteMeasurementSetup>
+struct DefaultMeasurementSetupIda
+: public MeasurementSetupIda<DefaultMeasurementSetupIda<ConcreteMeasurementSetup>,
+                              ConcreteMeasurementSetup> {
+  __host__ __device__
+  int operator()(
+        int const linId, ConcreteMeasurementSetup const * const meas ) {
+    return linId /(meas->n1y()*meas->n1z()*meas->n0y()*meas->n0z());
   }
 };
 
@@ -62,11 +83,8 @@ struct DefaultMeasurementSetupId0z
   int operator()(
         int const linId, ConcreteMeasurementSetup const * const meas ) {
     int temp = linId;
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z())*(meas->n1y()));
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z()));
-    temp %=      ((meas->n0z())*(meas->n0y()));
-    temp %=      ((meas->n0z()));
-    return temp;
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y()*meas->n0z());
+    return temp /(meas->n1y()*meas->n1z()*meas->n0y());
   }
 };
 
@@ -88,10 +106,9 @@ struct DefaultMeasurementSetupId0y
   int operator()(
         int const linId, ConcreteMeasurementSetup const * const meas ) {
     int temp = linId;
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z())*(meas->n1y()));
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z()));
-    temp %=      ((meas->n0z())*(meas->n0y()));
-    return temp /((meas->n0z()));
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y()*meas->n0z());
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y());
+    return temp /(meas->n1y()*meas->n1z());
   }
 };
 
@@ -113,9 +130,10 @@ struct DefaultMeasurementSetupId1z
   int operator()(
         int const linId, ConcreteMeasurementSetup const * const meas ) {
     int temp = linId;
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z())*(meas->n1y()));
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z()));
-    return temp /((meas->n0z())*(meas->n0y()));
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y()*meas->n0z());
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y());
+    temp %=      (meas->n1y()*meas->n1z());
+    return temp /(meas->n1y());
   }
 };
 
@@ -137,29 +155,11 @@ struct DefaultMeasurementSetupId1y
   int operator()(
         int const linId, ConcreteMeasurementSetup const * const meas ) {
     int temp = linId;
-    temp %=      ((meas->n0z())*(meas->n0y())*(meas->n1z())*(meas->n1y()));
-    return temp /((meas->n0z())*(meas->n0y())*(meas->n1z()));
-  }
-};
-
-template<typename ConcreteMSIda, typename ConcreteMeasurementSetup>
-struct MeasurementSetupIda {
-  __host__ __device__
-  int operator()(
-        int const linId, ConcreteMeasurementSetup const * const meas ) {
-    return static_cast<ConcreteMSIda*>(this)->
-            operator()(linId, meas);
-  }
-};
-
-template<typename ConcreteMeasurementSetup>
-struct DefaultMeasurementSetupIda
-: public MeasurementSetupIda<DefaultMeasurementSetupIda<ConcreteMeasurementSetup>,
-                              ConcreteMeasurementSetup> {
-  __host__ __device__
-  int operator()(
-        int const linId, ConcreteMeasurementSetup const * const meas ) {
-    return linId /((meas->n0z())*(meas->n0y())*(meas->n1z())*(meas->n1y()));
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y()*meas->n0z());
+    temp %=      (meas->n1y()*meas->n1z()*meas->n0y());
+    temp %=      (meas->n1y()*meas->n1z());
+    temp %=      (meas->n1y());
+    return temp;
   }
 };
 

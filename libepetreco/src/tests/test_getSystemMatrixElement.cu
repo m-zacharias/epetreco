@@ -17,7 +17,9 @@
 #include "H5DensityWriter.hpp"
 #include "real_measurementsetup_defines.h"
 //#include "voxelgrid10_defines.h"
-#include "voxelgrid52_defines.h"
+//#include "voxelgrid20_defines.h"
+//#include "voxelgrid52_defines.h"
+#include "voxelgrid64_defines.h"
 #include <iostream>
 #include "CUDA_HandleError.hpp"
 
@@ -29,7 +31,7 @@
  */
 
 #define TPB 256
-#define QUEUELENGTH 1024*1024*10
+#define QUEUELENGTH 1024*1024*15
 
 template<typename T>
 class GridAdapter {
@@ -115,8 +117,9 @@ int main(int argc, char** argv) {
   int nFound =
     getWorkqueueEntries<
           val_t,
-          ML, VG, MS,
-          Id0z, Id0y, Id1z, Id1y, Ida,
+          ML,
+          VG, Idx, Idy, Idz,
+          MS, Id0z, Id0y, Id1z, Id1y, Ida,
           Trafo0, Trafo1> (
           QUEUELENGTH, wqCnlId_host, wqVxlId_host, listId, vxlId, &list, &grid, &setup);
   

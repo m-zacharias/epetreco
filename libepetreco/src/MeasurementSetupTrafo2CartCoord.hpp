@@ -63,9 +63,9 @@ class DefaultMeasurementSetupTrafo2CartCoordFirstPixel
       pos[1]=(id0y-.5*(meas->n0y()-1))*edges[1];
       pos[2]=(id0z-.5*(meas->n0z()-1))*edges[2];
       // get angular function values of channel's rotation
-      T sin_ = sin(ida*(meas->da()));
-      T cos_ = cos(ida*(meas->da()));
-
+      T sin_ = sin(M_PI*ida*(meas->da())/180.0);
+      T cos_ = cos(M_PI*ida*(meas->da())/180.0);
+        
       // create transformation matrix
       T trafo[12];
 
@@ -147,8 +147,8 @@ class DefaultMeasurementSetupTrafo2CartCoordSecndPixel
       pos[1]=(id1y-.5*(meas->n1y()-1))*edges[1];
       pos[2]=(id1z-.5*(meas->n1z()-1))*edges[2];
       // get angular function values of channel's rotation
-      T sin_ = sin(ida*(meas->da()));
-      T cos_ = cos(ida*(meas->da()));
+      T sin_ = sin(M_PI*ida*(meas->da())/180.0);
+      T cos_ = cos(M_PI*ida*(meas->da())/180.0);
 
       // create transformation matrix
       T trafo[12];

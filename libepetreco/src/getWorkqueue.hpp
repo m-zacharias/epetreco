@@ -17,6 +17,9 @@
 template<typename T,
          typename ConcreteList,
          typename ConcreteVG,
+         typename ConcreteVGidx,
+         typename ConcreteVGidy,
+         typename ConcreteVGidz,
          typename ConcreteMS,
          typename ConcreteMSid0z,
          typename ConcreteMSid0y,
@@ -31,6 +34,9 @@ int getWorkqueueEntry(int * const returnCnlId, int * const returnVxlId,
                       ConcreteVG const * const grid,
                       ConcreteMS const * const setup) {
   // Create functors
+  ConcreteVGidx  f_idx;
+  ConcreteVGidy  f_idy;
+  ConcreteVGidz  f_idz;
   ConcreteMSid0z f_id0z;
   ConcreteMSid0y f_id0y;
   ConcreteMSid1z f_id1z;
@@ -61,11 +67,9 @@ int getWorkqueueEntry(int * const returnCnlId, int * const returnVxlId,
     trafo1(pix1Center, center, f_id1z(cnlId, setup), f_id1y(cnlId, setup), f_ida(cnlId, setup), setup);
     
     T vxlCenter[3];
-    int sepVxlId[3];
-    grid->sepVoxelId(sepVxlId, vxlId);
-    vxlCenter[0] = grid->gridox() + (sepVxlId[0]+center[0])*grid->griddx();
-    vxlCenter[1] = grid->gridoy() + (sepVxlId[1]+center[1])*grid->griddy();
-    vxlCenter[2] = grid->gridoz() + (sepVxlId[2]+center[2])*grid->griddz();
+    vxlCenter[0] = grid->gridox() + (f_idx(vxlId, grid)+center[0])*grid->griddx();
+    vxlCenter[1] = grid->gridoy() + (f_idy(vxlId, grid)+center[1])*grid->griddy();
+    vxlCenter[2] = grid->gridoz() + (f_idz(vxlId, grid)+center[2])*grid->griddz();
     
     
     // If is candidate ...
@@ -109,6 +113,9 @@ int getWorkqueueEntry(int * const returnCnlId, int * const returnVxlId,
 template<typename T,
          typename ConcreteList,
          typename ConcreteVG,
+         typename ConcreteVGidx,
+         typename ConcreteVGidy,
+         typename ConcreteVGidz,
          typename ConcreteMS,
          typename ConcreteMSid0z,
          typename ConcreteMSid0y,
@@ -129,6 +136,9 @@ int getWorkqueueEntries( int const n,
     found = getWorkqueueEntry<T,
                               ConcreteList,
                               ConcreteVG,
+                              ConcreteVGidx,
+                              ConcreteVGidy,
+                              ConcreteVGidz,
                               ConcreteMS,
                               ConcreteMSid0z,
                               ConcreteMSid0y,

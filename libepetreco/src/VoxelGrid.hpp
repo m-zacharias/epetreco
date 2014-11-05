@@ -65,20 +65,20 @@ class VoxelGrid
         return static_cast<ConcreteVoxelGrid*>(this)->gridnz();
     }
 
-    // Deprecated!
-    __host__ __device__
-    int linVoxelId( int const * const sepVoxelId ) const
-    {
-        return static_cast<ConcreteVoxelGrid*>(this)->linVoxelId(sepVoxelId);
-    }
-    
-    // Deprecated!
-    __host__ __device__
-    void sepVoxelId( int * const sepVoxelId, int const linVoxelId ) const
-    {
-        return static_cast<ConcreteVoxelGrid*>(this)->
-                sepVoxelId(sepVoxelId, linVoxelId);
-    }
+//    // Deprecated!
+//    __host__ __device__
+//    int linVoxelId( int const * const sepVoxelId ) const
+//    {
+//        return static_cast<ConcreteVoxelGrid*>(this)->linVoxelId(sepVoxelId);
+//    }
+//    
+//    // Deprecated!
+//    __host__ __device__
+//    void sepVoxelId( int * const sepVoxelId, int const linVoxelId ) const
+//    {
+//        return static_cast<ConcreteVoxelGrid*>(this)->
+//                sepVoxelId(sepVoxelId, linVoxelId);
+//    }
 };
 
 

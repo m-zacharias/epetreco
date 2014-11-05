@@ -29,9 +29,9 @@ struct DefaultVoxelGridLinId
   int operator()(
         int const idx, int const idy, int const idz,
         ConcreteVG const * const vg ) {
-    return   idx
-           + idy * vg->gridnx()
-           + idz *(vg->gridnx()*vg->gridny());
+    return   idx *(vg->gridnz()*vg->gridny())
+           + idy *(vg->gridnz())
+           + idz;
   }
 };
 
@@ -55,10 +55,7 @@ struct DefaultVoxelGridIdx
   __host__ __device__
   int operator()(
         int const linId, ConcreteVG const * const vg ) {
-    int temp(linId);
-    temp %= (vg->gridnx()*vg->gridny());
-    temp %=  vg->gridnx();
-    return temp/1;
+    return linId/(vg->gridnz()*vg->gridny());
   }
 };
 
@@ -83,8 +80,8 @@ struct DefaultVoxelGridIdy
   int operator()(
         int const linId, ConcreteVG const * const vg ) {
     int temp(linId);
-    temp %= (vg->gridnx()*vg->gridny());
-    return temp/vg->gridnx();
+    temp %= (vg->gridnz()*vg->gridny());
+    return temp/vg->gridnz();
   }
 };
 
@@ -108,7 +105,10 @@ struct DefaultVoxelGridIdz
   __host__ __device__
   int operator()(
         int const linId, ConcreteVG const * const vg ) {
-    return linId/(vg->gridnx()*vg->gridny());
+    int temp(linId);
+    temp %= (vg->gridnz()*vg->gridny());
+    temp %=  vg->gridnz();
+    return temp;
   }
 };
 #endif	/* VOXELGRIDLININDEX_HPP */
