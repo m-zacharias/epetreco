@@ -15,6 +15,7 @@
 #include "voxelgrid10_defines.h"
 //#include "voxelgrid52_defines.h"
 #include <iostream>
+#include <cassert>
 
 #include "typedefs.hpp"
 
@@ -78,19 +79,19 @@ void test2( std::string fn, int const n ) {
   ML list =
     H5File2DefaultMeasurementList<val_t>(fn, NA*N0Z*N0Y*N1Z*N1Y);
   
-  int * wqCnlId = new int[n];
-  int * wqVxlId = new int[n];
+  std::vector<int> wqCnlId;
+  std::vector<int> wqVxlId;
   int listId(0); int vxlId(0);
   int nFound;
   
-  nFound = getWorkqueueEntries<
+  nFound = getWorkqueue<
                  val_t,
                  ML,
                  VG, Idx, Idy, Idz,
                  MS, Id0z, Id0y, Id1z, Id1y, Ida,
                  Trafo0, Trafo1>
                (
-                 n, wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
+                 wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup, n);
   std::cout << "Found " << nFound << " workqueue entries" << std::endl;
   std::cout << "Workqueue:" << std::endl
             << "----------" << std::endl;
@@ -100,7 +101,7 @@ void test2( std::string fn, int const n ) {
   }
 }
 
-void test3( std::string const fn ) {
+void test3( std::string const fn, int const n ) {
   std::cout << std::endl
             << "-----Test3-----"
             << std::endl;
@@ -119,13 +120,10 @@ void test3( std::string const fn ) {
   ML list =
     H5File2DefaultMeasurementList<val_t>(fn, NA*N0Z*N0Y*N1Z*N1Y);
   
-//  int * wqCnlId = new int[n];
   std::vector<int> wqCnlId;
-  //  int * wqVxlId = new int[n];
   std::vector<int> wqVxlId;
   int listId(0); int vxlId(0);
   int nFound(0);
-  
   nFound = getWorkqueue<
                  val_t,
                  ML,
@@ -133,18 +131,70 @@ void test3( std::string const fn ) {
                  MS, Id0z, Id0y, Id1z, Id1y, Ida,
                  Trafo0, Trafo1>
                (
-                wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
-  std::cout << "Found " << nFound << " workqueue entries" << std::endl;
-  std::cout << "Workqueue:" << std::endl
-            << "----------" << std::endl;
-  std::vector<int>::iterator wqCnlIdIt = wqCnlId.begin();
-  std::vector<int>::iterator wqVxlIdIt = wqVxlId.begin();
-  while((wqCnlIdIt != wqCnlId.end()) && (wqVxlIdIt != wqVxlId.end())) {
-    std::cout << "  cnlId: "   << *wqCnlIdIt
-              << ",   vxlId: " << *wqVxlIdIt
-              << std::endl;
+                 wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
+  
+  std::vector<int> wqCnlId2;
+  std::vector<int> wqVxlId2;
+  int listId2(0); int vxlId2(0);
+  int nFound2(0);
+  nFound2 = getWorkqueue<
+                 val_t,
+                 ML,
+                 VG, Idx, Idy, Idz,
+                 MS, Id0z, Id0y, Id1z, Id1y, Ida,
+                 Trafo0, Trafo1>
+               (
+                 wqCnlId2, wqVxlId2, listId2, vxlId2, &list, &grid, &setup,
+                 n);
+  
+  std::cout << "Full search found " << nFound << " workqueue entries,"
+            << std::endl
+            << "search for " << n << " workqueue entries found " << nFound2
+            << std::endl;
+  std::cout << "Workqueue (full | limited):" << std::endl
+            << "---------------------------" << std::endl;
+  std::vector<int>::iterator wqCnlIdIt  = wqCnlId.begin();
+  std::vector<int>::iterator wqVxlIdIt  = wqVxlId.begin();
+  std::vector<int>::iterator wqCnlId2It = wqCnlId2.begin();
+  std::vector<int>::iterator wqVxlId2It = wqVxlId2.begin();
+  while(true) {
+    if(wqCnlIdIt != wqCnlId.end()) {
+      std::cout << "  cnlId: " << *wqCnlIdIt;
+      wqCnlIdIt++;
+    }
+    if(wqVxlIdIt != wqVxlId.end()) {
+      std::cout << "    vxlId: " << *wqVxlIdIt;
+      wqVxlIdIt++;
+    }
+    if(wqCnlId2It != wqCnlId2.end()) {
+      std::cout << "  |  cnlId: " << *wqCnlId2It;
+      wqCnlId2It++;
+    }
+    if(wqVxlId2It != wqVxlId2.end()) {
+      std::cout << "    vxlId: " << *wqVxlId2It;
+      wqVxlId2It++;
+    }
+    std::cout << std::endl;
+    
+    if(   (wqCnlIdIt  == wqCnlId.end())
+       && (wqVxlIdIt  == wqVxlId.end())
+       && (wqCnlId2It == wqCnlId2.end())
+       && (wqVxlId2It == wqVxlId2.end()))
+      break;
+  }
+  
+  wqCnlIdIt  = wqCnlId.begin();
+  wqVxlIdIt  = wqVxlId.begin();
+  wqCnlId2It = wqCnlId2.begin();
+  wqVxlId2It = wqVxlId2.begin();
+  while(   (wqCnlId2It != wqCnlId2.end())
+        && (wqVxlId2It != wqVxlId2.end())) {
+    assert((*wqCnlIdIt) == *(wqCnlId2It));
+    assert((*wqVxlIdIt) == *(wqVxlId2It));
     wqCnlIdIt++;
     wqVxlIdIt++;
+    wqCnlId2It++;
+    wqVxlId2It++;
   }
 }
 
@@ -162,7 +212,7 @@ int main(int argc, char ** argv) {
   
   test1(fn);
   test2(fn, n);
-  test3(fn);
+  test3(fn, n);
   
   return 0;
 }

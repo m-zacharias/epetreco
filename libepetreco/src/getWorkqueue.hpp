@@ -125,34 +125,47 @@ template<typename T,
          typename ConcreteMSida,
          typename ConcreteMSTrafo2CartCoordFirstPixel,
          typename ConcreteMSTrafo2CartCoordSecndPixel>
-int getWorkqueueEntries( int const n,
-                      int * const returnCnlId, int * const returnVxlId,
-                      int & listId, int & vxlId,
-                      ConcreteList const * const list,
-                      ConcreteVG const * const grid,
-                      ConcreteMS const * const setup ) {
+int getWorkqueue(
+          std::vector<int> & returnCnlId, std::vector<int> & returnVxlId,
+          int & listId, int & vxlId,
+          ConcreteList const * const list,
+          ConcreteVG const * const grid,
+          ConcreteMS const * const setup,
+          int const n ) {
+  if((returnCnlId.size()!=0) || (returnVxlId.size()!=0)) {
+    std::cerr << "getWorkqueue: error: return vector not empty!" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  
   int nFound(0);
-  int found(0);
-  do {
-    found = getWorkqueueEntry<T,
-                              ConcreteList,
-                              ConcreteVG,
-                              ConcreteVGidx,
-                              ConcreteVGidy,
-                              ConcreteVGidz,
-                              ConcreteMS,
-                              ConcreteMSid0z,
-                              ConcreteMSid0y,
-                              ConcreteMSid1z,
-                              ConcreteMSid1y,
-                              ConcreteMSida,
-                              ConcreteMSTrafo2CartCoordFirstPixel,
-                              ConcreteMSTrafo2CartCoordSecndPixel> (
-              &returnCnlId[nFound], &returnVxlId[nFound],
-              listId, vxlId,
-              list, grid, setup);
-    nFound += found;
-  } while((nFound<n) && (found==1));
+  int foundCnlId, foundVxlId;
+  while(nFound < n) {
+    if(getWorkqueueEntry<
+             T,
+             ConcreteList,
+             ConcreteVG,
+             ConcreteVGidx,
+             ConcreteVGidy,
+             ConcreteVGidz,
+             ConcreteMS,
+             ConcreteMSid0z,
+             ConcreteMSid0y,
+             ConcreteMSid1z,
+             ConcreteMSid1y,
+             ConcreteMSida,
+             ConcreteMSTrafo2CartCoordFirstPixel,
+             ConcreteMSTrafo2CartCoordSecndPixel>
+           (
+             &foundCnlId, &foundVxlId,
+             listId, vxlId,
+             list, grid, setup) != 1) {
+      break;
+    } else {
+      returnCnlId.push_back(foundCnlId);
+      returnVxlId.push_back(foundVxlId);
+      nFound++;
+    }
+  }
   return nFound;
 }
 
