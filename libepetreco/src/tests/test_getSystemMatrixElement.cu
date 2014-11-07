@@ -30,8 +30,8 @@
  * Simple C++ Test Suite
  */
 
+#define NBLOCKS 32
 #define TPB 256
-#define QUEUELENGTH 1024*1024*15
 
 template<typename T>
 class GridAdapter {
@@ -97,59 +97,62 @@ int main(int argc, char** argv) {
   ML list =
     H5File2DefaultMeasurementList<val_t>(fn, NA*N0Z*N0Y*N1Z*N1Y);
   
-  // Allocate memory for workqueue and matrix values, i.e. sparse matrix
+  // Allocate memory for workqueue on host
   SAYLINE(__LINE__-1);
-  int * wqCnlId_host = new int[QUEUELENGTH];
-  int * wqVxlId_host = new int[QUEUELENGTH];
-  val_t *   val_host = new val_t[  QUEUELENGTH];
-  
-  int * wqCnlId_devi = NULL;
-  int * wqVxlId_devi = NULL;
-  val_t *   val_devi = NULL;
-  HANDLE_ERROR(cudaMalloc((void**)&wqCnlId_devi, sizeof(wqCnlId_devi[0]) *QUEUELENGTH));
-  HANDLE_ERROR(cudaMalloc((void**)&wqVxlId_devi, sizeof(wqVxlId_devi[0]) *QUEUELENGTH));
-  HANDLE_ERROR(cudaMalloc((void**)&val_devi,     sizeof(val_devi[0])     *QUEUELENGTH));
-  HANDLE_ERROR(cudaDeviceSynchronize());
+  std::vector<int>   wqCnlId_host;;
+  std::vector<int>   wqVxlId_host;
   
   // Get Workqueue
   SAYLINE(__LINE__-1);
   int listId(0); int vxlId(0);
   int nFound =
-    getWorkqueueEntries<
+    getWorkqueue<
           val_t,
           ML,
           VG, Idx, Idy, Idz,
           MS, Id0z, Id0y, Id1z, Id1y, Ida,
           Trafo0, Trafo1> (
-          QUEUELENGTH, wqCnlId_host, wqVxlId_host, listId, vxlId, &list, &grid, &setup);
+          wqCnlId_host, wqVxlId_host, listId, vxlId, &list, &grid, &setup);
+  
+  // Allocate memory for sparse matrix (=workqueue + matrix values) on device
+  int * wqCnlId_devi = NULL;
+  int * wqVxlId_devi = NULL;
+  val_t *   val_devi = NULL;
+  HANDLE_ERROR(cudaMalloc((void**)&wqCnlId_devi, sizeof(wqCnlId_devi[0]) *nFound));
+  HANDLE_ERROR(cudaMalloc((void**)&wqVxlId_devi, sizeof(wqVxlId_devi[0]) *nFound));
+  HANDLE_ERROR(cudaMalloc((void**)&val_devi,     sizeof(val_devi[0])     *nFound));
+  HANDLE_ERROR(cudaDeviceSynchronize());
   
   // Copy Workqueue to device
   SAYLINE(__LINE__-1);
   HANDLE_ERROR(cudaMemcpy(
-        wqCnlId_devi, wqCnlId_host, sizeof(wqCnlId_devi[0]) *QUEUELENGTH, cudaMemcpyHostToDevice));
+        wqCnlId_devi, &(*wqCnlId_host.begin()), sizeof(wqCnlId_devi[0]) *nFound, cudaMemcpyHostToDevice));
   HANDLE_ERROR(cudaMemcpy(
-        wqVxlId_devi, wqVxlId_host, sizeof(wqVxlId_devi[0]) *QUEUELENGTH, cudaMemcpyHostToDevice));
+        wqVxlId_devi, &(*wqVxlId_host.begin()), sizeof(wqVxlId_devi[0]) *nFound, cudaMemcpyHostToDevice));
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   // Kernel launch
   SAYLINE(__LINE__-1);
   calcSystemMatrixElement<
         val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
-        <<<(QUEUELENGTH+TPB-1)/TPB, TPB>>> (
-        wqCnlId_devi, wqVxlId_devi, val_devi, QUEUELENGTH, nrays);
+        <<<NBLOCKS, TPB>>> (
+        wqCnlId_devi, wqVxlId_devi, val_devi, nFound, nrays);
   HANDLE_ERROR(cudaDeviceSynchronize());
+  
+  // Allocate memory for matrix values on host
+  std::vector<val_t> val_host(nFound, 0);
   
   // Copy matrix values to host
   SAYLINE(__LINE__-1);
   HANDLE_ERROR(cudaGetLastError());
   HANDLE_ERROR(cudaMemcpy(
-        val_host, val_devi, sizeof(val_host[0]) * QUEUELENGTH, cudaMemcpyDeviceToHost));
+        &(*val_host.begin()), val_devi, sizeof(val_host[0]) * nFound, cudaMemcpyDeviceToHost));
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   // Sum up values
   SAYLINE(__LINE__-1);
   val_t sum(0);
-  for(int i=0; i<QUEUELENGTH; i++) {
+  for(int i=0; i<nFound; i++) {
     sum += val_host[i];
   }
   std::cout << "Sum is: " << sum << std::endl;

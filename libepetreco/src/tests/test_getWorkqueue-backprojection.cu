@@ -19,20 +19,6 @@
 
 #include "typedefs.hpp"
 
-#define QUEUELENGTH 1024*1024*15
-
-typedef float                              val_t;
-typedef DefaultVoxelGrid<val_t>            VG;
-typedef DefaultMeasurementSetup<val_t>     MS;
-typedef DefaultMeasurementSetupId0z<MS>    Id0z;
-typedef DefaultMeasurementSetupId0y<MS>    Id0y;
-typedef DefaultMeasurementSetupId1z<MS>    Id1z;
-typedef DefaultMeasurementSetupId1y<MS>    Id1y;
-typedef DefaultMeasurementSetupIda<MS>     Ida;
-typedef DefaultMeasurementList<val_t>      ML;
-typedef DefaultMeasurementSetupTrafo2CartCoordFirstPixel<val_t, MS>  Trafo0;
-typedef DefaultMeasurementSetupTrafo2CartCoordSecndPixel<val_t, MS>  Trafo1;
-
 template<typename T>
 class GridAdapter {
 public:
@@ -62,7 +48,7 @@ private:
   VG * _grid;
 };
 
-void test2( std::string const fn, std::string const on, int const n ) {
+void test2( std::string const fn, std::string const on ) {
   VG grid =
     VG(
       GRIDOX, GRIDOY, GRIDOZ,
@@ -78,18 +64,18 @@ void test2( std::string const fn, std::string const on, int const n ) {
   ML list =
     H5File2DefaultMeasurementList<val_t>(fn, NA*N0Z*N0Y*N1Z*N1Y);
   
-  int * wqCnlId = new int[n];
-  int * wqVxlId = new int[n];
+  std::vector<int> wqCnlId;
+  std::vector<int> wqVxlId;
   int listId(0); int vxlId(0);
   int nFound;
   
-  nFound = getWorkqueueEntries<
+  nFound = getWorkqueue<
         val_t,
         ML, 
         VG, Idx, Idy, Idz,
         MS, Id0z, Id0y, Id1z, Id1y, Ida,
         Trafo0, Trafo1> (
-        n, wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
+        wqCnlId, wqVxlId, listId, vxlId, &list, &grid, &setup);
   
   // Create grid memory for backprojection
   int const gridsize(grid.gridnx()*grid.gridny()*grid.gridnz());
@@ -121,7 +107,7 @@ int main(int argc, char** argv) {
   std::string const fn(argv[1]);
   std::string const on(argv[2]);
 
-  test2(fn, on, QUEUELENGTH);
+  test2(fn, on);
   
   return 0;
 }

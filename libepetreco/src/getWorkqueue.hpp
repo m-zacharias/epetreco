@@ -9,6 +9,7 @@
 #define	GETWORKQUEUE_HPP
 
 #include <cmath>
+#include <vector>
 #include "VoxelGrid.hpp"
 #include "MeasurementSetup.hpp"
 #include "MeasurementList.hpp"
@@ -152,6 +153,58 @@ int getWorkqueueEntries( int const n,
               list, grid, setup);
     nFound += found;
   } while((nFound<n) && (found==1));
+  return nFound;
+}
+
+template<typename T,
+         typename ConcreteList,
+         typename ConcreteVG,
+         typename ConcreteVGidx,
+         typename ConcreteVGidy,
+         typename ConcreteVGidz,
+         typename ConcreteMS,
+         typename ConcreteMSid0z,
+         typename ConcreteMSid0y,
+         typename ConcreteMSid1z,
+         typename ConcreteMSid1y,
+         typename ConcreteMSida,
+         typename ConcreteMSTrafo2CartCoordFirstPixel,
+         typename ConcreteMSTrafo2CartCoordSecndPixel>
+int getWorkqueue(
+          std::vector<int> & returnCnlId, std::vector<int> & returnVxlId,
+          int & listId, int & vxlId,
+          ConcreteList const * const list,
+          ConcreteVG const * const grid,
+          ConcreteMS const * const setup ) {
+  if((returnCnlId.size()!=0) || (returnVxlId.size()!=0)) {
+    std::cerr << "getWorkqueue: error: return vector not empty!" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  int nFound(0);
+  int foundCnlId, foundVxlId;
+  while(getWorkqueueEntry<
+              T,
+              ConcreteList,
+              ConcreteVG,
+              ConcreteVGidx,
+              ConcreteVGidy,
+              ConcreteVGidz,
+              ConcreteMS,
+              ConcreteMSid0z,
+              ConcreteMSid0y,
+              ConcreteMSid1z,
+              ConcreteMSid1y,
+              ConcreteMSida,
+              ConcreteMSTrafo2CartCoordFirstPixel,
+              ConcreteMSTrafo2CartCoordSecndPixel>
+            (
+              &foundCnlId, &foundVxlId,
+              listId, vxlId,
+              list, grid, setup) == 1) {
+    returnCnlId.push_back(foundCnlId);
+    returnVxlId.push_back(foundVxlId);
+    nFound++;
+  }
   return nFound;
 }
 
