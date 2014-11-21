@@ -11,18 +11,21 @@
 #include <iomanip>
 
 template<typename T>
+__host__ __device__
 inline T absolute( T const * const a )
 {
     return sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
 }
 
 template<typename T>
+__host__ __device__
 inline T scalarProduct( T const * const a, T const * const b )
 {
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
 template<typename T>
+__host__ __device__
 T distance( T const * const a, T const * const b,
                 T const * const p )
 {
