@@ -47,7 +47,9 @@ EXECUTABLES := \
       test_getWorkqueue.out \
       test_getWorkqueue-backprojection.out \
       test_getSystemMatrixElement.out \
-      test_VoxelGridLinIndex.out
+      test_VoxelGridLinIndex.out \
+      example_condense_main.out \
+      example_partition.out
 
 default : $(EXECUTABLES)
 
@@ -77,6 +79,11 @@ libepetreco.a : \
 
 %.out : \
         $(TESTS_SRC)/%.cu
+	CPLUS_INCLUDE_PATH= ; \
+  $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
+
+%.out : \
+        $(SRC)/%.cu
 	CPLUS_INCLUDE_PATH= ; \
   $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
