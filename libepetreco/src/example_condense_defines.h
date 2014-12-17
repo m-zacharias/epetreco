@@ -22,9 +22,11 @@
 #define LATER_LEN   (NTEST / (NBLOCKS*TPB))
 #define SIZE        NTEST
   
-//#define T_TEST_SIZE 4
+//#define BOATSIZE 4
 //#define TRUCKSIZE   2
-#define RINGSIZE    (2 * TRUCKSIZE)
+//#define RINGSIZE    (2 * TRUCKSIZE)
+//#define RINGSIZE    ((TPB*BOATSIZE) < (2*TRUCKSIZE) ? (2*TRUCKSIZE) : (TPB*BOATSIZE))
+#define RINGSIZE    (TRUCKSIZE - 1 + (TPB*BOATSIZE))
 
 
   
