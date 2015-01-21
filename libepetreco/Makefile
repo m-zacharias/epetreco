@@ -49,7 +49,8 @@ EXECUTABLES := \
       test_getSystemMatrixElement.out \
       test_VoxelGridLinIndex.out \
       example_condense_main.out \
-      example_partition.out
+      example_partition.out \
+      test_getSystemMatrixDeviceOnly.out
 
 default : $(EXECUTABLES)
 

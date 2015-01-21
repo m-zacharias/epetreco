@@ -20,7 +20,7 @@ class FileTalk
 
     void sayLine( int lineNumber )
     {
-      std::cout << _filename << " : ";
+      std::cout << _filename << "(" << lineNumber << ") : ";
       char line[MAX_LINESIZE];
 
       _file.seekg(0);

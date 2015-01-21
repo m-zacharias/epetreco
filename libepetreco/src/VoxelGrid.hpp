@@ -93,9 +93,11 @@ class DefaultVoxelGrid : public VoxelGrid<T, DefaultVoxelGrid<T> >
   
   public:
     
+    __host__ __device__
     DefaultVoxelGrid()
     {}
     
+    __host__ __device__
     DefaultVoxelGrid( T const   gridO0, T const   gridO1, T const   gridO2,
                       T const   gridD0, T const   gridD1, T const   gridD2,
                       int const gridN0, int const gridN1, int const gridN2 )
@@ -108,6 +110,7 @@ class DefaultVoxelGrid : public VoxelGrid<T, DefaultVoxelGrid<T> >
       gridN[0]=gridN0; gridN[1]=gridN1; gridN[2]=gridN2;
     }
 
+    __host__ __device__
     DefaultVoxelGrid( DefaultVoxelGrid const & o )
 //    : VoxelGrid<T, DefaultVoxelGrid<T> >(o.gridox(), o.gridoy(), o.gridoz(),
 //                                         o.griddx(), o.griddy(), o.griddz(),  
