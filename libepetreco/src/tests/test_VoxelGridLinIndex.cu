@@ -1,3 +1,4 @@
+/** @file test_VoxelGridLinIndex.cu */
 /* 
  * File:   test_VoxelGridLinIndex.cu
  * Author: malte

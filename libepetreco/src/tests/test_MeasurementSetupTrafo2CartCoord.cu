@@ -1,3 +1,4 @@
+/** @file test_MeasurementSetupTrafo2CartCoord.cu */
 /* 
  * File:   test_MeasurementSetupTrafo2CartCoord.cpp
  * Author: malte

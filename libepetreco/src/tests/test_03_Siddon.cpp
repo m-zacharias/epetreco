@@ -1,3 +1,4 @@
+/** @file test_03_Siddon.cpp */
 /* This test file illuminates the behavior of the intersection length
  * calculation for setups where the start and end of a ray are positioned within
  * the grid.

@@ -1,3 +1,4 @@
+/** @file test_CudaTransform4.cu */
 // Test elementwise 'corrects' method of Cudatransform
 #include "CudaTransform.hpp"
 #include "FileTalk.hpp"

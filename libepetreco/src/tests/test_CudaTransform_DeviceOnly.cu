@@ -1,3 +1,4 @@
+/** @file test_CudaTransform_DeviceOnly.cu */
 #include "CudaTransform.hpp"
 #include "FileTalk.hpp"
 #include "CUDA_HandleError.hpp"

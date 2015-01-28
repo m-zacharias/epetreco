@@ -1,3 +1,4 @@
+/** @file test_CudaTransform3.cu */
 // Test elementwise division method of CudaTransform
 #include "CudaTransform.hpp"
 #include "FileTalk.hpp"

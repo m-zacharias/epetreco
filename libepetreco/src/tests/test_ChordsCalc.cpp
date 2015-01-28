@@ -1,3 +1,4 @@
+/** @file test_ChordsCalc.cpp */
 #include "ChordsCalc.hpp"
 #include "DevelRay.hpp"
 #include "DevelGrid.hpp"

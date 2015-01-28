@@ -1,3 +1,4 @@
+/** @file test_MeasurementSetupLinIndex.cu */
 /* 
  * File:   test_MeasurementSetupLinIndex.cpp
  * Author: malte

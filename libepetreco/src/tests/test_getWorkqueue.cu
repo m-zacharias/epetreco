@@ -1,3 +1,4 @@
+/** @file test_getWorkqueue.cu */
 /* 
  * File:   test_getWorkqueue.cpp
  * Author: malte

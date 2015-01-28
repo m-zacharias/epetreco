@@ -1,3 +1,4 @@
+/** @file test_H5Reader.cpp */
 #include "H5Reader.hpp"
 #include <iostream>
 #include <cstdlib>

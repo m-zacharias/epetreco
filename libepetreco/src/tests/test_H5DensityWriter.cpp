@@ -1,3 +1,4 @@
+/** @file test_H5DensityWriter.cpp */
 #include "H5DensityWriter.hpp"
 
 class MyGrid

@@ -1,3 +1,4 @@
+/** @file test_getSystemMatrixDeviceOnly.cu */
 /* 
  * File:   test_getSystemMatrixDeviceOnly.cu
  * Author: malte

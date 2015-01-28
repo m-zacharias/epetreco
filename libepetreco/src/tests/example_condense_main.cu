@@ -1,3 +1,4 @@
+/** @file example_condense_main.cu */
 /* 
  * File:   example_condense_main.cu
  * Author: malte

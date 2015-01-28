@@ -1,3 +1,4 @@
+/** @file test_DevelChannel.cpp */
 #include "DevelChannel.hpp"
 #include "DevelSetup.hpp"
 

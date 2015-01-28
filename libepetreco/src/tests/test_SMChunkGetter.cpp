@@ -1,3 +1,4 @@
+/** @file test_SMChunkGetter.cpp */
 #include "SMChunkGetter.hpp"
 #include "DevelChannel.hpp"
 #include "DevelSetup.hpp"

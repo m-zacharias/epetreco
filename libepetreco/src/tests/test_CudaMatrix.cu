@@ -1,3 +1,4 @@
+/** @file test_CudaMatrix.cu */
 #include "CudaMatrix.hpp"
 #include "CudaTransform.hpp"
 #include <cassert>

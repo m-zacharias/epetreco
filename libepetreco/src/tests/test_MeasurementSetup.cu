@@ -1,3 +1,4 @@
+/** @file test_MeasurementSetup.cu */
 #include "cuda.h"
 #include "MeasurementSetup.hpp"
 #include <iostream>

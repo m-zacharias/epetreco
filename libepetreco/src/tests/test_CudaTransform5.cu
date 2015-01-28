@@ -1,3 +1,4 @@
+/** @file test_CudaTransform5.cu */
 // Test 'normalize' method of CudaTransform
 #include "CudaTransform.hpp"
 #include "FileTalk.hpp"

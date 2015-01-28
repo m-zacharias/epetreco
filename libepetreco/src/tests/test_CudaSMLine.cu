@@ -1,3 +1,4 @@
+/** @file test_CudaSMLine.cu */
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "CUDA_HandleError.hpp"

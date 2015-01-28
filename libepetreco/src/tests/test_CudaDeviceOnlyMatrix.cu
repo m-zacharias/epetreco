@@ -1,3 +1,4 @@
+/** @file test_CudaDeviceOnlyMatrix.cu */
 #include "CudaTransform.hpp"
 #include "CudaDeviceOnlyMatrix.hpp"
 #include "FileTalk.hpp"

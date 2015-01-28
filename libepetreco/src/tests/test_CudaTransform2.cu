@@ -1,3 +1,4 @@
+/** @file test_CudaTransform2.cu */
 #include "CudaTransform.hpp"
 #include "FileTalk.hpp"
 

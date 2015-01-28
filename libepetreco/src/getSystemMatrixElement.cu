@@ -69,6 +69,17 @@ T intersectionLength(
                              +(rayCoord[3+2]-rayCoord[2]) * (rayCoord[3+2]-rayCoord[2]) );
 }
 
+/**
+ * Kernel function. Calculates system matrix.
+ * @param globalCnl Array of system matrix channel ids (input). In device
+ * global memory. Has wqLength elements.
+ * @param globalVxl Array of system matrix voxel ids (input). In device global
+ * memory. Has wqLength elements.
+ * @param globalVal Array for resulting system matrix elements. In device
+ * global memory.
+ * @param wqLength Number of entries in the workqueue. In device global memory.
+ * @param nrays Number of rays to use in one channel. In device global memory.
+ */
 template<
       typename T
     , typename ConcreteVG
