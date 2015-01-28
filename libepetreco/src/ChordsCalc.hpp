@@ -1,3 +1,4 @@
+/** @file ChordsCalc.hpp */
 #ifndef CHORDSCALC_HPP
 #define CHORDSCALC_HPP
 

@@ -1,3 +1,4 @@
+/** @file CudaVG.hpp */
 #ifndef CUDAVG
 #define CUDAVG
 

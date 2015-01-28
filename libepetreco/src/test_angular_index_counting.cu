@@ -1,3 +1,4 @@
+/** @file test_angular_index_counting.cu */
 /* Reconstruction program for real measurement data.  The reconstruction method
  * is Summed Backprojection.
  */

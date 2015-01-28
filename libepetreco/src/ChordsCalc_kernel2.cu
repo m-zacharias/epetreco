@@ -1,3 +1,4 @@
+/** @file ChordsCalc_kernel2.cu */
 #ifndef CHORDSCALC_KERNEL
 #define CHORDSCALC_KERNEL
 

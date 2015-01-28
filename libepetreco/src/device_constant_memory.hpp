@@ -1,3 +1,4 @@
+/** @file device_constant_memory.hpp */
 #ifndef DEVICE_CONSTANT_MEMORY_H
 #define DEVICE_CONSTANT_MEMORY_H
 

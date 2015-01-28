@@ -1,3 +1,4 @@
+/** @file WriteableCudaVG.hpp */
 #ifndef WRITEABLECUDAVG
 #define WRITEABLECUDAVG
 

@@ -1,3 +1,4 @@
+/** @file H5Reader.hpp */
 #ifndef H5READER_HPP
 #define H5READER_HPP
 

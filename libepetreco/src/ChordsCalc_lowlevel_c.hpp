@@ -1,3 +1,4 @@
+/** @file ChordsCalc_lowlevel_c.hpp */
 /* TODO Behavior for rays that lie exactly in a plane? Exactly on the
  * intersection line of to orthogonal planes?
  */

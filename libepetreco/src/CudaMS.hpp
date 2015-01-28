@@ -1,3 +1,4 @@
+/** @file CudaMS.hpp */
 #ifndef CUDAMS
 #define CUDAMS
 

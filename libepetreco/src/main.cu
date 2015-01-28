@@ -1,3 +1,4 @@
+/** @file main.cu */
 #include "CUDA_HandleError.hpp"
 #include "ChordsCalc_kernel2.cu"
 #include "visualization.hpp"

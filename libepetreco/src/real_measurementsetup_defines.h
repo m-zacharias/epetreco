@@ -1,3 +1,4 @@
+/** @file real_measurementsetup_defines.h */
 #ifndef MEASUREMENTSETUP_DEFINES
 #define MEASUREMENTSETUP_DEFINES
 

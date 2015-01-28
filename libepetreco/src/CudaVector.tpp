@@ -1,3 +1,4 @@
+/** @file CudaVector.tpp */
 #include "CudaVector.hpp"
 
 #include <iostream>

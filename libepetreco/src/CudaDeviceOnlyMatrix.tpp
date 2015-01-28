@@ -1,3 +1,4 @@
+/** @file CudaDeviceOnlyMatrix.tpp */
 #include "CudaDeviceOnlyMatrix.hpp"
 
 #include <iostream>

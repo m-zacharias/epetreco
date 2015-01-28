@@ -1,3 +1,4 @@
+/** @file SMChunkGetter.hpp */
 #ifndef SMCHUNKGETTER_HPP
 #define SMCHUNKGETTER_HPP
 

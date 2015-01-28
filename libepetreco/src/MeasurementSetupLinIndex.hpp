@@ -1,3 +1,4 @@
+/** @file MeasurementSetupLinIndex.hpp */
 /* 
  * File:   MeasurementSetupLinIndex.hpp
  * Author: malte

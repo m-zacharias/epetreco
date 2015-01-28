@@ -1,3 +1,4 @@
+/** @file DevelRay.hpp */
 #ifndef DEVELRAY_HPP
 #define DEVELRAY_HPP
 

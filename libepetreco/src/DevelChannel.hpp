@@ -1,3 +1,4 @@
+/** @file DevelChannel.hpp */
 #ifndef DEVELCHANNEL_HPP
 #define DEVELCHANNEL_HPP
 

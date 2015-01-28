@@ -1,3 +1,4 @@
+/** @file MeasurementList.hpp */
 /* 
  * File:   MeasurementList.hpp
  * Author: malte

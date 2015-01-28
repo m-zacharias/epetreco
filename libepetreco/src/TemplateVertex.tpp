@@ -1,3 +1,4 @@
+/** @file TemplateVertex.tpp */
 #include "TemplateVertex.hpp"
 
 template<class T>

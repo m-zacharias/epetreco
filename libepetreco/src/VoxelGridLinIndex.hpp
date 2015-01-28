@@ -1,3 +1,4 @@
+/** @file VoxelGridLinIndex.hpp */
 /* 
  * File:   VoxelGridLinIndex.hpp
  * Author: malte

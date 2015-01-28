@@ -1,3 +1,4 @@
+/** @file cublas_dot.hpp */
 #ifndef CUBLAS_DOT_HPP
 #define CUBLAS_DOT_HPP
 

@@ -1,3 +1,4 @@
+/** @file ChordsCalc_kernel.cu */
 #define DEBUG
 #define PRINT_KERNEL 2
 

@@ -1,3 +1,4 @@
+/** @file CudaDeviceOnlyMatrix.hpp */
 #ifndef CUDADEVICEONLYMATRIX_HPP
 #define CUDADEVICEONLYMATRIX_HPP
 

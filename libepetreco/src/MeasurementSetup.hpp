@@ -1,3 +1,4 @@
+/** @file MeasurementSetup.hpp */
 #ifndef MEASEREMENTSETUP_HPP
 #define MEASEREMENTSETUP_HPP
 

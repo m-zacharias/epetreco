@@ -1,3 +1,4 @@
+/** @file defines.h */
 #ifndef DEFINES
 #define DEFINES
 

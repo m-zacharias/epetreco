@@ -1,3 +1,4 @@
+/** @file CudaTransform.hpp */
 #ifndef CUDATRANFORM_HPP
 #define CUDATRANFORM_HPP
 

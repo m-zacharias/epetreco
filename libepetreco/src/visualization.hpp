@@ -1,7 +1,6 @@
+/** @file visualization.hpp */
 #include "Ply.hpp"
 #include "TemplateVertex.hpp"
-
-//typedef TemplateVertex<val_t> Vertex;
 
 template<typename T>
 class BetaPlyGrid : public PlyGrid<TemplateVertex<T> >

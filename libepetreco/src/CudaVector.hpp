@@ -1,3 +1,4 @@
+/** @file CudaVector.hpp */
 #ifndef CUDAVECTOR_HPP
 #define CUDAVECTOR_HPP
 

@@ -1,3 +1,4 @@
+/** @file readme_test_backprojection.txt */
 This is the readme file for the test unit test_backprojection.
 
 To run the test execute 'run_test_backprojection.sh' from the command line.

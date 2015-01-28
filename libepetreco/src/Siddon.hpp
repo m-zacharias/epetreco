@@ -1,3 +1,4 @@
+/** @file Siddon.hpp */
 #ifndef SIDDON_HPP
 #define SIDDON_HPP
 

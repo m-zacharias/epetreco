@@ -1,3 +1,4 @@
+/** @file Chord.hpp */
 #ifndef CHORD_HPP
 #define CHORD_HPP
 

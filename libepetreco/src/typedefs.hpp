@@ -1,5 +1,5 @@
+/** @file typedefs.hpp */
 /* 
- * File:   typedefs.hpp
  * Author: malte
  *
  * Created on 24. Oktober 2014, 11:41
@@ -31,4 +31,3 @@ typedef DefaultMeasurementSetupTrafo2CartCoordFirstPixel<val_t, MS>  Trafo0;
 typedef DefaultMeasurementSetupTrafo2CartCoordSecndPixel<val_t, MS>  Trafo1;
 
 #endif	/* TYPEDEFS_HPP */
-

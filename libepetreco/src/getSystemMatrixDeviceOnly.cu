@@ -1,3 +1,4 @@
+/** @file getSystemMatrixDeviceOnly.cu */
 #ifndef GETSYSTEMMATRIXDEVICEONLY_CU
 #define GETSYSTEMMATRIXDEVICEONLY_CU
 
@@ -18,6 +19,11 @@
 #define RANDOM_SEED 1251
 #define TPB 256
 
+/**
+ * Test if a given channel maybe intersects a given voxel.
+ * @param cnlId Linear id of the channel.
+ * @param vxlId Linear id of the voxel.
+ */
 template<
       typename T
     , typename ConcreteVG
@@ -77,6 +83,15 @@ bool test(
 
 
 
+/**
+ * Calculate the intersection length of a line with a box.
+ * @param vxlCoord Coordinates of the box (voxel): 0-2: Cartesian coordinates
+ * of one corner. 3-5: Cartesian coordinates of diagonally opposing corner.
+ * Grid parallel edges.
+ * @param rayCoord Coordinates of the line (ray): 0-2: Cartesian coordinates
+ * of start point. 3-5: Cartesian coordinates of end point.
+ * @return Intersection length.
+ */
 template<
       typename T >
 __host__ __device__
@@ -126,6 +141,12 @@ T intersectionLength(
 
 
 
+/**
+ * Calculate system matrix element.
+ * @param cnl Linear id of the channel.
+ * @param vxl Linear id of the voxel.
+ * @return System matrix element.
+ */
 template<
       typename T
     , typename ConcreteVG
@@ -212,10 +233,16 @@ T calcSme(
 
 
 
+/**
+ * @brief Functor. Calculates the linear voxel id from the getId.
+ */
 template< typename VG >
 struct GetId2vxlId {
   int const _gridDim;
   
+  /**
+   * Ctor.
+   */
   __host__ __device__
   GetId2vxlId( VG & vg )
   : _gridDim(vg.gridnx()*vg.gridny()*vg.gridnz()) {}
@@ -228,10 +255,16 @@ struct GetId2vxlId {
 
 
 
+/**
+ * @brief Functor. Calculates the list id from the getId.
+ */
 template< typename VG >
 struct GetId2listId {
   int const _gridDim;
   
+  /**
+   * Ctor.
+   */
   __host__ __device__
   GetId2listId( VG & vg )
   : _gridDim(vg.gridnx()*vg.gridny()*vg.gridnz()) {}
@@ -244,13 +277,19 @@ struct GetId2listId {
 
 
 
-template<
-      typename ConcreteVG
->
+/**
+ * @brief Functor. Tests if getId is the range for another getting loop.
+ */
+template< typename ConcreteVG >
 struct IsInRange {
   int const _gridDim;
   int const _listSize;
   
+  /**
+   * Ctor.
+   * @param vg Voxel grid.
+   * @param mlSize Measurement list size.
+   */
   __device__
   IsInRange( VG & vg, int const mlSize )
   : _gridDim(vg.gridnx()*vg.gridny()*vg.gridnz()),
@@ -264,11 +303,20 @@ struct IsInRange {
 
 
 
+/**
+ * @brief Functor. Tests if (vxlId, listId) refers to a valid system matrix
+ * entry.
+ */
 template< typename ConcreteVG >
 struct GetIsLegal {
   int const _gridDim;
   int const _listSize;
   
+  /**
+   * Ctor.
+   * @param vg Voxel grid.
+   * @param mlSize measurement list size.
+   */
   __host__ __device__
   GetIsLegal( VG vg, int const mlSize )
   : _gridDim(vg.gridnx()*vg.gridny()*vg.gridnz()),
@@ -281,7 +329,19 @@ struct GetIsLegal {
 };
 
 
-
+/**
+ * Kernel function. Calculates system matrix.
+ * @param sme_devi Array for resulting system matrix elements. In device
+ * global memory.
+ * @param vxlId_devi Array for resulting system matrix voxel ids. In device
+ * global memory.
+ * @param cnlId_devi Array for resulting system matrix channel ids. In device
+ * global memory.
+ * @param ml_devi Array: Measurement list. In device global memory.
+ * @param mlSize_devi Measurement list size. In device global memory.
+ * @param truckDest_devi Position where to write next system matrix entries. Is
+ * equal to the number of entries written so far.
+ */
 template<
       typename T
     , typename ConcreteVG

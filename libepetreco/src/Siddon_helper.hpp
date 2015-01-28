@@ -1,3 +1,4 @@
+/** @file Siddon_helper.hpp */
 #ifndef SIDDON_HELPER_HPP
 #define SIDDON_HELPER_HPP
 

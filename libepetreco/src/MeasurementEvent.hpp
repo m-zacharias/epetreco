@@ -1,3 +1,4 @@
+/** @file MeasurementEvent.hpp */
 #ifndef MEASUREMENTEVENT
 #define MEASUREMENTEVENT
 

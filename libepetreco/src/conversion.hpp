@@ -1,3 +1,4 @@
+/** @file conversion.hpp */
 #ifndef CONVERSION_HPP
 #define CONVERSION_HPP
 

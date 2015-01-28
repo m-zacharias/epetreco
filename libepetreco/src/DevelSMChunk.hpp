@@ -1,3 +1,4 @@
+/** @file DevelSMChunk.hpp */
 #ifndef DEVELSMCHUNK_HPP
 #define DEVELSMCHUNK_HPP
 

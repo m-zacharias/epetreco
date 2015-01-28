@@ -1,3 +1,4 @@
+/** @file example_condense.h */
 /* 
  * File:   example_condense.h
  * Author: malte

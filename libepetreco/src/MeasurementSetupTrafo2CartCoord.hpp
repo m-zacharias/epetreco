@@ -1,3 +1,4 @@
+/** @file MeasurementSetupTrafo2CartCoord.hpp */
 /* 
  * File:   MeasurementSetupTrafo2PixelVol.hpp
  * Author: malte

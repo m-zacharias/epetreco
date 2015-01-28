@@ -1,3 +1,4 @@
+/** @file CudaMatrix.tpp */
 #include "CudaMatrix.hpp"
 
 #include <cstdlib>

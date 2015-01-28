@@ -1,3 +1,4 @@
+/** @file DevelChannel.tpp */
 #include "DevelChannel.hpp"
 #include <cstdlib> // for random numbers
 

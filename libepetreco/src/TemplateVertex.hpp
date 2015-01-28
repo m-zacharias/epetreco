@@ -1,3 +1,4 @@
+/** @file TemplateVertex.hpp */
 #ifndef TEMPLATEVERTEX_HPP
 #define TEMPLATEVERTEX_HPP
 

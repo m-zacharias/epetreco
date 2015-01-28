@@ -1,3 +1,4 @@
+/** @file algo.cu */
 /* Reconstruction development example.  Uses a small and simple 2D geometry.
  * 
  * For the chosen setup (detectors, voxel grid), a true density vector xx is

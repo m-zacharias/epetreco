@@ -1,3 +1,4 @@
+/** @file test_backprojection.cu */
 /* Reconstruction program for real measurement data.  The reconstruction method
  * is Summed Backprojection.
  */

@@ -1,3 +1,4 @@
+/** @file cublas_dot.tpp */
 #include "cublas_dot.hpp"
 
 // S (float)

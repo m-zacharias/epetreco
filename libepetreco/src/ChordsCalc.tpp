@@ -1,3 +1,4 @@
+/** @file ChordsCalc.tpp */
 #include "ChordsCalc.hpp"
 #include "Siddon_helper.hpp"
 

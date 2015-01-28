@@ -1,3 +1,4 @@
+/** @file getSystemMatrixElement.cu */
 /* 
  * File:   getSystemMatrixElement.cu
  * Author: malte

@@ -1,3 +1,4 @@
+/** @file CudaMatrix.hpp */
 #ifndef CUDAMATRIX_HPP
 #define CUDAMATRIX_HPP
 

@@ -1,3 +1,4 @@
+/** @file H5DensityWriter.hpp */
 #ifndef H5DENSITYWRITER_HPP
 #define H5DENSITYWRITER_HPP
 
