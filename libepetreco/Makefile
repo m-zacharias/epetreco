@@ -46,7 +46,7 @@ EXECUTABLES := \
       test_MeasurementSetupTrafo2CartCoord.out \
       test_getWorkqueue.out \
       test_getWorkqueue-backprojection.out \
-      test_getSystemMatrixElement.out \
+      test_getSystemMatrixFromWorkqueue.out \
       test_VoxelGridLinIndex.out \
       example_condense_main.out \
       example_partition.out \

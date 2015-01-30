@@ -1,6 +1,5 @@
-/** @file getSystemMatrixElement.cu */
+/** @file getSystemMatrixFromWorkqueue.cu */
 /* 
- * File:   getSystemMatrixElement.cu
  * Author: malte
  *
  * Created on 21. Oktober 2014, 17:53
@@ -95,7 +94,7 @@ template<
     , typename ConcreteMSTrafo2CartCoordFirstPixel
     , typename ConcreteMSTrafo2CartCoordSecndPixel >
 __global__
-void calcSystemMatrixElement(
+void getSystemMatrixFromWorkqueue(
       int const * const globalCnl,
       int const * const globalVxl,
       T * const  globalVal,

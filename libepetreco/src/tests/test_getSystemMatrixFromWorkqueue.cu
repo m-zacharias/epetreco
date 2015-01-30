@@ -1,14 +1,13 @@
-/** @file test_getSystemMatrixElement.cu */
+/** @file test_getSystemMatrixFromWorkqueue.cu */
 /* 
- * File:   test_getSystemMatrixElement.cu
  * Author: malte
  *
  * Created on 22. Oktober 2014, 10:29
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include "FileTalk.hpp"
-#include "getSystemMatrixElement.cu"
+#include "getSystemMatrixFromWorkqueue.cu"
 #include "getWorkqueue.hpp"
 #include "VoxelGrid.hpp"
 #include "MeasurementSetup.hpp"
@@ -16,6 +15,7 @@
 #include "MeasurementSetupTrafo2CartCoord.hpp"
 #include "H5File2DefaultMeasurementList.h"
 #include "H5DensityWriter.hpp"
+#include "GridAdapter.hpp"
 #include "real_measurementsetup_defines.h"
 //#include "voxelgrid10_defines.h"
 //#include "voxelgrid20_defines.h"
@@ -33,35 +33,6 @@
 
 #define NBLOCKS 32
 #define TPB 256
-
-template<typename T>
-class GridAdapter {
-public:
-  GridAdapter(VG * grid) {
-    _grid = grid;
-  }
-  
-  void getOrigin( T * const origin ) const {
-    origin[0] = _grid->gridox();
-    origin[1] = _grid->gridoy();
-    origin[2] = _grid->gridoz();
-  }
-  
-  void getVoxelSize( T * const voxelSize ) const {
-    voxelSize[0] = _grid->griddx();
-    voxelSize[1] = _grid->griddy();
-    voxelSize[2] = _grid->griddz();
-  }
-  
-  void getNumberOfVoxels( int * const number ) const {
-    number[0] = _grid->gridnx();
-    number[1] = _grid->gridny();
-    number[2] = _grid->gridnz();
-  }
-  
-private:
-  VG * _grid;
-};
 
 
 
@@ -134,7 +105,7 @@ int main(int argc, char** argv) {
   
   // Kernel launch
   SAYLINE(__LINE__-1);
-  calcSystemMatrixElement<
+  getSystemMatrixFromWorkqueue<
         val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
         <<<NBLOCKS, TPB>>> (
         wqCnlId_devi, wqVxlId_devi, val_devi, nFound, nrays);
@@ -176,8 +147,8 @@ int main(int argc, char** argv) {
   
   // Write to hdf5
   SAYLINE(__LINE__-1);
-  H5DensityWriter<GridAdapter<val_t> > writer(on);
-  GridAdapter<val_t> ga(&grid);
+  H5DensityWriter<GridAdapter<VG, val_t> > writer(on);
+  GridAdapter<VG, val_t> ga(&grid);
   writer.write(mem, ga);
   
   return (EXIT_SUCCESS);

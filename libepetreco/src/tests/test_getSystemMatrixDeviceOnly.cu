@@ -15,6 +15,7 @@
 #include "MeasurementSetupTrafo2CartCoord.hpp"
 #include "H5File2DefaultMeasurementList.h"
 #include "H5DensityWriter.hpp"
+#include "GridAdapter.hpp"
 #include "real_measurementsetup_defines.h"
 //#include "voxelgrid10_defines.h"
 //#include "voxelgrid20_defines.h"
@@ -33,37 +34,6 @@
 
 
 #define NBLOCKS 32
-
-template<typename T>
-class GridAdapter {
-public:
-  GridAdapter(VG * grid) {
-    _grid = grid;
-  }
-  
-  void getOrigin( T * const origin ) const {
-    origin[0] = _grid->gridox();
-    origin[1] = _grid->gridoy();
-    origin[2] = _grid->gridoz();
-  }
-  
-  void getVoxelSize( T * const voxelSize ) const {
-    voxelSize[0] = _grid->griddx();
-    voxelSize[1] = _grid->griddy();
-    voxelSize[2] = _grid->griddz();
-  }
-  
-  void getNumberOfVoxels( int * const number ) const {
-    number[0] = _grid->gridnx();
-    number[1] = _grid->gridny();
-    number[2] = _grid->gridnz();
-  }
-  
-private:
-  VG * _grid;
-};
-
-
 
 template<typename T>
 struct SparseEntry {
@@ -250,8 +220,8 @@ int main(int argc, char** argv) {
   
   // Write to hdf5
   SAYLINE(__LINE__-1);
-  H5DensityWriter<GridAdapter<val_t> > writer(on);
-  GridAdapter<val_t> ga(&grid);
+  H5DensityWriter<GridAdapter<VG, val_t> > writer(on);
+  GridAdapter<VG, val_t> ga(&grid);
   writer.write(mem, ga);
   
   return (EXIT_SUCCESS);

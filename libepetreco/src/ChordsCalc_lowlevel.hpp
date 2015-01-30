@@ -1,6 +1,11 @@
-/** @file ChordsCalc_lowlevel.hpp */
+/**
+ * @file ChordsCalc_lowlevel.hpp
+ * @brief Header file that defines lowlevel functionality for calculations that
+ * include a grid and a ray.
+ */
+
 /* TODO Behavior for rays that lie exactly in a plane? Exactly on the
- * intersection line of to orthogonal planes?
+ * intersection line of two orthogonal planes?
  */
 #ifndef CHORDSCALC_LOWLEVEL_HPP
 #define CHORDSCALC_LOWLEVEL_HPP
@@ -14,21 +19,26 @@
 #endif
 
 /**
- * @brief Struct template: Conditional minimum functor
+ * @brief Functor: Minimum of some potential candidates.
  * 
- * @tparam n Dimension of argument vectors
+ * The number of candidates specialises the template. True candidates (those
+ * among the potential candidates, that are taken into account) are defined via
+ * a bool mask. State of result (valid minimum found/not) is saved.
+ * 
+ * @tparam n Number of potential candidates.
  */
 template<int n>
 struct MinFunctor
 {
   /**
-   * @brief Member function template: Functor operation
+   * @brief Functor operation.
    *
-   * @tparam T Type of minimum and possible candidates
-   * @arg min_ Result memory for minimum
-   * @arg good Result memory for state of result
-   * @arg a    Vector of candidates
-   * @arg b    Vector of possible candidates
+   * @tparam T Type of minimum and potential candidates.
+   * @arg min_ Result memory for minimum.
+   * @arg good Result memory for state of result.
+   * @arg a    Array of potential candidates.
+   * @arg b    Bool mask: Where true, the corresponding potential candidate is
+   * a true candidate.
    */
   template<typename T>
   __host__ __device__
@@ -52,7 +62,9 @@ struct MinFunctor
 };
 
 
-/* Template specialisation for n=2 */
+/**
+ * @brief Functor template specialisation for n=2
+ */
 template<>
 struct MinFunctor<2>
 {
@@ -76,21 +88,26 @@ struct MinFunctor<2>
 
 
 /**
- * @brief Struct template: Conditional maximum functor
+ * @brief Functor: Maximum of some potential candidates.
  * 
- * @tparam n Dimension of argument vectors
+ * The number of candidates specialises the template. True candidates (those
+ * among the potential candidates, that are taken into account) are defined via
+ * a bool mask. State of result (valid maximum found/not) is saved.
+ * 
+ * @tparam n Number of potential candidates.
  */
 template<int n>
 struct MaxFunctor
 {
   /**
-   * @brief Member function template: Functor operation
+   * @brief Functor operation.
    *
-   * @tparam T Type of maximum and possible candidates
-   * @arg max_ Result memory for maximum
-   * @arg good Result memory for state of result
-   * @arg a    Vector of candidates
-   * @arg b    Vector of possible candidates
+   * @tparam T Type of maximum and potential candidates.
+   * @arg min_ Result memory for maximum.
+   * @arg good Result memory for state of result.
+   * @arg a    Array of potential candidates.
+   * @arg b    Bool mask: Where true, the corresponding potential candidate is
+   * a true candidate.
    */
   template<typename T>
   __host__ __device__
@@ -114,7 +131,9 @@ struct MaxFunctor
 };
 
 
-/* Template specialisation for n=2 */
+/**
+ * @brief Functor template specialisation for n=2
+ */
 template<>
 struct MaxFunctor<2>
 {
@@ -137,19 +156,24 @@ struct MaxFunctor<2>
 };
 
 
-
-
-
-
-
+/**
+ * @brief Get chords.
+ * 
+ * Details.
+ * 
+ * @tparam val_t    Value type.
+ * @param chords    Result memory.
+ * @param voxelIds  Result memory.
+ * @param nChords   Number of chords.
+ * @param ray       Ray.
+ * @param gridO     Grid origin.
+ * @param gridD     Grid voxel edge lengths.
+ * @param gridN     Grid number of voxels in dimensions.
+ */
 template<typename val_t>
 __host__ __device__
 void
 getChords(
-//      val_t chords[], int voxelIds[],
-//      int const nChords,
-//      val_t const ray[],
-//      val_t const gridO[], val_t const gridD[], int const gridN[] )
       val_t * const chords, int * const voxelIds,
       int const nChords,
       val_t const * const ray,
@@ -334,15 +358,17 @@ getChords(
 
 
 /**
- * @brief Function template that for a given ray and a given grid determines for
- *        all axis, if the planes orthogonal to that axis are intersected by the
- *        ray.
+ * @brief Get info which planes are crossed.
+ * 
+ * Function template that for a given ray and a given grid determines for all
+ * axes, if the planes orthogonal to that axis are intersected by the ray.
  *
- * @arg crosses   Result memory
- * @arg ray       Array of ray start and end coordinates
- * @arg gridO     Array of grid origin coordinates
- * @arg gridD     Array of grid plane spacings for each axis
- * @arg gridN     Array of grid voxel numbers for each axis
+ * @tparam val_t    Value type.
+ * @param crosses   Result memory.
+ * @param ray       Array of ray start and end coordinates.
+ * @param gridO     Array of grid origin coordinates.
+ * @param gridD     Array of grid plane spacings for each axis.
+ * @param gridN     Array of grid voxel numbers for each axis.
  */
 template<typename val_t>
 __host__ __device__
@@ -384,12 +410,13 @@ getCrossesPlanes(
  *        intersect (no division by zero) but then the return value is
  *        meaningless, of course.
  *
- * @arg i         Index of plane in dim
- * @arg dim       Axis perpendicular to plane
- * @arg ray       Array of ray start and end coordinates
- * @arg gridO     Array of grid origin coordinates
- * @arg gridD     Array of grid plane spacings for each axis
- * @arg gridN     Array of grid voxel numbers for each axis
+ * @tparam val_t    Value type.
+ * @param i         Index of plane in dim
+ * @param dim       Axis perpendicular to plane
+ * @param ray       Array of ray start and end coordinates
+ * @param gridO     Array of grid origin coordinates
+ * @param gridD     Array of grid plane spacings for each axis
+ * @param gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -415,12 +442,13 @@ alphaFromId(
  *        the ray, 0 corresponds to the start point and 1 corresponds to the end
  *        point.
  *
- * @arg alpha     Ray parameter
- * @arg dim       Axis perpendicular to plane
- * @arg ray       Array of ray start and end coordinates
- * @arg gridO     Array of grid origin coordinates
- * @arg gridD     Array of grid plane spacings for each axis
- * @arg gridN     Array of grid voxel numbers for each axis
+ * @tparam val_t    Value type.
+ * @param alpha     Ray parameter
+ * @param dim       Axis perpendicular to plane
+ * @param ray       Array of ray start and end coordinates
+ * @param gridO     Array of grid origin coordinates
+ * @param gridD     Array of grid plane spacings for each axis
+ * @param gridN     Array of grid voxel numbers for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -447,11 +475,11 @@ phiFromAlpha(
  *        axis whose orthogonal planes are not intersected!!!
  *
  * @tparam val_t  Coordinate type
- * @arg aDimmin   Result memory for mimimum intersection parameters
- * @arg ray       Array of ray start and end coordinates
- * @arg gridO     Array of grid origin coordinates
- * @arg gridD     Array of grid plane spacings for each axis
- * @arg gridN     Array of grid voxel numbers for each axis
+ * @param aDimmin Result memory for mimimum intersection parameters
+ * @param ray     Array of ray start and end coordinates
+ * @param gridO   Array of grid origin coordinates
+ * @param gridD   Array of grid plane spacings for each axis
+ * @param gridN   Array of grid voxel numbers for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -481,11 +509,11 @@ getAlphaDimmin(
  *        axis whose orthogonal planes are not intersected!!!
  *
  * @tparam val_t  Coordinate type
- * @arg aDimmax   Result memory for mimimum intersection parameters
- * @arg ray       Array of ray start and end coordinates
- * @arg gridO     Array of grid origin coordinates
- * @arg gridD     Array of grid plane spacings for each axis
- * @arg gridN     Array of grid voxel numbers for each axis
+ * @param aDimmax Result memory for mimimum intersection parameters
+ * @param ray     Array of ray start and end coordinates
+ * @param gridO   Array of grid origin coordinates
+ * @param gridD   Array of grid plane spacings for each axis
+ * @param gridN   Array of grid voxel numbers for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -510,10 +538,11 @@ getAlphaDimmax(
  *        each axis determines the one that corresponds to the point where the
  *        ray enters the grid.
  *
- * @arg aMin          Result memory for minimum parameter of ray in grid
- * @arg good          Memory for the state of the result
- * @arg aDimmin       Array of intersection minima for each axis
- * @arg aDimminGood   Array of states of the intersection minima for each axis
+ * @tparam val_t        Coordinate type
+ * @param aMin          Result memory for minimum parameter of ray in grid
+ * @param good          Memory for the state of the result
+ * @param aDimmin       Array of intersection minima for each axis
+ * @param aDimminGood   Array of states of the intersection minima for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -532,10 +561,11 @@ getAlphaMin(
  *        each axis determines the one that corresponds to the point where the
  *        ray leaves the grid.
  *
- * @arg aMax          Result memory for maximum parameter of ray in grid
- * @arg good          Memory for the state of the result
- * @arg aDimmax       Array of intersection maxima for each axis
- * @arg aDimmaxGood   Array of states of the intersection maxima for each axis
+ * @tparam val_t        Coordinate type
+ * @param aMax          Result memory for maximum parameter of ray in grid
+ * @param good          Memory for the state of the result
+ * @param aDimmax       Array of intersection maxima for each axis
+ * @param aDimmaxGood   Array of states of the intersection maxima for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -552,7 +582,8 @@ getAlphaMax(
 /**
  * @brief Function template that returns the length of a given ray.
  *
- * @arg ray   Array of ray start and end coordinates
+ * @tparam val_t  Coordinate type
+ * @param ray     Array of ray start and end coordinates
  */
 template<typename val_t>
 __host__ __device__
@@ -573,9 +604,10 @@ getLength(
  *        the ray parameter increase that corresponds to advancing from plane n
  *        to plane n+1 for all axes.
  *
- * @arg aDimup  Result memory
- * @arg ray     Array of ray start and end coordinates
- * @arg gridD   Array of grid plane spacings for each axis
+ * @tparam val_t  Coordinate type
+ * @param aDimup  Result memory
+ * @param ray     Array of ray start and end coordinates
+ * @param gridD   Array of grid plane spacings for each axis
  */
 template<typename val_t>
 __host__ __device__
@@ -603,8 +635,9 @@ getAlphaDimup(
  *       increasing plane indices for an axis, this axis' update value is +1.
  *       Otherwise, ist is -1.
  *
- * @arg idDimup  Result memory
- * @arg ray      Array of ray start and end coordinates
+ * @tparam val_t  Coordinate type
+ * @param idDimup Result memory
+ * @param ray     Array of ray start and end coordinates
  */
 template<typename val_t>
 __host__ __device__

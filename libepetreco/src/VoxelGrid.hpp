@@ -1,4 +1,5 @@
 /** @file VoxelGrid.hpp */
+
 #ifndef VOXELGRID_HPP
 #define VOXELGRID_HPP
 

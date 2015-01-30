@@ -1,4 +1,5 @@
 /** @file H5DensityWriter.hpp */
+
 #ifndef H5DENSITYWRITER_HPP
 #define H5DENSITYWRITER_HPP
 
@@ -7,13 +8,67 @@
 #include <iostream>
 
 /**
+ * @brief Traits of WritableGrid.
+ * 
+ * @tparam T Type that is defined as trait CoordType.
+ */
+template<typename T>
+struct WritableGridTraits {
+  typedef T CoordType;
+};
+
+/**
+ * @brief Interface definition for template parameter TGrid in H5DensityWriter.
+ * 
+ * Provides low level getter functions.
+ * 
+ * @tparam ConcreteWritableGrid Class that implements the interface.
+ * @tparam ConcreteWritableGridTraits Class that provides member types for the
+ * implementation ConcreteWritableGrid.
+ */
+template<typename ConcreteWritableGrid, typename ConcreteWritableGridTraits>
+class WritableGrid {
+  public:
+      
+    typedef typename ConcreteWritableGridTraits::CoordType CoordType;
+    
+      /**
+       * @brief Get spatial coordinates of grid origin.
+       * 
+       * @param origin Target array. Contains grid origin after the
+       * function's return.
+       */
+      void getOrigin(CoordType * const origin) const {
+        static_cast<ConcreteWritableGrid *>(this)->getOrigin(origin);
+      }
+      
+      /**
+       * @brief Get edge lengths of one grid voxel.
+       * 
+       * @param voxelSize Target array. Contains edge lengths after the 
+       * function's return.
+       */
+      void getVoxelSize(CoordType * const voxelSize) const {
+        static_cast<ConcreteWritableGrid *>(this)->getVoxelSize(voxelSize);
+      }
+      
+      /**
+       * @brief Get number of voxels in the grid in each spatial dimension.
+       * 
+       * @param numberOfVoxels Target array. Contains number of voxels
+       * after the function's return.
+       */
+      void getNumberOfVoxels(int * const numberOfVoxels) const {
+        static_cast<ConcreteWritableGrid *>(this)
+           ->getNumberOfVoxels(numberOfVoxels);
+      }
+ };
+
+/**
  * @brief Class template for writing density data to an HDF5 file
  * 
- * The grid type TGrid has to implement low level getter functions that write
- * array information of 3 elements to the arrays given by their arguments:
- *  - for the grid origin:      void getOrigin(flaot*)
- *  - for the grid voxelsize:   void getVoxelSize(float*)
- *  - for the grid dimensions:  void getNumberOfVoxels(int*)
+ * @tparam TGrid Concretisation of WritableGrid.
+ * 
  */
 template<typename TGrid>
 class H5DensityWriter
@@ -57,9 +112,19 @@ class H5DensityWriter
       float origin[3];
       float voxelSize[3];
       int   numberOfVoxels[3];
-      grid.getOrigin(        origin);
-      grid.getVoxelSize(     voxelSize);
+      
+      typename TGrid::CoordType gOrigin[3];
+      typename TGrid::CoordType gVoxelSize[3];
+      
+      grid.getOrigin(gOrigin);
+      grid.getVoxelSize(gVoxelSize);
       grid.getNumberOfVoxels(numberOfVoxels);
+      
+      for(int dim=0; dim<3; dim++) {
+        origin[dim]    = static_cast<float>(gOrigin[dim]);
+        voxelSize[dim] = static_cast<float>(gVoxelSize[dim]);
+      }
+      
       float max[3];
       for(int dim=0; dim<3; dim++) max[dim] =
               origin[dim] + numberOfVoxels[dim] * voxelSize[dim];
