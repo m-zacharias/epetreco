@@ -11,7 +11,7 @@ LIB = -L$(HDF5_ROOT)/lib -L./ -lhdf5 -lhdf5_cpp -lepetreco
 CUC = nvcc
 override CUCFLAGS += -arch=sm_20
 CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
-CUCLIB = -L$(CUDA_ROOT)/lib -L./ -lcublas -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
+CUCLIB = -L$(CUDA_ROOT)/lib -L./ -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
 
 # ##############################################################################
 # ### PUT ALL DEFAULT TARGETS HERE
@@ -50,7 +50,9 @@ EXECUTABLES := \
       test_VoxelGridLinIndex.out \
       example_condense_main.out \
       example_partition.out \
-      test_getSystemMatrixDeviceOnly.out
+      test_getSystemMatrixDeviceOnly.out \
+      test_cooSort.out \
+      test_cusparseWrapper.out
 
 default : $(EXECUTABLES)
 
