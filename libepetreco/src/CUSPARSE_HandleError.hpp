@@ -1,6 +1,7 @@
-/* 
- * File:   CUSPARSE_HandleError.hpp
- * Author: malte
+/** 
+ * @file CUSPARSE_HandleError.hpp
+ */
+/* Author: malte
  *
  * Created on 3. Februar 2015, 14:39
  */

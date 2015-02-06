@@ -53,7 +53,8 @@ EXECUTABLES := \
       test_getSystemMatrixDeviceOnly.out \
       test_cooSort.out \
       test_cusparseWrapper.out \
-      test_mlemOperations.out
+      test_mlemOperations.out \
+      test_convertCsr2Ecsr.out
 
 default : $(EXECUTABLES)
 
