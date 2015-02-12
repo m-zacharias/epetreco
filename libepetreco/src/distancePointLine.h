@@ -48,33 +48,32 @@ __host__ __device__
 T distance( T const * const a, T const * const b,
                 T const * const p )
 {
-    T ap[3];
-    ap[0] = p[0]-a[0];
-    ap[1] = p[1]-a[1];
-    ap[2] = p[2]-a[2];
-    
-    T ab[3];
-    ab[0] = b[0]-a[0];
-    ab[1] = b[1]-a[1];
-    ab[2] = b[2]-a[2];
-    
-    T sp = scalarProduct(ab,ap);
-    T abs_ab = absolute(ab);
-    T abs_ap = absolute(ap);
-    
-    T test = scalarProduct(ab,ap)/(absolute(ab)*absolute(ap));
-    
-    if(!((test>=0.) && (test<=1.))) {
-      printf("test not in range! %.20e\n", test-1);
-      return 0.;
-    } else if(!((acos(test)>=0.) && (acos(test)<=M_PI))) {
-      printf("acos(test) not in range! %f\n", acos(test));
-      return 0;
-    } else {
-      return absolute(ap)*
-              sin(acos(scalarProduct(ab,ap)/absolute(ab)/absolute(ap)));
-    }
+  T ap[3];
+  T ab[3];
+  for(int dim=0; dim<3; dim++) {
+    ap[dim] = p[dim]-a[dim];
+    ab[dim] = b[dim]-a[dim];
   }
+
+  T sp = scalarProduct(ab,ap);
+  T abs_ab = absolute(ab);
+  T abs_ap = absolute(ap);
+
+  T cos_alpha = scalarProduct(ab,ap)/(absolute(ab)*absolute(ap));
+  
+  if(cos_alpha<-1.) {
+    printf("cos_alpha not in range! cos_alpha+1: %.20e\n", cos_alpha+1);
+    // use: cos_alpha = -1.  =>  sin(acos(cos_alpha)) = 0.
+    return 0.;
+  }
+  if(cos_alpha>1.) {  
+    printf("cos_alpha not in range! cos_alpha-1: %.20e\n", cos_alpha-1);
+    // use: cos_alpha = +1.  =>  sin(acos(cos_alpha)) = 0.
+    return 0.;
+  }
+  return absolute(ap)*
+            sin(acos(scalarProduct(ab,ap)/absolute(ab)/absolute(ap)));
+}
 
 #endif	/* DISTANCEPOINTLINE_H */
 

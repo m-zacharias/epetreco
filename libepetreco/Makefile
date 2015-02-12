@@ -54,7 +54,9 @@ EXECUTABLES := \
       test_cooSort.out \
       test_cusparseWrapper.out \
       test_mlemOperations.out \
-      test_convertCsr2Ecsr.out
+      test_convertCsr2Ecsr.out \
+      reco.out \
+      test_supplement_mv.out
 
 default : $(EXECUTABLES)
 
