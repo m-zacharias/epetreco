@@ -29,8 +29,154 @@
 
 #define NBLOCKS 32
 
+/** @brief System matrix calculation.
+ * @param aEcsrCnlPtr_devi Array of effective row pointers. Part of ECSR sparse
+ * representation of the system matrix. Representation on device.
+ * @param aVxlId_devi Array of system matrix column ids (which are voxel ids).
+ * Part of COO representation of the system matrix. Representation on device.
+ * @param aVal_devi Array of system matrix values. Part of sparse
+ * representation of the system matrix. Representation on device.
+ * @param nnz_devi After execution finished: Number of non-zeros in system
+ * matrix plus initial value. Should usually be initialized to 0 prior to call
+ * to this function. Representation on device.
+ * @param aCnlId_devi Array of system matrix row ids (which are channel ids).
+ * Part of COO representation of the system matrix - is only an
+ * intermediate result. Representation on device.
+ * @param aCsrCnlPtr_devi Array of row Pointers. Part of CSR representation of
+ * the system matrix - is only an intermediate result. Representation on device.
+ * @param yRowId_devi Array of measurement vector elements' row indices. Part
+ * of sparse representation of the vector. Representation on device.
+ * @param effM Number of non-zero elements in measurement vector y.
+ * @param handle Handle to cuSPARSE library context. */
+template<typename T>
+void systemMatrixCalculation(
+      int * const aEcsrCnlPtr_devi, int * const aVxlId_devi, T * const aVal_devi,
+      int * const nnz_devi,
+      int * const aCnlId_devi, int * const aCsrCnlPtr_devi,
+      int * const yRowId_devi, int * const effM_devi, int * const effM_host,
+      cusparseHandle_t const & handle) {
+  /* Run kernel */
+  getSystemMatrix<
+        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
+        <<<NBLOCKS, TPB>>>
+      ( aVal_devi,
+        aVxlId_devi,
+        aCnlId_devi,
+        yRowId_devi,
+        effM_devi,
+        nnz_devi);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+  /* Copy nnz back to host */
+  int nnz_host[1];
+  HANDLE_ERROR(
+        cudaMemcpy(nnz_host, nnz_devi, sizeof(nnz_host[0]), cudaMemcpyDeviceToHost));
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+  /* Sort system matrix elements according to row major format */
+  cooSort<val_t>(aVal_devi, aCnlId_devi, aVxlId_devi, *nnz_host);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+  /* COO -> CSR */
+  convertCoo2Csr(aCsrCnlPtr_devi, aCnlId_devi, handle, *nnz_host, NCHANNELS);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+  /* CSR -> ECSR */
+  convertCsr2Ecsr(aEcsrCnlPtr_devi, yRowId_devi, effM_host[0], aCsrCnlPtr_devi, NCHANNELS);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+}
+
+/** @brief Wrapper function for device memory allocation.
+ * @tparam T Type of memory.
+ * @param devi Pointer to allocate memory for.
+ * @param n Number of elements to allocate memory for. */
+template<typename T>
+cudaError_t malloc_devi(T * devi, int const n) {
+  return cudaMalloc((void**)&devi, sizeof(devi[0]) * n);
+}
+
+/** @brief Wrapper function for memcpy from host to device. 
+ * @tparam T Type of memory.
+ * @param devi Target memory on device.
+ * @param host Source memory on host.
+ * @param n Number of elements of type T that are copied. */
+template<typename T>
+cudaError_t memcpyH2D(T * const devi, T const * const host, int const n) {
+  return cudaMemcpy(devi, host, sizeof(devi[0]) * n, cudaMemcpyHostToDevice);
+}
+
+/** @brief Wrapper function for memcpy from device to host.
+ * @tparam T Type of memory.
+ * @param host Target memory on host.
+ * @param devi Source memory on device.
+ * @param n Number of elements of type T that are copied. */
+template<typename T>
+cudaError_t memcpyD2H(T * const host, T const * const devi, int const n) {
+  return cudaMemcpy(host, devi, sizeof(host[0]) * n, cudaMemcpyDeviceToHost);
+}
+
+/** @brief Find number of non-zeros in an array.
+ * @tparam Type of elements.
+ * @param mem Array of length n.
+ * @param n Length of the array. */
+int findNnz(val_t const * const mem, int const n) {
+  int tmp(0);
+  for(int i=0; i<n; i++) {
+    if(mem[i] != 0) tmp++;
+  }
+  return tmp;
+}
+  
+/** @brief Convert a dense vector into a sparse vector.
+ * @tparam T Type of elements.
+ * @param vctId Array that holds the vector elements' indices after function
+ * returns. Must be [number of non-zeros in vct] long.
+ * @param vctVal Array that holds the vector elements' values after function
+ * returns. Must be [number of non-zeros in vct] long.
+ * @param vct Dense vector of length n to convert.
+ * @param n Length of dense vector to convert. */
+template<typename T>
+void makeSparseVct(int * const vctId, T * const vctVal,
+      T const * const vct, int const n) {
+  int id(0);
+  for(int i=0; i<n; i++) {
+    if(vct[i] != 0) {
+      vctId[id]  = i;
+      vctVal[id] = vct[i];
+      id++;
+    }
+  }
+}
+
+/** @brief Wrapper function for device memory allocation for a sparse vector.
+ * @tparam T Type of elements.
+ * @param vctId_devi Array of vector elements' indices of length vctNnz. 
+ * @param vctVal_devi Array of vector elements' values of length vctNnz. 
+ * @param vctNnz Number of non-zeros in the vector. 
+ * @return Error code of last operation in function body. */
+template<typename T>
+cudaError_t mallocSparseVct_devi(int * vctId_devi, T * vctVal_devi,
+      int * vctNnz_devi, int const vctNnz) {
+  malloc_devi<int>(vctId_devi,  vctNnz);
+  malloc_devi<T>  (vctVal_devi, vctNnz);
+  return malloc_devi<int>(vctNnz_devi, 1);
+}
+
+/** @brief Wrapper function for copying a sparse vector from host to device. */
+template<typename T>
+cudaError_t cpySparseVctH2D(
+      int * const vctId_devi, T * const vctVal_devi, int * const vctNnz_devi,
+      int const * const vctId_host, T const * const vctVal_host,
+      int const * const vctNnz_host) {
+  memcpyH2D<int>(vctId_devi,  vctId_host,  vctNnz_host[0]);
+  memcpyH2D<T>(  vctVal_devi, vctVal_host, vctNnz_host[0]);
+  return memcpyH2D<int>(vctNnz_devi, vctNnz_host, 1);
+}
+
+
+
 int main(int argc, char** argv) {
-  // Process command line args
+  /* Process command line args */
   int const nargs(3);
   if(argc!=nargs+1) {
     std::cerr << "Error: Wrong number of arguments. Exspected: "
@@ -44,309 +190,234 @@ int main(int argc, char** argv) {
   std::string const on(argv[2]);
   int const nrays(atoi(argv[3]));
   
-  // Create measurement setup
+  /* Create measurement setup */
   MS setup =
     MS(
       POS0X, POS1X,
       NA, N0Z, N0Y, N1Z, N1Y,
       DA, SEGX, SEGY, SEGZ);
   
-  // Create voxel grid
+  /* Create voxel grid */
   VG grid =
     VG(
       GRIDOX, GRIDOY, GRIDOZ,
       GRIDDX, GRIDDY, GRIDDZ,
       GRIDNX, GRIDNY, GRIDNZ);
   
-  // Copy setup, grid and nrays to GPU constant memory
+  /* Copy setup, grid and nrays to GPU constant memory */
   HANDLE_ERROR(cudaMemcpyToSymbol(setup_const, &setup, sizeof(MS)));
   HANDLE_ERROR(cudaMemcpyToSymbol(grid_const, &grid, sizeof(grid)));
   HANDLE_ERROR(cudaMemcpyToSymbol(nrays_const, &nrays, sizeof(int)));
   
-  // Read measurement
-  /**
-   * @var effM Number of non-zero elements in measurement vector y.
-   */
-  int effM;
-  /**
-   * @var yRowId Array of y row indices. Part of sparse representation of
-   * measurement vector y. Has length effM.
-   */
-  int * yRowId;
-  /**
-   * @var yVal Array of y values. Part of sparse representation of measurement
-   * vector y. Has length effM.
-   */
-  val_t * yVal;
+  /*****************************************************************************
+   * MEASUREMENT VECTOR
+   ****************************************************************************/
+  
+  /* Read */
+  
+  /** @var effM_host Number of non-zero elements in measurement vector y.
+   * Representation on host. */
+  int effM_host[1];
+  /** @var effM_devi Representation of effM_host on device. */
+  int * effM_devi = NULL;
+  
+  /** @var yRowId_host Array of y row indices. Part of sparse representation of
+   * measurement vector y. Will have length effM_host. Representation on host. */
+  int * yRowId_host = NULL;
+  /** @var yRowId_devi Representation of yRowId_host on device. */
+  int * yRowId_devi = NULL;
+  
+  /** @var yVal_host Array of y values. Part of sparse representation of
+   * measurement vector y. Will have length effM_host. Representation on host. */
+  val_t * yVal_host = NULL;
+  /** @var yVal_devi Representation of yVal on device. */
+  val_t * yVal_devi = NULL;
   
   do{
     H5Reader reader(fn);
     int fSize = reader.sizeOfFile();
     val_t * fMem = new val_t[fSize];
     reader.read(fMem);
-    effM = 0;
-    for(int i=0; i<fSize; i++) {
-      if(fMem[i] != 0) effM++;
-    }
-    yRowId = new int[  effM];
-    yVal   = new val_t[effM];
-    int id = 0;
-    for(int i=0; i<fSize; i++) {
-      if(fMem[i] != 0) {
-        yVal[id] = fMem[i];
-        yRowId[id] = i;
-        id++;
-      }
-    }
+    effM_host[0] = findNnz(fMem, fSize);
+    yRowId_host = new int[  effM_host[0]];
+    yVal_host   = new val_t[effM_host[0]];
+    makeSparseVct(yRowId_host, yVal_host, fMem, fSize);
     delete[] fMem;
   } while(false);
   
-  // Copy measurement vector to device
-  /**
-   * @var effM_devi Representation of effM on device.
-   */
-  int * effM_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&effM_devi,   sizeof(effM_devi[0])));
-  HANDLE_ERROR(
-        cudaMemcpy(effM_devi, &effM,     sizeof(effM_devi[0]),
-        cudaMemcpyHostToDevice));
-  /**
-   * @var yRowId_devi Representation of yRowId on device.
-   */
-  int * yRowId_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&yRowId_devi, sizeof(yRowId_devi[0]) * effM));
-  HANDLE_ERROR(
-        cudaMemcpy(yRowId_devi, yRowId,  sizeof(yRowId_devi[0]) * effM,
-        cudaMemcpyHostToDevice));
-  /**
-   * @var yVal_devi Representation of yVal on device.
-   */
-  val_t * yVal_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&yVal_devi,   sizeof(yVal_devi[0])   * effM));
-  HANDLE_ERROR(
-        cudaMemcpy(yVal_devi,   yVal,    sizeof(yVal_devi[0])   * effM,
-        cudaMemcpyHostToDevice));
+  HANDLE_ERROR(mallocSparseVct_devi(yRowId_devi, yVal_devi, effM_devi, effM_host[0]));
+  HANDLE_ERROR(cpySparseVctH2D(yRowId_devi, yVal_devi, effM_devi,
+        yRowId_host, yVal_host, effM_host));
   
-  // Get system matrix
-  /**
-   * @var aVxld_devi Array of system matrix column ids (which are voxel ids).
-   * Part of (COO) sparse representation of the system matrix. Representation on
-   * device.
-   */
-  int * aVxlId_devi = NULL;
-  /**
-   * @var aVal_devi Array of system matrix values. Part of sparse representation 
-   * of the system matrix. Representation on device.
-   */
-  val_t * aVal_devi = NULL;
-  /**
-   * @var Number of non-zeros in system matrix. Representation on host.
-   */
-  int nnz_host[1];
-  /**
-   * @var Number of non-zeros in system matrix. Representation on device.
-   */
-  int * nnz_devi = NULL;
-  /**
-   * @var aEcsrCnlPtr_devi Array of effective row pointers. Part of ECSR sparse
-   * representation of the system matrix. Representation on device.
-   */
+  int maxNnz = effM_host[0] * VGRIDSIZE;
+  
+  /* Prepare objects that are meaningful to the algorithm */
+  
+  /** @var aCnlId_devi Array of system matrix row ids (which are channel ids).
+   * Part of COO representation of the system matrix - is only an
+   * intermediate result. Representation on device. */
+  int * aCnlId_devi = NULL;
+  HANDLE_ERROR(malloc_devi(aCnlId_devi, maxNnz));
+  
+  /** @var aCsrCnlPtr_devi Array of row Pointers. Part of CSR representation of
+   * the system matrix - is only an intermediate result. Representation on
+   * device. */
+  int * aCsrCnlPtr_devi = NULL;
+  HANDLE_ERROR(malloc_devi(aCsrCnlPtr_devi, NCHANNELS+1));
+  
+  /** @var aEcsrCnlPtr_devi Array of effective row pointers. Part of ECSR sparse
+   * representation of the system matrix. Representation on device. */
   int * aEcsrCnlPtr_devi = NULL;
-  /**
-   * @var handle Handle to cusparse library context.
-   */
+  HANDLE_ERROR(malloc_devi(aEcsrCnlPtr_devi, effM_host[0]+1));
+  
+  /** @var aVxlId_devi Array of system matrix column ids (which are voxel ids).
+   * Part of (COO) sparse representation of the system matrix. Representation on
+   * device. */
+  int * aVxlId_devi = NULL;
+  HANDLE_ERROR(malloc_devi(aVxlId_devi, maxNnz));
+  
+  /** @var aVal_devi Array of system matrix values. Part of sparse representation 
+   * of the system matrix. Representation on device. */
+  val_t * aVal_devi = NULL;
+  HANDLE_ERROR(malloc_devi(aVal_devi, maxNnz));
+  
+  /** @var Number of non-zeros in system matrix. Representation on host. */
+  int nnz_host[1];
+
+  /** @var Number of non-zeros in system matrix. Representation on device. */
+  int * nnz_devi = NULL;
+  
+  /** @var Density guess vector x. Representation on host. */
+  val_t * x_host = new val_t[VGRIDSIZE];
+  for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 1.; }
+  
+  /** @var Density guess vector x. Representation on device. */
+  val_t * x_devi = NULL;
+  HANDLE_ERROR(malloc_devi(x_devi, VGRIDSIZE));
+  HANDLE_ERROR(memcpyH2D(x_devi, x_host, VGRIDSIZE));
+  HANDLE_ERROR(cudaDeviceSynchronize());
+  do {
+    val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
+    scales<val_t>(x_devi, 1./norm, VGRIDSIZE);
+    HANDLE_ERROR(cudaDeviceSynchronize());
+  } while(false);
+  
+  /** @var handle Handle to cusparse library context. */
   cusparseHandle_t handle = NULL;
   
-  do {
-    int * aCnlId_devi = NULL;
-    
-    // Allocate memory for matrix on device
-    do{
-      int potNnz = effM * VGRIDSIZE;
-      HANDLE_ERROR(
-            cudaMalloc((void**)&aCnlId_devi, sizeof(aCnlId_devi[0]) * potNnz));
-      HANDLE_ERROR(
-            cudaMalloc((void**)&aVxlId_devi, sizeof(aVxlId_devi[0]) * potNnz));
-      HANDLE_ERROR(
-            cudaMalloc((void**)&aVal_devi,   sizeof(aVal_devi[0])   * potNnz));
-    } while(false);
-    
-    // Initialize nnz
-    *nnz_host = 0;
-    HANDLE_ERROR(
-          cudaMalloc((void**)&nnz_devi,   sizeof(nnz_devi[0])));
-    HANDLE_ERROR(
-          cudaMemcpy(nnz_devi, nnz_host, sizeof(nnz_devi[0]), cudaMemcpyHostToDevice));
-    
-    // Make sure, copy operations have finished
-    HANDLE_ERROR(
-          cudaDeviceSynchronize());
-
-    // Run kernel
-    getSystemMatrix<
-          val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
-          <<<NBLOCKS, TPB>>>
-        ( aVal_devi,
-          aVxlId_devi,
-          aCnlId_devi,
-          yRowId_devi,
-          effM_devi,
-          nnz_devi);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    
-    // Copy nnz back to host
-    HANDLE_ERROR(
-          cudaMemcpy(nnz_host, nnz_devi, sizeof(nnz_host[0]), cudaMemcpyDeviceToHost));
-
-    // Sort system matrix elements according to row major format
-    cooSort<val_t>(aVal_devi, aCnlId_devi, aVxlId_devi, *nnz_host);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-
-    // COO -> CSR
-    int * aCsrCnlPtr_devi = NULL;
-    HANDLE_ERROR(
-          cudaMalloc((void**)&aCsrCnlPtr_devi, sizeof(aCsrCnlPtr_devi[0]) * (int)(NCHANNELS+1)));
-    HANDLE_CUSPARSE_ERROR(
-          cusparseCreate(&handle));
-    convertCoo2Csr(aCsrCnlPtr_devi, aCnlId_devi, handle, *nnz_host, NCHANNELS);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-
-    // CSR -> ECSR
-    HANDLE_ERROR(
-          cudaMalloc((void**)&aEcsrCnlPtr_devi, sizeof(aEcsrCnlPtr_devi[0]) * (effM+1)));
-    convertCsr2Ecsr(aEcsrCnlPtr_devi, yRowId_devi, effM, aCsrCnlPtr_devi, NCHANNELS);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    
-    // Cleanup
-    cudaFree(aCnlId_devi);
-    cudaFree(aCsrCnlPtr_devi);
-  } while(false);
-  
-  // Prepare density guess vector
-  val_t * densityGuess_host = new val_t[VGRIDSIZE];
-  for(int i=0; i<VGRIDSIZE; i++) {
-    densityGuess_host[i] = 1.;
-  }
-  val_t * densityGuess_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&densityGuess_devi, sizeof(densityGuess_devi[0]) * VGRIDSIZE));
-  HANDLE_ERROR(
-        cudaMemcpy(densityGuess_devi, densityGuess_host,
-              sizeof(densityGuess_devi[0]) * VGRIDSIZE, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaDeviceSynchronize());
-  
-  do {
-    val_t norm = sum<val_t>(densityGuess_devi, VGRIDSIZE);
-    scales<val_t>(densityGuess_devi, 1./norm, VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-  } while(false);
-  
-  // Matrix vector multiplication to simulate measurement
-  val_t * yTildeVal_devi = NULL; 
-  HANDLE_ERROR(
-        cudaMalloc((void**)&yTildeVal_devi, sizeof(yTildeVal_devi[0]) * effM));
-  HANDLE_ERROR(cudaDeviceSynchronize());
+  /** @var A Matrix descriptor. Used with cuSPARSE library. */
   cusparseMatDescr_t A = NULL;
-  HANDLE_CUSPARSE_ERROR(
-        cusparseCreateMatDescr(&A));
-  HANDLE_CUSPARSE_ERROR(
-        customizeMatDescr(A, handle));
+  HANDLE_CUSPARSE_ERROR(cusparseCreateMatDescr(&A));
+  HANDLE_CUSPARSE_ERROR(customizeMatDescr(A, handle));
+  
+  /** @var alpha Scalar factor. */
   val_t alpha = 1.;
+  
+  /** @var beta Scalar factor. */
   val_t beta  = 0.;
-  CSRmv<val_t>()(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-        effM, VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
-        densityGuess_devi, &beta, yTildeVal_devi);
-  HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Division to get "error"
+  /** @var oneVal_host Vector of ones in measurement space. Representation on
+   * host. */
+  val_t * oneVal_host = new val_t[effM_host[0]];
+  for(int i=0; i<effM_host[0]; i++) { oneVal_host[i] = 1.; }
+  
+  /** @var oneVal_host Vector of ones in measurement space. Representation on
+   * device. */
+  val_t * oneVal_devi = NULL;
+  HANDLE_ERROR(malloc_devi(oneVal_devi, effM_host[0]));
+  HANDLE_ERROR(memcpyH2D(oneVal_devi, oneVal_host, effM_host[0]));
+  
+  /** @var yTildeVal_devi Simulated measurement vector. Representation on
+   * device. */
+  val_t * yTildeVal_devi = NULL;
+  HANDLE_ERROR(malloc_devi(yTildeVal_devi, effM_host[0]));
+  
+  /** @var eVal_devi "Error" in measurement space. Representation on device. */
   val_t * eVal_devi = NULL; 
-  HANDLE_ERROR(
-        cudaMalloc((void**)&eVal_devi, sizeof(eVal_devi[0]) * effM));
+  HANDLE_ERROR(malloc_devi(eVal_devi, effM_host[0]));
+  
+  /** @var c_devi Correction in grid space. Representation on device. */
+  val_t * c_devi = NULL;
+  HANDLE_ERROR(malloc_devi(c_devi, VGRIDSIZE));
+  
+  /** @var s_devi Sensitivity in grid space. Representation on device. */
+  val_t * s_devi = NULL;
+  HANDLE_ERROR(malloc_devi(s_devi, VGRIDSIZE));
+  
+  /** @var xx_host Intermediate grid space vector. Representation on host. */
+  val_t * xx_host = new val_t[VGRIDSIZE];
+  
+  /** @var xx_devi Intermediate grid space vector. Representation on device. */
+  val_t * xx_devi = NULL;
+  HANDLE_ERROR(malloc_devi(xx_devi, VGRIDSIZE));
+  
+  
+  
+  /* Get system matrix */
+  systemMatrixCalculation<val_t> (
+        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi,
+        nnz_devi,
+        aCnlId_devi, aCsrCnlPtr_devi,
+        yRowId_devi, effM_devi, effM_host,
+        handle);
   HANDLE_ERROR(cudaDeviceSynchronize());
-  divides<val_t>(eVal_devi, yVal_devi, yTildeVal_devi, effM);
+  HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Matrix vector multiplication to backproject error on grid
-  val_t * c_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&c_devi, sizeof(c_devi[0]) * VGRIDSIZE));
+  /* Matrix vector multiplication to calculate sensitivity */
+  CSRmv<val_t>()(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+        effM_host[0], VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
+        oneVal_devi, &beta, s_devi);
   HANDLE_ERROR(cudaDeviceSynchronize());
+  
+  
+  
+  /* Get system matrix */
+  systemMatrixCalculation<val_t> (
+        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi,
+        nnz_devi,
+        aCnlId_devi, aCsrCnlPtr_devi,
+        yRowId_devi, effM_devi, effM_host,
+        handle);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+  HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+  /* Matrix vector multiplication to simulate measurement */
+  CSRmv<val_t>()(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+        effM_host[0], VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
+        x_devi, &beta, yTildeVal_devi);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+  
+  /* Division to get "error" */
+  divides<val_t>(eVal_devi, yVal_devi, yTildeVal_devi, effM_host[0]);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+  
+  /* Matrix vector multiplication to backproject error on grid */
   CSRmv<val_t>()(handle, CUSPARSE_OPERATION_TRANSPOSE,
-        effM, VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
+        effM_host[0], VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
         eVal_devi, &beta, c_devi);
   HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Matrix vector multiplication to calculate sensitivity
-  val_t * s_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&s_devi, sizeof(s_devi[0]) * VGRIDSIZE));
-  val_t * oneVal_host = new val_t[effM];
-  for(int i=0; i<effM; i++) {
-    oneVal_host[i] = 1.;
-  }
-  val_t * oneVal_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&oneVal_devi, sizeof(oneVal_devi[0]) * effM));
-  HANDLE_ERROR(
-        cudaMemcpy(oneVal_devi, oneVal_host, sizeof(oneVal_devi[0]) * effM,
-              cudaMemcpyHostToDevice));
-  HANDLE_ERROR(cudaDeviceSynchronize());
-  CSRmv<val_t>()(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-        effM, VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
-        oneVal_devi, &beta, s_devi);
-  
-  // Apply correction
-  val_t * xx_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&xx_devi, sizeof(xx_devi[0]) * VGRIDSIZE));
-  HANDLE_ERROR(cudaDeviceSynchronize());
-  dividesMultiplies<val_t>(xx_devi, densityGuess_devi, c_devi, s_devi, VGRIDSIZE);
+  /* Apply correction */
+  dividesMultiplies<val_t>(xx_devi, x_devi, c_devi, s_devi, VGRIDSIZE);
   HANDLE_ERROR(cudaDeviceSynchronize());
   
-//  // Normalize
+//  /* Normalize */
 //  val_t norm = sum<val_t>(xx_devi, VGRIDSIZE);
 //  scales<val_t>(density_Guess)
   
-  // Copy back to host
-  val_t * xx_host = new val_t[VGRIDSIZE];
-  HANDLE_ERROR(
-        cudaMemcpy(xx_host, xx_devi, sizeof(xx_host[0]) * VGRIDSIZE,
-              cudaMemcpyDeviceToHost));
+  /* Copy back to host */
+  HANDLE_ERROR(memcpyD2H(xx_host, xx_devi, VGRIDSIZE));
   HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Write to file
+  /* Write to file */
   H5DensityWriter<GridAdapter<VG, val_t> > writer(on);
   GridAdapter<VG, val_t> ga(&grid);
   writer.write(xx_host, ga);
   
-  // Cleanup
-  delete[] xx_host;
-  cudaFree(xx_devi);
-  delete[] oneVal_host;
-  cudaFree(oneVal_devi);
-  cudaFree(c_devi);
-  cudaFree(s_devi);
-  cudaFree(yTildeVal_devi); 
-  cudaFree(eVal_devi); 
-  delete[] densityGuess_host;
+  /* Cleanup */
   
-//  // Copy grid vector to host
-//  val_t * x_host = new val_t[VGRIDSIZE];
-//  HANDLE_ERROR(
-//        cudaMemcpy(x_host, x_devi, sizeof(x_host[0])*VGRIDSIZE, cudaMemcpyDeviceToHost));
-//  HANDLE_ERROR(
-//        cudaDeviceSynchronize());
-//  
-  
-  // ###########################################################################
-  // ### DEBUG
-  // ###########################################################################
-
-  delete[] yRowId;
-  delete[] yVal;
   return 0;
 }
 
