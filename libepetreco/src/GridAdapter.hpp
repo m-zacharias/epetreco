@@ -19,9 +19,8 @@
 template<typename TVoxelGrid, typename T>
 class GridAdapter : public WritableGrid<GridAdapter<TVoxelGrid, T>, WritableGridTraits<T> > {
 public:
-  GridAdapter(TVoxelGrid * grid) {
-    _grid = grid;
-  }
+  GridAdapter(TVoxelGrid const * const grid) 
+  : _grid(grid) {}
   
   void getOrigin( T * const origin ) const {
     origin[0] = _grid->gridox();
@@ -42,7 +41,7 @@ public:
   }
   
 private:
-  TVoxelGrid * _grid;
+  TVoxelGrid const * const _grid;
 };
 
 #endif	/* GRIDADAPTER_HPP */
