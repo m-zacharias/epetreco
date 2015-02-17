@@ -1,7 +1,13 @@
 /** @file voxelgrid10_defines.h */
 
+
+
 #ifndef VOXELGRID_DEFINES
 #define VOXELGRID_DEFINES
+
+#ifdef	__cplusplus
+extern "C" {
+#endif
 
 #define GRIDNX 10                       /** x dimension of voxel grid */
 #define GRIDNY 10                       /** y dimension of voxel grid */
@@ -12,6 +18,10 @@
 #define GRIDDX  0.070                   /** x edge length of one voxel [m] */
 #define GRIDDY  0.070                   /** y edge length of one voxel [m] */
 #define GRIDDZ  0.070                   /** z edge length of one voxel [m] */
-#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ  /** Number of voxel in the voxel grid */
+#define VGRIDSIZE (GRIDNX*GRIDNY*GRIDNZ)/** Number of voxel in the voxel grid */
+
+#ifdef	__cplusplus
+}
+#endif
 
 #endif  /* #define VOXELGRID_DEFINES */

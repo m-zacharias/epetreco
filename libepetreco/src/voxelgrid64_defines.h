@@ -1,9 +1,7 @@
 /** @file voxelgrid64_defines.h */
-/* 
- * Author: malte
+/* Author: malte
  *
- * Created on 4. November 2014, 15:20
- */
+ * Created on 4. November 2014, 15:20 */
 #ifndef VOXELGRID_DEFINES
 #define VOXELGRID_DEFINES
 
@@ -20,10 +18,10 @@ extern "C" {
 #define GRIDDX  0.0009375               /** x edge length of one voxel [m] */
 #define GRIDDY  0.0009375               /** y edge length of one voxel [m] */
 #define GRIDDZ  0.0009375               /** z edge length of one voxel [m] */
-#define VGRIDSIZE GRIDNX*GRIDNY*GRIDNZ  /** Number of voxel in the voxel grid */
+#define VGRIDSIZE (GRIDNX*GRIDNY*GRIDNZ)/** Number of voxel in the voxel grid */
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif  // #define VOXELGRID_DEFINES
+#endif  /* #define VOXELGRID_DEFINES */

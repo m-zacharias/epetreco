@@ -62,14 +62,14 @@ int main(int argc, char** argv) {
   /* Measurement vector values. Part of sparse representation. */
   val_t * yVal_host = NULL;
   
-  readMeasVct_HDF5(yRowId_host, yVal_host, effM_host, fn);
+  readMeasVct_HDF5(yRowId_host, yVal_host, effM_host[0], fn);
   
   int * effM_devi = NULL;
   int * yRowId_devi = NULL;
   val_t * yVal_devi = NULL;
-  HANDLE_ERROR(mallocSparseVct_devi(yRowId_devi, yVal_devi, effM_devi, effM_host[0]));
-  HANDLE_ERROR(cpySparseVctH2D(yRowId_devi, yVal_devi, effM_devi,
-        yRowId_host, yVal_host, effM_host));
+  HANDLE_ERROR(mallocSparseVct_devi(yRowId_devi, yVal_devi, effM_host[0]));
+  HANDLE_ERROR(cpySparseVctH2D(yRowId_devi, yVal_devi, yRowId_host, yVal_host,
+        effM_host[0]));
   
   
   /* MAX NUMBER OF NON_ZEROS IN SYSTEM MATRIX */
@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
   /* Number of non-zeros in system matrix. */
   int nnz_host[1];
   int * nnz_devi = NULL;
+  HANDLE_ERROR(malloc_devi<int>(nnz_devi, 1));
   
   
   /* X-LIKE VECTORS */
@@ -114,7 +115,8 @@ int main(int argc, char** argv) {
   HANDLE_ERROR(cudaDeviceSynchronize());
   do {
     val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
-    scales<val_t>(x_devi, 1./norm, VGRIDSIZE);
+    HANDLE_ERROR(cudaDeviceSynchronize());
+    scales<val_t>(x_devi, (1./norm), VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
   } while(false);
   
@@ -181,7 +183,7 @@ int main(int argc, char** argv) {
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi,
         nnz_devi,
         aCnlId_devi, aCsrCnlPtr_devi,
-        yRowId_devi, effM_devi, effM_host,
+        yRowId_devi, effM_host,
         handle);
   HANDLE_ERROR(cudaDeviceSynchronize());
   HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
@@ -192,6 +194,7 @@ int main(int argc, char** argv) {
         effM_host[0], VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
         x_devi, &beta, yTildeVal_devi);
   HANDLE_ERROR(cudaDeviceSynchronize());
+  std::cout << "sum(yTildeVal_devi):" << sum<val_t>(yTildeVal_devi, effM_host[0]) << std::endl;
   
   /* Division to get "error" */
   divides<val_t>(eVal_devi, yVal_devi, yTildeVal_devi, effM_host[0]);

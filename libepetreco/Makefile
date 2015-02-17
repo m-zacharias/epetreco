@@ -56,7 +56,8 @@ EXECUTABLES := \
       test_mlemOperations.out \
       test_convertCsr2Ecsr.out \
       reco.out \
-      test_supplement_mv.out
+      test_supplement_mv.out \
+      backprojection.out
 
 default : $(EXECUTABLES)
 
@@ -88,6 +89,10 @@ libepetreco.a : \
         $(TESTS_SRC)/%.cu
 	CPLUS_INCLUDE_PATH= ; \
   $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
+
+%.out : \
+      $(TESTS_SRC)/%.cpp
+	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
 
 %.out : \
         $(SRC)/%.cu
