@@ -3,8 +3,6 @@
  *
  * Created on 16. Februar 2015, 11:28 */
 
-#include <cstdlib>
-
 #define NBLOCKS 32
 
 #include "wrappers.hpp"
@@ -19,12 +17,10 @@ int const LIMNNZ(134217728);
 /* Max # of channels in COO matrix arrays */
 int const LIMM(LIMNNZ/VGRIDSIZE);
 
-/* # of matrix chunks, that are necessary */
-int NCHUNKS(int const maxNnz) {
-  return ((maxNnz + (LIMM * VGRIDSIZE) - 1) / (LIMM * VGRIDSIZE));
-}
-
 int main(int argc, char** argv) {
+#ifdef MEASURE_TIME
+  clock_t time1 = clock();
+#endif /* MEASURE_TIME */
   int const nargs(3);
   if(argc!=nargs+1) {
     std::cerr << "Error: Wrong number of arguments. Exspected: "
@@ -89,10 +85,13 @@ int main(int argc, char** argv) {
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
   int * nnz_devi = NULL;
   HANDLE_ERROR(malloc_devi<int>(nnz_devi,          1));
-  
+#ifdef MEASURE_TIME
+  clock_t time2 = clock();
+  printTimeDiff(time2, time1, "Time before BP: ");
+#endif /* MEASURE_TIME */
+
   /* BACKPROJECT */
-  for(int chunkId=0; chunkId<NCHUNKS(maxNnz); chunkId++) {
-    std::cout << chunkId << std::endl;
+  for(int chunkId=0; chunkId<nChunks(maxNnz, LIMM*VGRIDSIZE); chunkId++) {
     int m = nInChunk(chunkId, effM, LIMM);
     int ptr = chunkPtr(chunkId, LIMM);
     
@@ -116,6 +115,10 @@ int main(int argc, char** argv) {
           &(yVal_devi[ptr]), &beta, x_devi);
     HANDLE_ERROR(cudaDeviceSynchronize());
   }
+#ifdef MEASURE_TIME
+  clock_t time3 = clock();
+  printTimeDiff(time3, time2, "Time for BP: ");
+#endif /* MEASURE_TIME */
   
   /* Copy back to host */
   HANDLE_ERROR(memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE));
@@ -136,6 +139,10 @@ int main(int argc, char** argv) {
   cudaFree(aVxlId_devi);
   cudaFree(aVal_devi);
   cudaFree(nnz_devi);
+#ifdef MEASURE_TIME
+  clock_t time4 = clock();
+  printTimeDiff(time4, time3, "Time after BP: ");
+#endif /* MEASURE_TIME */
   
   return 0;
 }

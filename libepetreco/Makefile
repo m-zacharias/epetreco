@@ -57,7 +57,8 @@ EXECUTABLES := \
       test_convertCsr2Ecsr.out \
       reco.out \
       test_supplement_mv.out \
-      backprojection.out
+      backprojection.out \
+      pureSMCalculation.out
 
 default : $(EXECUTABLES)
 

@@ -21,6 +21,17 @@
 #include <string>
 #include <vector>
 
+#ifdef MEASURE_TIME
+#include <ctime>
+#include <iostream>
+#include <string>
+void printTimeDiff(clock_t const end, clock_t const beg,
+      std::string const & mes) {
+  std::cout << mes << (float(end-beg)/CLOCKS_PER_SEC) << " s" << std::endl;
+}
+#endif /* MEASURE_TIME */
+
+
 /** @brief Wrapper function for device memory allocation.
  * @tparam T Type of memory.
  * @param devi Pointer to allocate memory for.
@@ -111,8 +122,8 @@ cudaError_t cpySparseVctH2D(
  * Representation on host.
  * @param mlN Number of entries in the measurement list. */
 cudaError_t cpyMeasListH2D(
-      int * const       ml_devi, int * const       mlN_devi,
-      int const * const ml_host, int const mlN) {
+      int * const       ml_devi, int const * const ml_host,
+      int const mlN) {
   return memcpyH2D<int>(ml_devi,  ml_host,  mlN);
 }
 
@@ -141,13 +152,21 @@ void systemMatrixCalculation(
       int * const aEcsrCnlPtr_devi, int * const aVxlId_devi, T * const aVal_devi,
       int * const nnz_devi,
       int * const aCnlId_devi, int * const aCsrCnlPtr_devi,
-      int * const yRowId_devi, int * const & nY_host,
+      int * const yRowId_devi, int const * const & nY_host,
       cusparseHandle_t const & handle) {
+#ifdef MEASURE_TIME
+  clock_t time1 = clock();
+#endif /* MEASURE_TIME */
+
   /* Copy to device */
   int * nY_devi = NULL;
   HANDLE_ERROR(malloc_devi<int>(nY_devi, 1));
   HANDLE_ERROR(memcpyH2D<int>(nY_devi, nY_host, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
+#ifdef MEASURE_TIME
+  clock_t time2 = clock();
+  printTimeDiff(time2, time1, "systemMatrixCalculation: Copy nY to device: ");
+#endif /* MEASURE_TIME */
   
   /* Run kernel */
   getSystemMatrix<
@@ -160,26 +179,50 @@ void systemMatrixCalculation(
         nY_devi,
         nnz_devi);
   HANDLE_ERROR(cudaDeviceSynchronize());
+#ifdef MEASURE_TIME
+  clock_t time3 = clock();
+  printTimeDiff(time3, time2, "systemMatrixCalculation: Run kernel: ");
+#endif /* MEASURE_TIME */
 
   /* Copy nnz back to host */
   int nnz_host[1];
   HANDLE_ERROR(memcpyD2H<int>(nnz_host, nnz_devi, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
+#ifdef MEASURE_TIME
+  clock_t time4 = clock();
+  printTimeDiff(time4, time3, "systemMatrixCalculation: Copy nnz to host: ");
+#endif /* MEASURE_TIME */
 
   /* Sort system matrix elements according to row major format */
   cooSort<val_t>(aVal_devi, aCnlId_devi, aVxlId_devi, *nnz_host);
   HANDLE_ERROR(cudaDeviceSynchronize());
+#ifdef MEASURE_TIME
+  clock_t time5 = clock();
+  printTimeDiff(time5, time4, "systemMatrixCalculation: Sort elems: ");
+#endif /* MEASURE_TIME */
 
   /* COO -> CSR */
   convertCoo2Csr(aCsrCnlPtr_devi, aCnlId_devi, handle, *nnz_host, NCHANNELS);
   HANDLE_ERROR(cudaDeviceSynchronize());
+#ifdef MEASURE_TIME
+  clock_t time6 = clock();
+  printTimeDiff(time6, time5, "systemMatrixCalculation: COO -> CSR: ");
+#endif /* MEASURE_TIME */
 
   /* CSR -> ECSR */
   convertCsr2Ecsr(aEcsrCnlPtr_devi, yRowId_devi, nY_host[0], aCsrCnlPtr_devi, NCHANNELS);
   HANDLE_ERROR(cudaDeviceSynchronize());
+#ifdef MEASURE_TIME
+  clock_t time7 = clock();
+  printTimeDiff(time7, time6, "systemMatrixCalculation: CSR -> ECSR: ");
+#endif /* MEASURE_TIME */
   
   /* Cleanup */
   cudaFree(nY_devi);
+#ifdef MEASURE_TIME
+  clock_t time8 = clock();
+  printTimeDiff(time8, time7, "systemMatrixCalculation: Cleanup: ");
+#endif /* MEASURE_TIME */
 }
 
 /** @brief Find number of non-zeros in an array.
@@ -347,5 +390,12 @@ int chunkPtr(int const chunkId, int const nFullChunk) {
   return chunkId*nFullChunk;
 }
 
+/** @brief Number of chunks the system matrix has to be divided into in order
+ * to chunk-wise fit into limited memory. 
+ * @param maxNnz Maximum number of non-zeros in the system matrix.
+ * @param maxNChunk Maximum number of elements in one chunk. */
+int nChunks(int const maxNnz, int const maxNChunk) {
+  return ((maxNnz + maxNChunk - 1) / maxNChunk);
+}
 #endif	/* WRAPPERS_HPP */
 
