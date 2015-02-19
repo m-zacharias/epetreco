@@ -69,6 +69,9 @@ int main(int argc, char** argv) {
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "Time before SM calculation: ");
 #endif /* MEASURE_TIME */
+#ifdef DEBUG
+  int totalNnz(0);
+#endif
   
   /* SM CALCULATION */
   for(int chunkId=0; chunkId<nChunks(maxNnz, LIMM*VGRIDSIZE); chunkId++) {
@@ -87,7 +90,13 @@ int main(int argc, char** argv) {
           val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
           <<<NBLOCKS, TPB>>>
           ( aVal_devi, aVxlId_devi, aCnlId_devi, &(yRowId_devi[ptr]), m_devi, nnz_devi);
+    HANDLE_ERROR(cudaDeviceSynchronize()); 
+#ifdef DEBUG
+    HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
+    totalNnz += nnz_host[0];
+#endif
+    
     
     /* Cleanup */
     cudaFree(m_devi);
@@ -96,6 +105,9 @@ int main(int argc, char** argv) {
   clock_t time3 = clock();
   printTimeDiff(time3, time2, "Time for SM calculation: ");
 #endif /* MEASURE_TIME */
+#ifdef DEBUG
+  std::cout << "Found: " << totalNnz << " elements." << std::endl;
+#endif
           
   /* Cleanup */
   cudaFree(yRowId_devi);

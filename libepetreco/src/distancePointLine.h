@@ -20,7 +20,7 @@ template<typename T>
 __host__ __device__
 inline T absolute( T const * const a )
 {
-    return sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
+    return sqrtf(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
 }
 
 /**

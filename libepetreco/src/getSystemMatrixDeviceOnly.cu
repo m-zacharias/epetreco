@@ -55,12 +55,12 @@ bool test(
   ConcreteMSTrafo2CartCoordSecndPixel trafo1;
   
   // Relative 3d center coordinates
-  T center[3] = {0.5, 0.5, 0.5};
+  T center[3] = {T(0.5), T(0.5), T(0.5)};
   
   // Sum of radii
   T vxlEdges[3] = {grid_const.griddx(), grid_const.griddy(), grid_const.griddz()};
   T pxlEdges[3] = {setup_const.segx(), setup_const.segy(), setup_const.segz()};
-  T sumRadii = 0.5*(absolute(vxlEdges)+absolute(pxlEdges));
+  T sumRadii = T(0.5)*(absolute(vxlEdges)+absolute(pxlEdges));
   
   // Get channel pixel centers, voxel center
   T pix0Center[3];
@@ -209,6 +209,12 @@ T calcSme(
     rnd[3] = curand_uniform(&rndState);
     rnd[4] = curand_uniform(&rndState);
     rnd[5] = curand_uniform(&rndState);
+//    rnd[0] = 0;
+//    rnd[1] = 0;
+//    rnd[2] = 0;
+//    rnd[3] = 0;
+//    rnd[4] = 0;
+//    rnd[5] = 0;
 
     // ... Calculate ray coordinates ...
     T rayCoord[6];

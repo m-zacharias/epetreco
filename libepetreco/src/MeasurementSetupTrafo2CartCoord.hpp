@@ -61,47 +61,47 @@ class DefaultMeasurementSetupTrafo2CartCoordFirstPixel
       // get not-yet-rotated position of pixel
       T pos[3];
       pos[0]=meas->pos0x();
-      pos[1]=(id0y-.5*(meas->n0y()-1))*edges[1];
-      pos[2]=(id0z-.5*(meas->n0z()-1))*edges[2];
+      pos[1]=(id0y-T(.5)*(meas->n0y()-1))*edges[1];
+      pos[2]=(id0z-T(.5)*(meas->n0z()-1))*edges[2];
       // get angular function values of channel's rotation
-      T sin_ = sin(M_PI*ida*(meas->da())/180.0);
-      T cos_ = cos(M_PI*ida*(meas->da())/180.0);
+      T sin_ = sinf(T(M_PI)*ida*(meas->da())/T(180.0));
+      T cos_ = cosf(T(M_PI)*ida*(meas->da())/T(180.0));
         
       // create transformation matrix
       T trafo[12];
 
       trafo[0*4 + 0] = cos_*edges[0];
-      trafo[0*4 + 1] = 0.;
+      trafo[0*4 + 1] = T(0.);
       trafo[0*4 + 2] = sin_*edges[2];
-      trafo[0*4 + 3] = cos_*(pos[0]-.5*edges[0])\
-                      +sin_*(pos[2]-.5*edges[2]);
+      trafo[0*4 + 3] = cos_*(pos[0]-T(.5)*edges[0])\
+                      +sin_*(pos[2]-T(.5)*edges[2]);
 
-      trafo[1*4 + 0] = 0.;
+      trafo[1*4 + 0] = T(0.);
       trafo[1*4 + 1] = edges[1];
-      trafo[1*4 + 2] = 0.;
-      trafo[1*4 + 3] = pos[1]-.5*edges[1];
+      trafo[1*4 + 2] = T(0.);
+      trafo[1*4 + 3] = pos[1]-T(.5)*edges[1];
 
       trafo[2*4 + 0] =-sin_*edges[0];
-      trafo[2*4 + 1] = 0.;
+      trafo[2*4 + 1] = T(0.);
       trafo[2*4 + 2] = cos_*edges[2];
-      trafo[2*4 + 3] =-sin_*(pos[0]-.5*edges[0])\
-                      +cos_*(pos[2]-.5*edges[2]);
+      trafo[2*4 + 3] =-sin_*(pos[0]-T(.5)*edges[0])\
+                      +cos_*(pos[2]-T(.5)*edges[2]);
 
       // apply transformation matrix
       cart_coords[0] =   trafo[0*4 + 0] * box_coords[0]
                        + trafo[0*4 + 1] * box_coords[1]
                        + trafo[0*4 + 2] * box_coords[2] 
-                       + trafo[0*4 + 3] * 1.;
+                       + trafo[0*4 + 3] * T(1.);
 
       cart_coords[1] =   trafo[1*4 + 0] * box_coords[0]
                        + trafo[1*4 + 1] * box_coords[1]
                        + trafo[1*4 + 2] * box_coords[2] 
-                       + trafo[1*4 + 3] * 1.;
+                       + trafo[1*4 + 3] * T(1.);
 
       cart_coords[2] =   trafo[2*4 + 0] * box_coords[0]
                        + trafo[2*4 + 1] * box_coords[1]
                        + trafo[2*4 + 2] * box_coords[2] 
-                       + trafo[2*4 + 3] * 1.;
+                       + trafo[2*4 + 3] * T(1.);
     }
 };
 
@@ -145,47 +145,47 @@ class DefaultMeasurementSetupTrafo2CartCoordSecndPixel
       // get not-yet-rotated position of pixel
       T pos[3];
       pos[0]=meas->pos1x();
-      pos[1]=(id1y-.5*(meas->n1y()-1))*edges[1];
-      pos[2]=(id1z-.5*(meas->n1z()-1))*edges[2];
+      pos[1]=(id1y-T(.5)*(meas->n1y()-1))*edges[1];
+      pos[2]=(id1z-T(.5)*(meas->n1z()-1))*edges[2];
       // get angular function values of channel's rotation
-      T sin_ = sin(M_PI*ida*(meas->da())/180.0);
-      T cos_ = cos(M_PI*ida*(meas->da())/180.0);
+      T sin_ = sinf(T(M_PI)*ida*(meas->da())/T(180.0));
+      T cos_ = cosf(T(M_PI)*ida*(meas->da())/T(180.0));
 
       // create transformation matrix
       T trafo[12];
 
       trafo[0*4 + 0] = cos_*edges[0];
-      trafo[0*4 + 1] = 0.;
+      trafo[0*4 + 1] = T(0.);
       trafo[0*4 + 2] = sin_*edges[2];
-      trafo[0*4 + 3] = cos_*(pos[0]-.5*edges[0])\
-                      +sin_*(pos[2]-.5*edges[2]);
+      trafo[0*4 + 3] = cos_*(pos[0]-T(.5)*edges[0])\
+                      +sin_*(pos[2]-T(.5)*edges[2]);
 
-      trafo[1*4 + 0] = 0.;
+      trafo[1*4 + 0] = T(0.);
       trafo[1*4 + 1] = edges[1];
-      trafo[1*4 + 2] = 0.;
-      trafo[1*4 + 3] = pos[1]-.5*edges[1];
+      trafo[1*4 + 2] = T(0.);
+      trafo[1*4 + 3] = pos[1]-T(.5)*edges[1];
 
       trafo[2*4 + 0] =-sin_*edges[0];
-      trafo[2*4 + 1] = 0.;
+      trafo[2*4 + 1] = T(0.);
       trafo[2*4 + 2] = cos_*edges[2];
-      trafo[2*4 + 3] =-sin_*(pos[0]-.5*edges[0])\
-                      +cos_*(pos[2]-.5*edges[2]);
+      trafo[2*4 + 3] =-sin_*(pos[0]-T(.5)*edges[0])\
+                      +cos_*(pos[2]-T(.5)*edges[2]);
 
       // apply transformation matrix
       cart_coords[0] =   trafo[0*4 + 0] * box_coords[0]
                        + trafo[0*4 + 1] * box_coords[1]
                        + trafo[0*4 + 2] * box_coords[2] 
-                       + trafo[0*4 + 3] * 1.;
+                       + trafo[0*4 + 3] * T(1.);
 
       cart_coords[1] =   trafo[1*4 + 0] * box_coords[0]
                        + trafo[1*4 + 1] * box_coords[1]
                        + trafo[1*4 + 2] * box_coords[2] 
-                       + trafo[1*4 + 3] * 1.;
+                       + trafo[1*4 + 3] * T(1.);
 
       cart_coords[2] =   trafo[2*4 + 0] * box_coords[0]
                        + trafo[2*4 + 1] * box_coords[1]
                        + trafo[2*4 + 2] * box_coords[2] 
-                       + trafo[2*4 + 3] * 1.;
+                       + trafo[2*4 + 3] * T(1.);
     }
 };
 #endif	/* MEASUREMENTSETUPTRAFO2CARTCOORD_HPP */
