@@ -9,6 +9,7 @@
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
 #include "csrmv.hpp"
+#include "mlemOperations.hpp"
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
  * matrix arrays on GPU */
@@ -119,6 +120,13 @@ int main(int argc, char** argv) {
   clock_t time3 = clock();
   printTimeDiff(time3, time2, "Time for BP: ");
 #endif /* MEASURE_TIME */
+  
+  /* Normalize */
+  val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
+  std::cout << "Norm: " << norm << std::endl;
+  HANDLE_ERROR(cudaDeviceSynchronize());
+  scales<val_t>(x_devi, val_t(1./norm), VGRIDSIZE);
+  HANDLE_ERROR(cudaDeviceSynchronize());
   
   /* Copy back to host */
   HANDLE_ERROR(memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE));

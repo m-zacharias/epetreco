@@ -170,7 +170,7 @@ void systemMatrixCalculation(
   
   /* Run kernel */
   getSystemMatrix<
-        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
+        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0_inplace, Trafo1_inplace>
         <<<NBLOCKS, TPB>>>
       ( aVal_devi,
         aVxlId_devi,

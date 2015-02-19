@@ -110,4 +110,19 @@ typedef DefaultMeasurementSetupTrafo2CartCoordFirstPixel<val_t, MS>  Trafo0;
  */
 typedef DefaultMeasurementSetupTrafo2CartCoordSecndPixel<val_t, MS>  Trafo1;
 
+/**
+ * @var typedef DefaultMeasurementSetupTrafo2CartCoordFirstPixel_inplace<val_t, MS> Trafo0_inplace
+ * @brief Type definition for functor 'inplace transformation of uniform coordinates
+ * in a particular pixel on the first detector for a particular angular index
+ * to global cartesian coordinates'.
+ */
+typedef DefaultMeasurementSetupTrafo2CartCoordFirstPixel_inplace<val_t, MS>  Trafo0_inplace;
+
+/**
+ * @var typedef DefaultMeasurementSetupTrafo2CartCoordSecndPixel<val_t, MS> Trafo1
+ * @brief Type definition for functor 'inplace transformation of uniform coordinates
+ * in a particular pixel on the second detector for a particular angular index
+ * to global cartesian coordinates'.
+ */
+typedef DefaultMeasurementSetupTrafo2CartCoordSecndPixel_inplace<val_t, MS>  Trafo1_inplace;
 #endif	/* TYPEDEFS_HPP */

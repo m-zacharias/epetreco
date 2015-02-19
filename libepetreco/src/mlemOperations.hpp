@@ -1,10 +1,7 @@
-/**
- * @file mlemOperations.hpp
- */
+/** @file mlemOperations.hpp */
 /* Author: malte
  *
- * Created on 6. Februar 2015, 14:12
- */
+ * Created on 6. Februar 2015, 14:12 */
 
 #ifndef MLEMOPERATIONS_HPP
 #define	MLEMOPERATIONS_HPP
@@ -24,9 +21,9 @@
  */
 template<typename T>
 void divides(
-      T * const result,
-      T * const dividend,
-      T * const divisor,
+      T * const & result,
+      T * const & dividend,
+      T * const & divisor,
       int const n) {
   thrust::device_ptr<T> dvd = thrust::device_pointer_cast<T>(dividend);
   thrust::device_ptr<T> dvs = thrust::device_pointer_cast<T>(divisor);
@@ -63,10 +60,10 @@ struct dividesMultiplies_F : public thrust::unary_function<thrust::tuple<T, T, T
  */
 template<typename T>
 void dividesMultiplies(
-      T * const result,
-      T * const a,
-      T * const b,
-      T * const c,
+      T * const & result,
+      T * const & a,
+      T * const & b,
+      T * const & c,
       int const n) {
   thrust::device_ptr<T> aa = thrust::device_pointer_cast<T>(a);
   thrust::device_ptr<T> bb = thrust::device_pointer_cast<T>(b);
@@ -117,7 +114,7 @@ private:
  */
 template<typename T>
 void scales(
-      T * const x,
+      T * const & x,
       T const alpha,
       int const n) {
   thrust::device_ptr<T> xx = thrust::device_pointer_cast<T>(x);
@@ -133,10 +130,10 @@ void scales(
  */
 template<typename T>
 T sum(
-      T * const x,
+      T * const & x,
       int const n) {
   thrust::device_ptr<T> xx = thrust::device_pointer_cast<T>(x);
-  return thrust::reduce(xx, xx+n, (int) 0, thrust::plus<int>());
+  return thrust::reduce(xx, xx+n, T(0.), thrust::plus<T>());
 }
 
 #endif	/* MLEMOPERATIONS_HPP */
