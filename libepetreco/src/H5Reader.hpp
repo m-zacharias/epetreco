@@ -20,7 +20,7 @@ class H5Reader
       std::cout << "H5Reader::H5Reader(std::string)" << std::endl;
 #endif
       // Open file, dataset
-      H5::Exception::dontPrint();
+//      H5::Exception::dontPrint();
       _file = 0;
       _is_open = true;
       try

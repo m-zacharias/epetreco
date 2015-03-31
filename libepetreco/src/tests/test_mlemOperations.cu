@@ -1,11 +1,7 @@
-/**
- * @file test_mlemOperations.cu
- */
-/* 
- * Author: malte
+/** @file test_mlemOperations.cu */
+/* Author: malte
  *
- * Created on 4. Februar 2015, 14:15
- */
+ * Created on 4. Februar 2015, 14:15 */
 
 #include <iostream>
 #include "CUDA_HandleError.hpp"
@@ -13,16 +9,33 @@
 
 #define N 10
 
+template<typename T>
+cudaError_t malloc_devi(T * & devi, int const n) {
+  return cudaMalloc((void**)&devi, sizeof(devi[0]) * n);
+}
+
+template<typename T>
+cudaError_t memcpy_h2d(T * const devi, T const * const host, int const n) {
+  return cudaMemcpy(devi, host, sizeof(devi[0]) * n, cudaMemcpyHostToDevice);
+}
+
+template<typename T>
+cudaError_t memcpy_d2h(T * const host, T const * const devi, int const n) {
+  return cudaMemcpy(host, devi, sizeof(devi[0]) * n, cudaMemcpyDeviceToHost);
+}
+
+template<typename T>
+cudaError_t memcpy_d2d(T * const devi0, T const * const devi1, int const n) {
+  return cudaMemcpy(devi0, devi1, sizeof(devi0[0]) * n, cudaMemcpyDeviceToDevice);
+}
+
 typedef float val_t;
 
 int main(int argc, char** argv) {
-  // Create host arrays
-  val_t A_host[N];
-  val_t B_host[N];
-  val_t C_host[N];
-  val_t D_host[N];
+  /* Create host arrays */
+  val_t A_host[N]; val_t B_host[N]; val_t C_host[N]; val_t D_host[N];
   
-  // Fill host arrays
+  /* Fill host arrays */
   for(int i=0; i<N; i++) {
     A_host[i] = (i+1)*(i+1);
     C_host[i] = i+1;
@@ -30,84 +43,55 @@ int main(int argc, char** argv) {
     D_host[i] = 0;
   }
   
-  // Create device arrays
+  /* Create device arrays */
   val_t * A_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&A_devi, sizeof(A_devi[0]) * N));
+  HANDLE_ERROR(malloc_devi(A_devi, N));
   val_t * B_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&B_devi, sizeof(B_devi[0]) * N));
+  HANDLE_ERROR(malloc_devi(B_devi, N));
   val_t * C_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&C_devi, sizeof(C_devi[0]) * N));
+  HANDLE_ERROR(malloc_devi(C_devi, N));
   val_t * D_devi = NULL;
-  HANDLE_ERROR(
-        cudaMalloc((void**)&D_devi, sizeof(D_devi[0]) * N));
+  HANDLE_ERROR(malloc_devi(D_devi, N));
   
-  // Copy to device arrays
-  HANDLE_ERROR(
-        cudaMemcpy(A_devi, A_host, sizeof(A_devi[0]) * N, cudaMemcpyHostToDevice));
-  HANDLE_ERROR(
-        cudaMemcpy(B_devi, B_host, sizeof(B_devi[0]) * N, cudaMemcpyHostToDevice));
-  HANDLE_ERROR(
-        cudaMemcpy(C_devi, C_host, sizeof(C_devi[0]) * N, cudaMemcpyHostToDevice));
-  HANDLE_ERROR(
-        cudaMemcpy(D_devi, D_host, sizeof(D_devi[0]) * N, cudaMemcpyHostToDevice));
+  /* Copy to device arrays */
+  HANDLE_ERROR(memcpy_h2d(A_devi, A_host, N));
+  HANDLE_ERROR(memcpy_h2d(B_devi, B_host, N));
+  HANDLE_ERROR(memcpy_h2d(C_devi, C_host, N));
+  HANDLE_ERROR(memcpy_h2d(D_devi, D_host, N));
   
-  // Divides
+  /* Divides */
   divides<val_t>(D_devi, A_devi, C_devi, N);
-  HANDLE_ERROR(
-        cudaDeviceSynchronize());
+  HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Copy result to host
-  HANDLE_ERROR(
-        cudaMemcpy(D_host, D_devi, sizeof(D_host[0]) * N, cudaMemcpyDeviceToHost));
-  
-  // Show results
+  HANDLE_ERROR(memcpy_d2h(D_host, D_devi, N));
+  HANDLE_ERROR(cudaDeviceSynchronize());
   std::cout << "D = A / C = " << std::endl;
-  for(int i=0; i<N; i++) {
-    std::cout << D_host[i] << std::endl;
-  }
+  for(int i=0; i<N; i++) { std::cout << D_host[i] << std::endl; }
   std::cout << std::endl;
   
-  // Divides multiplies
+  /* Divides multiplies */
   dividesMultiplies<val_t>(D_devi, A_devi, B_devi, C_devi, N);
-  HANDLE_ERROR(
-        cudaDeviceSynchronize());
+  HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Copy result to host
-  HANDLE_ERROR(
-        cudaMemcpy(D_host, D_devi, sizeof(D_host[0]) * N, cudaMemcpyDeviceToHost));
-  
-  // Show results
+  HANDLE_ERROR(memcpy_d2h(D_host, D_devi, N));
+  HANDLE_ERROR(cudaDeviceSynchronize());
   std::cout << "D = A / B * C = " << std::endl;
-  for(int i=0; i<N; i++) {
-    std::cout << D_host[i] << std::endl;
-  }
+  for(int i=0; i<N; i++) { std::cout << D_host[i] << std::endl; }
   std::cout << std::endl;
 
-  // Sum
+  /* Sum */
   val_t norm = sum<val_t>(D_devi, N);
-  HANDLE_ERROR(
-        cudaDeviceSynchronize());
+  HANDLE_ERROR(cudaDeviceSynchronize());
   
-  // Show results
-  std::cout << "norm =" << std::endl;
-  std::cout << norm << std::endl;
-  std::cout << std::endl;
+  std::cout << "norm =" << std::endl << norm << std::endl << std::endl;
     
-  // Scales
+  /* Scales */
   scales<val_t>(D_devi, (1./norm), N);
   
-  // Copy result to host
-  HANDLE_ERROR(
-        cudaMemcpy(D_host, D_devi, sizeof(D_host[0]) * N, cudaMemcpyDeviceToHost));
-  
-  // Show results
+  HANDLE_ERROR(memcpy_d2h(D_host, D_devi, N));
+  HANDLE_ERROR(cudaDeviceSynchronize());
   std::cout << "D = D * " << 1./norm << " = " << std::endl;
-  for(int i=0; i<N; i++) {
-    std::cout << D_host[i] << std::endl;
-  }
+  for(int i=0; i<N; i++) { std::cout << D_host[i] << std::endl; }
   std::cout << std::endl;
   
   cudaFree(A_devi);

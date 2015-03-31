@@ -61,6 +61,16 @@ cudaError_t memcpyD2H(T * const host, T const * const devi, int const n) {
   return cudaMemcpy(host, devi, sizeof(host[0]) * n, cudaMemcpyDeviceToHost);
 }
 
+/** @brief Wrapper function for memcpy from device to device.
+ * @tparam T Type of memory.
+ * @param host Target memory on host.
+ * @param devi Source memory on device.
+ * @param n Number of elements of type T that are copied. */
+template<typename T>
+cudaError_t memcpyD2D(T * const devi1, T const * const devi0, int const n) {
+  return cudaMemcpy(devi1, devi0, sizeof(devi1[0]) * n, cudaMemcpyDeviceToDevice);
+}
+
 /** @brief Wrapper function for device memory allocation for a sparse vector.
  * @tparam T Type of elements.
  * @param vctId_devi Array of vector elements' indices of length vctNnz.
