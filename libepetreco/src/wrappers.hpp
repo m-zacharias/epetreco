@@ -80,7 +80,8 @@ cudaError_t memcpyD2D(T * const devi1, T const * const devi0, int const n) {
 template<typename T>
 cudaError_t mallocSparseVct_devi(int * & vctId_devi, T * & vctVal_devi,
       int const vctNnz) {
-         malloc_devi<int>(vctId_devi,  vctNnz);
+  cudaError_t err;
+  err  = malloc_devi<int>(vctId_devi,  vctNnz); if(err!=cudaSuccess) return err;
   return malloc_devi<T>  (vctVal_devi, vctNnz);
 }
 
@@ -98,10 +99,11 @@ cudaError_t mallocSystemMatrix_devi(int * & mtxCnlId_devi,
       int * & mtxCsrCnlPtr_devi, int * & mtxEcsrCnlPtr_devi,
       int * & mtxVxlId_devi, T * & mtxVal_devi, int const nRows,
       int const nMemRows, int const nCols) {
-         malloc_devi<int>(  mtxCnlId_devi,      (nMemRows*nCols));
-         malloc_devi<int>(  mtxCsrCnlPtr_devi,  (nRows+1));
-         malloc_devi<int>(  mtxEcsrCnlPtr_devi, (nMemRows+1));
-         malloc_devi<int>(  mtxVxlId_devi,      (nMemRows*nCols));
+  cudaError_t err;
+  err  = malloc_devi<int>(  mtxCnlId_devi,      (nMemRows*nCols)); if(err!=cudaSuccess) return err;
+  err  = malloc_devi<int>(  mtxCsrCnlPtr_devi,  (nRows+1));        if(err!=cudaSuccess) return err;
+  err  = malloc_devi<int>(  mtxEcsrCnlPtr_devi, (nMemRows+1));     if(err!=cudaSuccess) return err;
+  err  = malloc_devi<int>(  mtxVxlId_devi,      (nMemRows*nCols)); if(err!=cudaSuccess) return err;
   return malloc_devi<val_t>(mtxVal_devi,        (nMemRows*nCols));
 }
 
@@ -121,7 +123,8 @@ cudaError_t cpySparseVctH2D(
       int * const       vctId_devi, T * const       vctVal_devi,
       int const * const vctId_host, T const * const vctVal_host,
       int const vctNnz) {
-         memcpyH2D<int>(vctId_devi,  vctId_host,  vctNnz);
+  cudaError_t err;
+  err  = memcpyH2D<int>(vctId_devi,  vctId_host,  vctNnz); if(err!=cudaSuccess) return err;
   return memcpyH2D<T>(  vctVal_devi, vctVal_host, vctNnz);
 }
 
