@@ -35,10 +35,11 @@ template<
     , typename MSid1y
     , typename MSida
     , typename MSTrafo0_inplace
-    , typename MSTrafo1_inplace>
+    , typename MSTrafo1_inplace
+    , typename GridSizeType >
 __device__
 bool test(
-      int const & cnlId, int const & vxlId) {
+      int const & cnlId, GridSizeType const & vxlId) {
   
   /* Create functors */
   int const idx  = VGidx()( vxlId, &grid_const);
@@ -187,11 +188,12 @@ template<
     , typename MSId1y
     , typename MSIda  
     , typename MSTrafo0_inplace
-    , typename MSTrafo1_inplace >
+    , typename MSTrafo1_inplace
+    , typename GridSizeType >
 __device__
 T calcSme(
       int const cnl,
-      int const vxl,
+      GridSizeType const vxl,
       curandState_t * const rndState) {
 
   /* Voxel coordinates */
@@ -274,23 +276,27 @@ struct GetId2listId {
 
 
 
-/** @brief Functor. Tests if getId is the range for another getting loop. */
-template< typename ConcreteVG >
+/** @brief Functor. Tests if getId is in the range for another getting loop. */
+template<
+      typename ConcreteVG
+    , typename ListSizeType=uint32_t
+    , typename GridSizeType=uint32_t
+    , typename MemArrSizeType=uint64_t >
 struct IsInRange {
-  int const _gridDim;
-  int const _listSize;
+  GridSizeType const _gridDim;
+  ListSizeType const _listSize;
   
   /** Ctor.
    * @param vg Voxel grid.
    * @param mlSize Measurement list size. */
   __device__
-  IsInRange( VG & vg, int const mlSize )
+  IsInRange( VG & vg, ListSizeType const mlSize )
   : _gridDim(vg.gridnx()*vg.gridny()*vg.gridnz()),
     _listSize(mlSize) {}
   
   __device__
-  bool operator()( int const getId ) const {
-    return getId < ((_gridDim * _listSize) + blockDim.x -1);
+  bool operator()( MemArrSizeType const getId ) const {
+    return getId < MemArrSizeType((_gridDim * _listSize) + blockDim.x -1);
   }
 };
 
@@ -298,21 +304,24 @@ struct IsInRange {
 
 /** @brief Functor. Tests if (vxlId, listId) refers to a valid system matrix
  * entry. */
-template< typename ConcreteVG >
+template<
+      typename ConcreteVG
+    , typename GridSizeType=uint32_t
+    , typename ListSizeType=uint32_t >
 struct GetIsLegal {
-  int const _gridDim;
-  int const _listSize;
+  GridSizeType const _gridDim;
+  ListSizeType const _listSize;
   
   /** Ctor.
    * @param vg Voxel grid.
    * @param mlSize measurement list size. */
   __host__ __device__
-  GetIsLegal( VG vg, int const mlSize )
+  GetIsLegal( VG vg, ListSizeType const mlSize )
   : _gridDim(vg.gridnx()*vg.gridny()*vg.gridnz()),
     _listSize(mlSize) {}
   
   __host__ __device__
-  bool operator()( int const vxlId, int const listId ) const {
+  bool operator()( GridSizeType const vxlId, ListSizeType const listId ) const {
     return (listId<_listSize) && (vxlId<_gridDim);
   }
 };
@@ -343,25 +352,28 @@ template<
     , typename ConcreteMSida  
     , typename ConcreteMSTrafo0
     , typename ConcreteMSTrafo1
+    , typename ListSizeType
+    , typename GridSizeType
+    , typename MemArrSizeType
 >
 __global__
 void getSystemMatrix(
-      T * const   sme_devi,   // return array for system matrix elements
-      int * const vxlId_devi, // return array for voxel ids
-      int * const cnlId_devi, // return array for channel ids
-      int const * const ml_devi,
-      int const * const mlSize_devi,
-      int * const truckDest_devi
+      T * const            sme_devi,   // return array for system matrix elements
+      GridSizeType * const vxlId_devi, // return array for voxel ids
+      int * const          cnlId_devi, // return array for channel ids
+      int const * const    ml_devi,
+      ListSizeType const * const mlSize_devi,
+      MemArrSizeType * const truckDest_devi
      ) {
   
   /* global id and global dim */
   int const globalId  = threadIdx.x + blockIdx.x*blockDim.x;
   int const globalDim = blockDim.x*gridDim.x;
   
-  __shared__ int nPassed_blck;
-  __shared__ int truckCnlId_blck[TPB];
-  __shared__ int truckVxlId_blck[TPB];
-  __shared__ int truckDest_blck;
+  __shared__ uint           nPassed_blck;
+  __shared__ int            truckCnlId_blck[TPB];
+  __shared__ GridSizeType   truckVxlId_blck[TPB];
+  __shared__ MemArrSizeType truckDest_blck;
   
   /* Random init */
   curandState_t rndState;
@@ -375,13 +387,15 @@ void getSystemMatrix(
   
   GetId2vxlId<ConcreteVG>   f_vxlId(grid_const);
   GetId2listId<ConcreteVG>  f_listId(grid_const);
-  IsInRange<ConcreteVG>     f_isInRange(grid_const, *mlSize_devi);
-  GetIsLegal<ConcreteVG>    f_getIsLegal(grid_const, *mlSize_devi);
-  for(int getId_thrd = globalId;
+  IsInRange<ConcreteVG, ListSizeType, GridSizeType, MemArrSizeType>
+    f_isInRange(grid_const, *mlSize_devi);
+  GetIsLegal<ConcreteVG, GridSizeType, ListSizeType>
+    f_getIsLegal(grid_const, *mlSize_devi);
+  for(MemArrSizeType getId_thrd = globalId;
           f_isInRange(getId_thrd);
           getId_thrd += globalDim) {
-    int vxlId_thrd  = f_vxlId( getId_thrd);
-    int listId_thrd = f_listId(getId_thrd);
+    GridSizeType vxlId_thrd( f_vxlId( getId_thrd));
+    ListSizeType listId_thrd(f_listId(getId_thrd));
     int cnlId_thrd = -1;
     
     int writeOffset_thrd = -1;
@@ -406,7 +420,8 @@ void getSystemMatrix(
                               , ConcreteMSid1y
                               , ConcreteMSida
                               , ConcreteMSTrafo0
-                              , ConcreteMSTrafo1>
+                              , ConcreteMSTrafo1
+                              , GridSizeType>
                             (cnlId_thrd, vxlId_thrd);
 
       /* Did it pass the test? */
@@ -432,7 +447,7 @@ void getSystemMatrix(
       
       /* Master thread? */
       if(threadIdx.x == 0) {
-        truckDest_blck = atomicAdd(truckDest_devi, TPB);
+        truckDest_blck = atomicAdd(truckDest_devi, MemArrSizeType(TPB));
         nPassed_blck -= TPB;
       }
       __syncthreads();
@@ -477,7 +492,7 @@ void getSystemMatrix(
     
     /* Master thread? */
     if(threadIdx.x == 0) {
-      truckDest_blck = atomicAdd(truckDest_devi, nPassed_blck);
+      truckDest_blck = atomicAdd(truckDest_devi, MemArrSizeType(nPassed_blck));
     }
     __syncthreads();
     

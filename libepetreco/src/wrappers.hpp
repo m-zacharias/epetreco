@@ -157,24 +157,28 @@ cudaError_t cpyMeasListH2D(
  * the system matrix - is only an intermediate result. Representation on device.
  * @param yRowId_devi Array of measurement vector elements' row indices. Part
  * of sparse representation of the vector. Representation on device.
- * @param nY_host Treat first nY_host elements listed in yRowId_devi.
- * Representation on host.
+ * @param nY_host Treat first nY_host elements (=rowIds) listed in
+ * yRowId_devi. Representation on host.
  * @param handle Handle to cuSPARSE library context. */
-template<typename T>
+template<
+      typename T
+    , typename ListSizeType
+    , typename GridSizeType
+    , typename MemArrSizeType >
 void systemMatrixCalculation(
-      int * const aEcsrCnlPtr_devi, int * const aVxlId_devi, T * const aVal_devi,
-      int * const nnz_devi,
+      int * const aEcsrCnlPtr_devi, GridSizeType * const aVxlId_devi,
+      T * const aVal_devi, MemArrSizeType * const nnz_devi,
       int * const aCnlId_devi, int * const aCsrCnlPtr_devi,
-      int * const yRowId_devi, int const * const & nY_host,
+      int * const yRowId_devi, ListSizeType const * const & nY_host,
       cusparseHandle_t const & handle) {
 #ifdef MEASURE_TIME
   clock_t time1 = clock();
 #endif /* MEASURE_TIME */
 
   /* Copy to device */
-  int * nY_devi = NULL;
-  HANDLE_ERROR(malloc_devi<int>(nY_devi, 1));
-  HANDLE_ERROR(memcpyH2D<int>(nY_devi, nY_host, 1));
+  ListSizeType * nY_devi = NULL;
+  HANDLE_ERROR(malloc_devi<ListSizeType>(nY_devi, 1));
+  HANDLE_ERROR(memcpyH2D<ListSizeType>(nY_devi, nY_host, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
 #ifdef MEASURE_TIME
   clock_t time2 = clock();
@@ -183,7 +187,8 @@ void systemMatrixCalculation(
   
   /* Run kernel */
   getSystemMatrix<
-        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0_inplace, Trafo1_inplace>
+        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida,
+        Trafo0_inplace, Trafo1_inplace, ListSizeType, GridSizeType, MemArrSizeType>
         <<<NBLOCKS, TPB>>>
       ( aVal_devi,
         aVxlId_devi,
@@ -198,8 +203,8 @@ void systemMatrixCalculation(
 #endif /* MEASURE_TIME */
 
   /* Copy nnz back to host */
-  int nnz_host[1];
-  HANDLE_ERROR(memcpyD2H<int>(nnz_host, nnz_devi, 1));
+  MemArrSizeType nnz_host[1];
+  HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
 #ifdef MEASURE_TIME
   clock_t time4 = clock();
@@ -386,9 +391,13 @@ void writeDensity_HDF5(T const * const density, std::string const ofn,
  * @param nAll Number of elements altogether.
  * @param nFullChunk Number of elements in a full chunk.
  * @return Number of elements in chunk. */
-int nInChunk(int const idChunk, int const nAll, int const nFullChunk) {
-  if(idChunk < ((nAll + nFullChunk - 1) / nFullChunk)) {
-    if(idChunk < (nAll / nFullChunk)) {
+template<
+      typename ListSizeType
+    , typename ChunkGridSizeType >
+ListSizeType nInChunk( ChunkGridSizeType idChunk, ListSizeType const nAll,
+      ListSizeType const nFullChunk) {
+  if(idChunk < ChunkGridSizeType((nAll + nFullChunk - 1) / nFullChunk)) {
+    if(idChunk < ChunkGridSizeType(nAll / nFullChunk)) {
       return nFullChunk;
     }
     return (nAll % nFullChunk);
@@ -398,8 +407,12 @@ int nInChunk(int const idChunk, int const nAll, int const nFullChunk) {
 
 /** @brief Index of first element in chunk.
  * @param chunkId Index of chunk.
- * @param nFullChunk Mumber of elements in a full chunk. */
-int chunkPtr(int const chunkId, int const nFullChunk) {
+ * @param nFullChunk Number of elements in a full chunk. */
+template<
+      typename ListSizeType
+    , typename ChunkGridSizeType >
+ListSizeType chunkPtr(ChunkGridSizeType const chunkId,
+      ListSizeType const nFullChunk) {
   return chunkId*nFullChunk;
 }
 
@@ -407,8 +420,12 @@ int chunkPtr(int const chunkId, int const nFullChunk) {
  * to chunk-wise fit into limited memory. 
  * @param maxNnz Maximum number of non-zeros in the system matrix.
  * @param maxNChunk Maximum number of elements in one chunk. */
-int nChunks(int const maxNnz, int const maxNChunk) {
-  return ((maxNnz + maxNChunk - 1) / maxNChunk);
+template<
+      typename ChunkGridSizeType
+    , typename MemArrSizeType >
+ChunkGridSizeType nChunks(MemArrSizeType const maxNnz,
+      MemArrSizeType const maxNChunk) {
+  return ChunkGridSizeType((maxNnz + maxNChunk - 1) / maxNChunk);
 }
 #endif	/* WRAPPERS_HPP */
 

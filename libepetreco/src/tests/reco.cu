@@ -11,7 +11,7 @@
 
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
-//#include "typedefs.hpp"
+#include "typedefs.hpp"
 //#include "device_constant_memory.hpp"
 //#include "voxelgrid64_defines.h"
 //#include "real_measurementsetup_defines.h"
@@ -23,10 +23,10 @@
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
  * matrix arrays on GPU */
-int const LIMNNZ(134217728);
+MemArrSizeType const LIMNNZ(134217728);
 
 /* Max # of channels in COO matrix arrays */
-int const LIMM(LIMNNZ/VGRIDSIZE);
+ListSizeType const LIMM(LIMNNZ/VGRIDSIZE);
 
 int main(int argc, char** argv) {
 #ifdef MEASURE_TIME
@@ -60,10 +60,14 @@ int main(int argc, char** argv) {
   
   /* MEASUREMENT VECTOR Y */
   /* Number of non-zeros, row indices, values. */
-  int effM; std::vector<int> yRowId_host; std::vector<val_t> yVal_host;
+  ListSizeType effM; std::vector<int> yRowId_host; std::vector<val_t> yVal_host;
   
-  readMeasVct_HDF5(yRowId_host, yVal_host, effM, fn);
-  
+  do {
+    int tmp_effM(0);
+    readMeasVct_HDF5(yRowId_host, yVal_host, tmp_effM, fn);
+    effM = ListSizeType(tmp_effM);
+  } while(false);
+
   int * yRowId_devi = NULL;
   val_t * yVal_devi = NULL;
   HANDLE_ERROR(mallocSparseVct_devi(yRowId_devi, yVal_devi, effM));
@@ -87,7 +91,7 @@ int main(int argc, char** argv) {
   val_t zero = val_t(0.); val_t one = val_t(1.);
   
   /* MAX NUMBER OF NON_ZEROS IN SYSTEM MATRIX */
-  int maxNnz = effM * VGRIDSIZE;
+  MemArrSizeType maxNnz(effM * VGRIDSIZE);
   
   
   
@@ -132,8 +136,8 @@ int main(int argc, char** argv) {
   val_t * aVal_devi = NULL;
   HANDLE_ERROR(mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
-  int * nnz_devi = NULL;
-  HANDLE_ERROR(malloc_devi<int>(nnz_devi,          1));
+  MemArrSizeType * nnz_devi = NULL;
+  HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
 #ifdef MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "Time before BP: ");
@@ -146,12 +150,14 @@ int main(int argc, char** argv) {
     HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* CHUNKWISE */
-    for(int chunkId=0; chunkId<nChunks(maxNnz, LIMM*VGRIDSIZE); chunkId++) {
-      int m = nInChunk(chunkId, effM, LIMM);
-      int ptr = chunkPtr(chunkId, LIMM);
+    for(ChunkGridSizeType chunkId=0;
+          chunkId<nChunks<ChunkGridSizeType, MemArrSizeType>(maxNnz, MemArrSizeType(LIMM*VGRIDSIZE));
+          chunkId++) {
+      ListSizeType m   = nInChunk(chunkId, effM, LIMM);
+      ListSizeType ptr = chunkPtr(chunkId, LIMM);
 
-      int nnz_host[1] = {0};
-      HANDLE_ERROR(memcpyH2D<int>(nnz_devi, nnz_host, 1));
+      MemArrSizeType nnz_host[1] = {0};
+      HANDLE_ERROR(memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1));
 
       /* Get system matrix */
       systemMatrixCalculation<val_t> (
@@ -161,7 +167,7 @@ int main(int argc, char** argv) {
             &(yRowId_devi[ptr]), &m,
             handle);
       HANDLE_ERROR(cudaDeviceSynchronize());
-      HANDLE_ERROR(memcpyD2H<int>(nnz_host, nnz_devi, 1));
+      HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
       HANDLE_ERROR(cudaDeviceSynchronize());
 
       /* Simulate measurement */

@@ -9,8 +9,8 @@ INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
 LIB = -L$(HDF5_ROOT)/lib -L./ -lhdf5 -lhdf5_cpp -lepetreco
 
 CUC = nvcc
-#override CUCFLAGS += -arch=sm_35
-override CUCFLAGS += -arch=sm_35 -Xptxas=-v --source-in-ptx -Xcompiler -rdynamic -lineinfo --keep --keep-dir nvcc_tmp --use_fast_math
+override CUCFLAGS += -arch=sm_35 -Xcompiler -Wall
+#override CUCFLAGS += -arch=sm_35 -Xptxas=-v --source-in-ptx -Xcompiler -rdynamic -lineinfo --keep --keep-dir nvcc_tmp --use_fast_math
 CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
 CUCLIB = -L$(CUDA_ROOT)/lib64 -L./ -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
 
