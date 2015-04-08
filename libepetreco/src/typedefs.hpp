@@ -133,8 +133,8 @@ typedef DefaultMeasurementSetupTrafo2CartCoordSecndPixel_inplace<val_t, MS>  Tra
  * are arrays that make up sparse representations of matrices. Which are
  * matrices like the system matrix.
  */
-//typedef unsigned long long int MemArrSizeType;
-typedef uint32_t MemArrSizeType;
+typedef unsigned long long int MemArrSizeType;
+//typedef uint32_t MemArrSizeType;
 
 /**
  * @var typedef uint32_t ListSizeType

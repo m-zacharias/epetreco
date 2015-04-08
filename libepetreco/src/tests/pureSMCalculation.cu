@@ -12,10 +12,10 @@
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
  * matrix arrays on GPU */
-int const LIMNNZ(134217728);
+MemArrSizeType const LIMNNZ(134217728);
 
 /* Max # of channels in COO matrix arrays */
-int const LIMM(LIMNNZ/VGRIDSIZE);
+ListSizeType const LIMM(LIMNNZ/VGRIDSIZE);
 
 int main(int argc, char** argv) {
 #ifdef MEASURE_TIME
@@ -45,26 +45,38 @@ int main(int argc, char** argv) {
   
   /* MEASUREMENT LIST */
   /* Number of non-zeros, row indices */
-  int effM; std::vector<int> yRowId_host;
+  ListSizeType effM; std::vector<int> yRowId_host;
   
-  readMeasList_HDF5<val_t>(yRowId_host, effM, fn);
+    do {
+    int tmp_effM(0);
+    readMeasList_HDF5<val_t>(yRowId_host, tmp_effM, fn);
+    effM = ListSizeType(tmp_effM);
+  } while(false);
   
   int * yRowId_devi = NULL;
   HANDLE_ERROR(mallocMeasList_devi(yRowId_devi, effM));
   HANDLE_ERROR(cpyMeasListH2D(yRowId_devi, &(yRowId_host[0]), effM));
   
+  
+  /* STUFF FOR MV */
+  cusparseHandle_t handle = NULL; cusparseMatDescr_t A = NULL;
+  HANDLE_CUSPARSE_ERROR(cusparseCreate(&handle));
+  HANDLE_CUSPARSE_ERROR(cusparseCreateMatDescr(&A));
+  HANDLE_CUSPARSE_ERROR(customizeMatDescr(A, handle));
+
   /* MAX NUMBER OF NON_ZEROS IN SYSTEM MATRIX */
-  int maxNnz = effM * VGRIDSIZE;
+  MemArrSizeType maxNnz(effM * VGRIDSIZE);
   
   /* SYSTEM MATRIX */
   /* Row (channel) ids, row pointers, effective row pointers, column (voxel)
    * ids, values, number of non-zeros (host, devi) */
-  int * aCnlId_devi = NULL; int * aVxlId_devi = NULL; val_t * aVal_devi = NULL;
-  HANDLE_ERROR(malloc_devi<int>(  aCnlId_devi, LIMM*VGRIDSIZE));
-  HANDLE_ERROR(malloc_devi<int>(  aVxlId_devi, LIMM*VGRIDSIZE));
-  HANDLE_ERROR(malloc_devi<val_t>(aVal_devi,   LIMM*VGRIDSIZE));
-  int * nnz_devi = NULL;
-  HANDLE_ERROR(malloc_devi<int>(  nnz_devi,    1));
+  int * aCnlId_devi = NULL; int * aCsrCnlPtr_devi = NULL;
+  int * aEcsrCnlPtr_devi = NULL; int * aVxlId_devi = NULL;
+  val_t * aVal_devi = NULL;
+  HANDLE_ERROR(mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
+        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
+  MemArrSizeType * nnz_devi = NULL;
+  HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
 #ifdef MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "Time before SM calculation: ");
@@ -74,32 +86,30 @@ int main(int argc, char** argv) {
 #endif
   
   /* SM CALCULATION */
-  for(int chunkId=0; chunkId<nChunks(maxNnz, LIMM*VGRIDSIZE); chunkId++) {
-    int m = nInChunk(chunkId, effM, LIMM);
-    int ptr = chunkPtr(chunkId, LIMM);
+  for(ChunkGridSizeType chunkId=0;
+        chunkId<nChunks<ChunkGridSizeType, MemArrSizeType>(maxNnz, MemArrSizeType(LIMM*VGRIDSIZE));
+        chunkId++) {
+    ListSizeType m = nInChunk(chunkId, effM, LIMM);
+    ListSizeType ptr = chunkPtr(chunkId, LIMM);
     
-    int nnz_host[1] = {0};
-    HANDLE_ERROR(memcpyH2D<int>(nnz_devi, nnz_host, 1));
-    
-    int * m_devi = NULL;
-    HANDLE_ERROR(malloc_devi<int>(m_devi, 1));
-    HANDLE_ERROR(memcpyH2D<int>(m_devi, &m, 1));
-    
+    MemArrSizeType nnz_host[1] = {0};
+    HANDLE_ERROR(memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1));
+
     /* Get system matrix */
-    getSystemMatrix<
-          val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
-          <<<NBLOCKS, TPB>>>
-          ( aVal_devi, aVxlId_devi, aCnlId_devi, &(yRowId_devi[ptr]), m_devi, nnz_devi);
-    HANDLE_ERROR(cudaDeviceSynchronize()); 
+    systemMatrixCalculation<val_t> (
+          aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi,
+          nnz_devi,
+          aCnlId_devi, aCsrCnlPtr_devi,
+          &(yRowId_devi[ptr]), &m,
+          handle);
+    HANDLE_ERROR(cudaDeviceSynchronize());
+    HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
+    HANDLE_ERROR(cudaDeviceSynchronize());
 #ifdef DEBUG
     HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
     totalNnz += nnz_host[0];
 #endif
-    
-    
-    /* Cleanup */
-    cudaFree(m_devi);
   }
 #ifdef MEASURE_TIME
   clock_t time3 = clock();
