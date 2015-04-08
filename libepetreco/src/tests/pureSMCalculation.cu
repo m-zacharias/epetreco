@@ -8,6 +8,7 @@
 #include "wrappers.hpp"
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
+#include "measure_time.hpp"
 #include "csrmv.hpp"
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
@@ -18,7 +19,7 @@ MemArrSizeType const LIMNNZ(134217728);
 ListSizeType const LIMM(LIMNNZ/VGRIDSIZE);
 
 int main(int argc, char** argv) {
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time1 = clock();
 #endif
   int const nargs(2);
@@ -77,11 +78,11 @@ int main(int argc, char** argv) {
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
   MemArrSizeType * nnz_devi = NULL;
   HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "Time before SM calculation: ");
 #endif /* MEASURE_TIME */
-#ifdef DEBUG
+#if DEBUG
   int totalNnz(0);
 #endif
   
@@ -105,17 +106,17 @@ int main(int argc, char** argv) {
     HANDLE_ERROR(cudaDeviceSynchronize());
     HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef DEBUG
+#if DEBUG
     HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
     totalNnz += nnz_host[0];
 #endif
   }
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time3 = clock();
   printTimeDiff(time3, time2, "Time for SM calculation: ");
 #endif /* MEASURE_TIME */
-#ifdef DEBUG
+#if DEBUG
   std::cout << "Found: " << totalNnz << " elements." << std::endl;
 #endif
           
@@ -125,7 +126,7 @@ int main(int argc, char** argv) {
   cudaFree(aVxlId_devi);
   cudaFree(aVal_devi);
   cudaFree(nnz_devi);
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time4 = clock();
   printTimeDiff(time4, time3, "Time after SM calculation: ");
 #endif /* MEASURE_TIME */

@@ -8,6 +8,7 @@
 #include "wrappers.hpp"
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
+#include "measure_time.hpp"
 #include "csrmv.hpp"
 #include "mlemOperations.hpp"
 #include "typedefs.hpp"
@@ -20,7 +21,7 @@ MemArrSizeType const LIMNNZ(134217728);
 ListSizeType const LIMM(LIMNNZ/VGRIDSIZE);
 
 int main(int argc, char** argv) {
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time1 = clock();
 #endif /* MEASURE_TIME */
   int const nargs(3);
@@ -91,7 +92,7 @@ int main(int argc, char** argv) {
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
   MemArrSizeType * nnz_devi = NULL;
   HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "Time before BP: ");
 #endif /* MEASURE_TIME */
@@ -123,7 +124,7 @@ int main(int argc, char** argv) {
           &(yVal_devi[ptr]), &beta, x_devi);
     HANDLE_ERROR(cudaDeviceSynchronize());
   }
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time3 = clock();
   printTimeDiff(time3, time2, "Time for BP: ");
 #endif /* MEASURE_TIME */
@@ -154,7 +155,7 @@ int main(int argc, char** argv) {
   cudaFree(aVxlId_devi);
   cudaFree(aVal_devi);
   cudaFree(nnz_devi);
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time4 = clock();
   printTimeDiff(time4, time3, "Time after BP: ");
 #endif /* MEASURE_TIME */

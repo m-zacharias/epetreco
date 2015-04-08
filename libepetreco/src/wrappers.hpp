@@ -7,6 +7,7 @@
 #define	WRAPPERS_HPP
 
 #include "CUDA_HandleError.hpp"
+#include "measure_time.hpp"
 #include "voxelgrid64_defines.h"
 #include "real_measurementsetup_defines.h"
 #include "getSystemMatrixDeviceOnly.cu"
@@ -21,15 +22,6 @@
 #include <string>
 #include <vector>
 
-#ifdef MEASURE_TIME
-#include <ctime>
-#include <iostream>
-#include <string>
-void printTimeDiff(clock_t const end, clock_t const beg,
-      std::string const & mes) {
-  std::cout << mes << (float(end-beg)/CLOCKS_PER_SEC) << " s" << std::endl;
-}
-#endif /* MEASURE_TIME */
 
 
 /** @brief Wrapper function for device memory allocation.
@@ -171,7 +163,7 @@ void systemMatrixCalculation(
       int * const aCnlId_devi, int * const aCsrCnlPtr_devi,
       int * const yRowId_devi, ListSizeType const * const & nY_host,
       cusparseHandle_t const & handle) {
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time1 = clock();
 #endif /* MEASURE_TIME */
 
@@ -180,7 +172,7 @@ void systemMatrixCalculation(
   HANDLE_ERROR(malloc_devi<ListSizeType>(nY_devi, 1));
   HANDLE_ERROR(memcpyH2D<ListSizeType>(nY_devi, nY_host, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "systemMatrixCalculation: Copy nY to device: ");
 #endif /* MEASURE_TIME */
@@ -197,7 +189,7 @@ void systemMatrixCalculation(
         nY_devi,
         nnz_devi);
   HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time3 = clock();
   printTimeDiff(time3, time2, "systemMatrixCalculation: Run kernel: ");
 #endif /* MEASURE_TIME */
@@ -206,7 +198,7 @@ void systemMatrixCalculation(
   MemArrSizeType nnz_host[1];
   HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
   HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time4 = clock();
   printTimeDiff(time4, time3, "systemMatrixCalculation: Copy nnz to host: ");
 #endif /* MEASURE_TIME */
@@ -214,7 +206,7 @@ void systemMatrixCalculation(
   /* Sort system matrix elements according to row major format */
   cooSort<val_t>(aVal_devi, aCnlId_devi, aVxlId_devi, *nnz_host);
   HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time5 = clock();
   printTimeDiff(time5, time4, "systemMatrixCalculation: Sort elems: ");
 #endif /* MEASURE_TIME */
@@ -222,7 +214,7 @@ void systemMatrixCalculation(
   /* COO -> CSR */
   convertCoo2Csr(aCsrCnlPtr_devi, aCnlId_devi, handle, *nnz_host, NCHANNELS);
   HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time6 = clock();
   printTimeDiff(time6, time5, "systemMatrixCalculation: COO -> CSR: ");
 #endif /* MEASURE_TIME */
@@ -230,14 +222,14 @@ void systemMatrixCalculation(
   /* CSR -> ECSR */
   convertCsr2Ecsr(aEcsrCnlPtr_devi, yRowId_devi, nY_host[0], aCsrCnlPtr_devi, NCHANNELS);
   HANDLE_ERROR(cudaDeviceSynchronize());
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time7 = clock();
   printTimeDiff(time7, time6, "systemMatrixCalculation: CSR -> ECSR: ");
 #endif /* MEASURE_TIME */
   
   /* Cleanup */
   cudaFree(nY_devi);
-#ifdef MEASURE_TIME
+#if MEASURE_TIME
   clock_t time8 = clock();
   printTimeDiff(time8, time7, "systemMatrixCalculation: Cleanup: ");
 #endif /* MEASURE_TIME */
