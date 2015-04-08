@@ -22,7 +22,10 @@
 #include <string>
 #include <vector>
 
-
+#if MEASURE_TIME
+#define OLD_MEASURE_TIME 1
+#undef MEASURE_TIME
+#endif
 
 /** @brief Wrapper function for device memory allocation.
  * @tparam T Type of memory.
@@ -419,5 +422,11 @@ ChunkGridSizeType nChunks(MemArrSizeType const maxNnz,
       MemArrSizeType const maxNChunk) {
   return ChunkGridSizeType((maxNnz + maxNChunk - 1) / maxNChunk);
 }
+
+#if OLD_MEASURE_TIME
+#define MEASURE_TIME 1
+#undef OLD_MEASURE_TIME
+#endif
+
 #endif	/* WRAPPERS_HPP */
 

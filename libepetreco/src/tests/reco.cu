@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
   val_t zero = val_t(0.); val_t one = val_t(1.);
   
   /* MAX NUMBER OF NON_ZEROS IN SYSTEM MATRIX */
-  MemArrSizeType maxNnz(effM * VGRIDSIZE);
+  MemArrSizeType maxNnz(MemArrSizeType(effM) * MemArrSizeType(VGRIDSIZE));
   
   
   
@@ -151,8 +151,11 @@ int main(int argc, char** argv) {
     HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* CHUNKWISE */
+    ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
+          (maxNnz, MemArrSizeType(LIMM*VGRIDSIZE))
+    );
     for(ChunkGridSizeType chunkId=0;
-          chunkId<nChunks<ChunkGridSizeType, MemArrSizeType>(maxNnz, MemArrSizeType(LIMM*VGRIDSIZE));
+          chunkId<NChunks;
           chunkId++) {
       ListSizeType m   = nInChunk(chunkId, effM, LIMM);
       ListSizeType ptr = chunkPtr(chunkId, LIMM);

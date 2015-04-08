@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
   val_t alpha = 1.; val_t beta = 1.;
   
   /* MAX NUMBER OF NON_ZEROS IN SYSTEM MATRIX */
-  MemArrSizeType maxNnz(effM * VGRIDSIZE);
+  MemArrSizeType maxNnz(MemArrSizeType(effM) * MemArrSizeType(VGRIDSIZE));
     
   /* DENSITY X */
   val_t x_host[VGRIDSIZE];
@@ -98,8 +98,11 @@ int main(int argc, char** argv) {
 #endif /* MEASURE_TIME */
   
   /* BACKPROJECT */
+  ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
+        (maxNnz, MemArrSizeType(LIMM)*MemArrSizeType(VGRIDSIZE))
+  );
   for(ChunkGridSizeType chunkId=0;
-        chunkId<nChunks<ChunkGridSizeType, MemArrSizeType>(maxNnz, MemArrSizeType(LIMM*VGRIDSIZE));
+        chunkId<NChunks;
         chunkId++) {
     ListSizeType m   = nInChunk(chunkId, effM, LIMM);
     ListSizeType ptr = chunkPtr(chunkId, LIMM);

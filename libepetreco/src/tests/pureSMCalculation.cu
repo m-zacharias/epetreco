@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   /* Number of non-zeros, row indices */
   ListSizeType effM; std::vector<int> yRowId_host;
   
-    do {
+  do {
     int tmp_effM(0);
     readMeasList_HDF5<val_t>(yRowId_host, tmp_effM, fn);
     effM = ListSizeType(tmp_effM);
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   HANDLE_CUSPARSE_ERROR(customizeMatDescr(A, handle));
 
   /* MAX NUMBER OF NON_ZEROS IN SYSTEM MATRIX */
-  MemArrSizeType maxNnz(effM * VGRIDSIZE);
+  MemArrSizeType maxNnz(MemArrSizeType(effM) * MemArrSizeType(VGRIDSIZE));
   
   /* SYSTEM MATRIX */
   /* Row (channel) ids, row pointers, effective row pointers, column (voxel)
@@ -83,12 +83,23 @@ int main(int argc, char** argv) {
   printTimeDiff(time2, time1, "Time before SM calculation: ");
 #endif /* MEASURE_TIME */
 #if DEBUG
-  int totalNnz(0);
+  MemArrSizeType totalNnz(0);
 #endif
   
   /* SM CALCULATION */
+  ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
+        (maxNnz, MemArrSizeType(LIMM)*MemArrSizeType(VGRIDSIZE))
+  );
+#if DEBUG
+  std::cout << "Calculate system matrix with #LOR = " << effM
+            << " and #voxels = " << VGRIDSIZE
+            << " . Max number of non-zero elements is consequently " << maxNnz
+            << " . Partition the system matrix into chunks of maximum #LOR = " << LIMM
+            << ", which means " << NChunks
+            << " chunks have to be calculated." << std::endl;
+#endif
   for(ChunkGridSizeType chunkId=0;
-        chunkId<nChunks<ChunkGridSizeType, MemArrSizeType>(maxNnz, MemArrSizeType(LIMM*VGRIDSIZE));
+        chunkId<NChunks;
         chunkId++) {
     ListSizeType m = nInChunk(chunkId, effM, LIMM);
     ListSizeType ptr = chunkPtr(chunkId, LIMM);
@@ -110,6 +121,9 @@ int main(int argc, char** argv) {
     HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
     totalNnz += nnz_host[0];
+    std::cout << "Finished chunk " << chunkId
+              << " of " << NChunks
+              << ", found " << nnz_host[0] << " elements." << std::endl;
 #endif
   }
 #if MEASURE_TIME
