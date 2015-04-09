@@ -3,24 +3,19 @@
  *
  * Created on 6. Februar 2015, 17:09 */
 
-#include <cstdlib>
-
 #define NBLOCKS 32
 
 #include "wrappers.hpp"
-
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
 #include "measure_time.hpp"
 #include "typedefs.hpp"
-//#include "device_constant_memory.hpp"
-//#include "voxelgrid64_defines.h"
-//#include "real_measurementsetup_defines.h"
-//#include "getSystemMatrixDeviceOnly.cu"
-#include <cusparse.h>
 #include "csrmv.hpp"
 #include "mlemOperations.hpp"
+
+#include <cusparse.h>
 #include <sstream>
+#include <cstdlib>
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
  * matrix arrays on GPU */

@@ -9,6 +9,7 @@
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
 #include "measure_time.hpp"
+#include "typedefs.hpp"
 #include "csrmv.hpp"
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO

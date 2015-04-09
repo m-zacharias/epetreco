@@ -9,6 +9,7 @@
 #include "CUDA_HandleError.hpp"
 #include "measure_time.hpp"
 #include "voxelgrid64_defines.h"
+//#include "voxelgrid32_defines.h"
 #include "real_measurementsetup_defines.h"
 #include "getSystemMatrixDeviceOnly.cu"
 #include "cooSort.hpp"
