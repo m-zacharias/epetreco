@@ -45,7 +45,9 @@ struct dividesMultiplies_F : public thrust::unary_function<thrust::tuple<T, T, T
    */
   T operator()(
         thrust::tuple<T, T, T> const & t) const {
-    return thrust::get<0>(t) * thrust::get<1>(t) / thrust::get<2>(t);
+    T dvs(thrust::get<2>(t));
+    dvs += T(dvs==0.);
+    return thrust::get<0>(t) * thrust::get<1>(t) / dvs;
   }
 };
 
