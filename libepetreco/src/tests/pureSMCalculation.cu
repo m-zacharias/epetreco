@@ -79,19 +79,18 @@ int main(int argc, char** argv) {
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
   MemArrSizeType * nnz_devi = NULL;
   HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
-#if MEASURE_TIME
-  clock_t time2 = clock();
-  printTimeDiff(time2, time1, "Time before SM calculation: ");
-#endif /* MEASURE_TIME */
-#if DEBUG
-  MemArrSizeType totalNnz(0);
-#endif
   
   /* SM CALCULATION */
   ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
         (maxNnz, MemArrSizeType(LIMM)*MemArrSizeType(VGRIDSIZE))
   );
+#if MEASURE_TIME
+  clock_t * chunkTimes = new clock_t[NChunks+1];
+  chunkTimes[0] = clock();
+  printTimeDiff(chunkTimes[0], time1, "Time before SM calculation: ");
+#endif /* MEASURE_TIME */
 #if DEBUG
+  MemArrSizeType totalNnz(0);
   std::cout << "Calculate system matrix with #LOR = " << effM
             << " and #voxels = " << VGRIDSIZE
             << " . Max number of non-zero elements is consequently " << maxNnz
@@ -118,6 +117,10 @@ int main(int argc, char** argv) {
     HANDLE_ERROR(cudaDeviceSynchronize());
     HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
+#if MEASURE_TIME
+    chunkTimes[chunkId+1] = clock();
+    printTimeDiff(chunkTimes[chunkId+1], chunkTimes[chunkId], "Time for latest chunk: ");
+#endif
 #if DEBUG
     HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
     HANDLE_ERROR(cudaDeviceSynchronize());
@@ -129,7 +132,7 @@ int main(int argc, char** argv) {
   }
 #if MEASURE_TIME
   clock_t time3 = clock();
-  printTimeDiff(time3, time2, "Time for SM calculation: ");
+  printTimeDiff(time3, chunkTimes[0], "Time for SM calculation: ");
 #endif /* MEASURE_TIME */
 #if DEBUG
   std::cout << "Found: " << totalNnz << " elements." << std::endl;
