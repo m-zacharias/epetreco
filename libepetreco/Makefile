@@ -59,7 +59,8 @@ EXECUTABLES := \
       reco.out \
       test_supplement_mv.out \
       backprojection.out \
-      pureSMCalculation.out
+      pureSMCalculation.out \
+      test_H5DensityReader.out
 
 default : $(EXECUTABLES)
 
