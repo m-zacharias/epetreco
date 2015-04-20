@@ -16,6 +16,7 @@
 #include <cusparse.h>
 #include <sstream>
 #include <cstdlib>
+#include <fstream>
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
  * matrix arrays on GPU */
@@ -28,17 +29,23 @@ int main(int argc, char** argv) {
 #if MEASURE_TIME
   clock_t time1 = clock();
 #endif /* MEASURE_TIME */
-  int const nargs(3);
+  int const nargs(6);
   if(argc!=nargs+1) {
     std::cerr << "Error: Wrong number of arguments. Exspected: "
               << nargs << ":" << std::endl
               << "  filename of measurement" << std::endl
               << "  filename of output" << std::endl
-              << "  number of rays" << std::endl;
+              << "  number of rays" << std::endl
+              << "  filename of sensitivity" << std::endl
+              << "  number reco iterations" << std::endl
+              << "  filename of density guess" << std::endl;
     exit(EXIT_FAILURE);
   }
   std::string const fn(argv[1]);
   std::string const on(argv[2]);
+  std::string const sfn(argv[4]);
+  int const nIt(atoi(argv[5]));
+  std::string const xfn(argv[6]);
   
   /* NUMBER OF RAYS PER CHANNEL */
   int const nrays(atoi(argv[3]));
@@ -92,18 +99,32 @@ int main(int argc, char** argv) {
   
   
   /* DENSITY X */
+  bool xfile_good(false);
+  do {
+    std::ifstream xfile(xfn.c_str());
+    xfile_good = xfile.is_open();
+  } while(false);
+  
   val_t x_host[VGRIDSIZE];
-  for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 1.; }
+  if(xfile_good) {
+    readDensity_HDF5(x_host, xfn);
+  } else {
+    return 1;
+    for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 1.; }
+  }
+  
   val_t * x_devi = NULL;
   HANDLE_ERROR(malloc_devi<val_t>(x_devi, VGRIDSIZE));
   HANDLE_ERROR(memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE));
   HANDLE_ERROR(cudaDeviceSynchronize());
-  do {
-    val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    scales<val_t>(x_devi, (1./norm), VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-  } while(false);
+  if(!xfile_good) {
+    do {
+      val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+      scales<val_t>(x_devi, (1./norm), VGRIDSIZE);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+    } while(false);
+  }
   
   /* INTERMEDIATE DENSITY GUESS */
 //  val_t xx_host[VGRIDSIZE];
@@ -117,10 +138,16 @@ int main(int argc, char** argv) {
   
   /* SENSITIVITY */
   val_t s_host[VGRIDSIZE];
-  for(int i=0; i<VGRIDSIZE; i++) { s_host[i]=1; }
+  readDensity_HDF5(s_host, sfn);
+//  for(int i=0; i<VGRIDSIZE; i++) { s_host[i]=1; }
+
   val_t * s_devi = NULL;
   HANDLE_ERROR(malloc_devi(s_devi, VGRIDSIZE));
   HANDLE_ERROR(memcpyH2D<val_t>(s_devi, s_host, VGRIDSIZE));
+  
+  /* Normalize */
+  val_t norm = sum<val_t>(s_devi, VGRIDSIZE);
+  scales<val_t>(s_devi, val_t(1./norm), VGRIDSIZE);
   
   
   
@@ -135,11 +162,12 @@ int main(int argc, char** argv) {
   MemArrSizeType * nnz_devi = NULL;
   HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
 #if MEASURE_TIME
-  clock_t time2 = clock();
-  printTimeDiff(time2, time1, "Time before BP: ");
+  clock_t * itTimes = new clock_t[nIt+1];
+  itTimes[0] = clock();
+  printTimeDiff(itTimes[0], time1, "Time before reco iterations: ");
 #endif /* MEASURE_TIME */
 
-  for(int it=0; it<5; it++) {
+  for(int it=0; it<nIt; it++) {
     /* Correction to zero */
     for(int i=0; i<VGRIDSIZE; i++) { c_host[i]=0; };
     HANDLE_ERROR(memcpyH2D<val_t>(c_devi, c_host, VGRIDSIZE));
@@ -205,10 +233,15 @@ int main(int argc, char** argv) {
     std::stringstream ss("");
     ss << it;
     writeDensity_HDF5(x_host, ss.str() + std::string("_") + on, grid);
+#if MEASURE_TIME
+    itTimes[it+1] = clock();
+    printTimeDiff(itTimes[it+1], itTimes[it], "Time for latest reco iteration: ");
+#endif
   }
 #if MEASURE_TIME
   clock_t time3 = clock();
-  printTimeDiff(time3, time2, "Time for BP: ");
+  printTimeDiff(time3, itTimes[0], "Time for reco iterations: ");
+  delete[] itTimes;
 #endif /* MEASURE_TIME */
   
   
@@ -226,7 +259,7 @@ int main(int argc, char** argv) {
   cudaFree(nnz_devi);
 #if MEASURE_TIME
   clock_t time4 = clock();
-  printTimeDiff(time4, time3, "Time after BP: ");
+  printTimeDiff(time4, time3, "Time after reco iterations: ");
 #endif /* MEASURE_TIME */
   
   return 0;
