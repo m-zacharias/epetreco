@@ -20,6 +20,7 @@
 #include "H5DensityWriter.hpp"
 #include "VoxelGrid.hpp"
 #include "H5Reader.hpp"
+#include "H5DensityReader.hpp"
 #include <string>
 #include <vector>
 
@@ -422,6 +423,12 @@ template<
 ChunkGridSizeType nChunks(MemArrSizeType const maxNnz,
       MemArrSizeType const maxNChunk) {
   return ChunkGridSizeType((maxNnz + maxNChunk - 1) / maxNChunk);
+}
+
+template<typename T>
+void readDensity_HDF5(T * dens, std::string const & ifn) {
+  H5DensityReader reader(ifn);
+  reader.read(dens);
 }
 
 #if OLD_MEASURE_TIME
