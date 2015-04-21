@@ -73,16 +73,16 @@ int main(int argc, char** argv) {
 
   int * yRowId_devi = NULL;
   val_t * yVal_devi = NULL;
-  HANDLE_ERROR(mallocSparseVct_devi(yRowId_devi, yVal_devi, effM));
-  HANDLE_ERROR(cpySparseVctH2D(yRowId_devi, yVal_devi, &yRowId_host[0], &yVal_host[0], effM));
+  mallocSparseVct_devi(yRowId_devi, yVal_devi, effM);
+  cpySparseVctH2D(yRowId_devi, yVal_devi, &yRowId_host[0], &yVal_host[0], effM);
   
   /* SIMULATED MEASUREMENT VECTOR */
   val_t * yTildeVal_devi = NULL;
-  HANDLE_ERROR(malloc_devi(yTildeVal_devi, LIMM));
+  malloc_devi(yTildeVal_devi, LIMM);
   
   /* "ERROR" */
   val_t * eVal_devi = NULL; 
-  HANDLE_ERROR(malloc_devi(eVal_devi, LIMM));
+  malloc_devi(eVal_devi, LIMM);
   
   
   
@@ -107,15 +107,16 @@ int main(int argc, char** argv) {
   
   val_t x_host[VGRIDSIZE];
   if(xfile_good) {
+    std::cout << "Will use density from file " << xfn << std::endl;
     readDensity_HDF5(x_host, xfn);
   } else {
-    return 1;
+    std::cout << "No valid density input file given. Will use homogenous density." << std::endl;
     for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 1.; }
   }
   
   val_t * x_devi = NULL;
-  HANDLE_ERROR(malloc_devi<val_t>(x_devi, VGRIDSIZE));
-  HANDLE_ERROR(memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE));
+  malloc_devi<val_t>(x_devi, VGRIDSIZE);
+  memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE);
   HANDLE_ERROR(cudaDeviceSynchronize());
   if(!xfile_good) {
     do {
@@ -129,12 +130,12 @@ int main(int argc, char** argv) {
   /* INTERMEDIATE DENSITY GUESS */
 //  val_t xx_host[VGRIDSIZE];
   val_t * xx_devi = NULL;
-  HANDLE_ERROR(malloc_devi(xx_devi, VGRIDSIZE));
+  malloc_devi(xx_devi, VGRIDSIZE);
   
   /* CORRECTION */
   val_t c_host[VGRIDSIZE];
   val_t * c_devi = NULL;
-  HANDLE_ERROR(malloc_devi(c_devi, VGRIDSIZE));
+  malloc_devi(c_devi, VGRIDSIZE);
   
   /* SENSITIVITY */
   val_t s_host[VGRIDSIZE];
@@ -142,8 +143,8 @@ int main(int argc, char** argv) {
 //  for(int i=0; i<VGRIDSIZE; i++) { s_host[i]=1; }
 
   val_t * s_devi = NULL;
-  HANDLE_ERROR(malloc_devi(s_devi, VGRIDSIZE));
-  HANDLE_ERROR(memcpyH2D<val_t>(s_devi, s_host, VGRIDSIZE));
+  malloc_devi(s_devi, VGRIDSIZE);
+  memcpyH2D<val_t>(s_devi, s_host, VGRIDSIZE);
   
   /* Normalize */
   val_t norm = sum<val_t>(s_devi, VGRIDSIZE);
@@ -157,10 +158,10 @@ int main(int argc, char** argv) {
   int * aCnlId_devi = NULL; int * aCsrCnlPtr_devi = NULL;
   int * aEcsrCnlPtr_devi = NULL; int * aVxlId_devi = NULL;
   val_t * aVal_devi = NULL;
-  HANDLE_ERROR(mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
-        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
+  mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
+        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE);
   MemArrSizeType * nnz_devi = NULL;
-  HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
+  malloc_devi<MemArrSizeType>(nnz_devi,          1);
 #if MEASURE_TIME
   clock_t * itTimes = new clock_t[nIt+1];
   itTimes[0] = clock();
@@ -170,7 +171,7 @@ int main(int argc, char** argv) {
   for(int it=0; it<nIt; it++) {
     /* Correction to zero */
     for(int i=0; i<VGRIDSIZE; i++) { c_host[i]=0; };
-    HANDLE_ERROR(memcpyH2D<val_t>(c_devi, c_host, VGRIDSIZE));
+    memcpyH2D<val_t>(c_devi, c_host, VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* CHUNKWISE */
@@ -184,7 +185,7 @@ int main(int argc, char** argv) {
       ListSizeType ptr = chunkPtr(chunkId, LIMM);
 
       MemArrSizeType nnz_host[1] = {0};
-      HANDLE_ERROR(memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1));
+      memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1);
 
       /* Get system matrix */
       systemMatrixCalculation<val_t> (
@@ -194,7 +195,7 @@ int main(int argc, char** argv) {
             &(yRowId_devi[ptr]), &m,
             handle);
       HANDLE_ERROR(cudaDeviceSynchronize());
-      HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
+      memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
       HANDLE_ERROR(cudaDeviceSynchronize());
 
       /* Simulate measurement */
@@ -220,7 +221,7 @@ int main(int argc, char** argv) {
     HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* Copy */
-    HANDLE_ERROR(memcpyD2D(x_devi, xx_devi, VGRIDSIZE));
+    memcpyD2D(x_devi, xx_devi, VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* Normalize */
@@ -228,7 +229,7 @@ int main(int argc, char** argv) {
     scales<val_t>(x_devi, val_t(1./norm), VGRIDSIZE);
     
     /* Write to file */
-    HANDLE_ERROR(memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE));
+    memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
     std::stringstream ss("");
     ss << it;

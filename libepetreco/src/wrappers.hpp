@@ -34,8 +34,8 @@
  * @param devi Pointer to allocate memory for.
  * @param n Number of elements to allocate memory for. */
 template<typename T>
-cudaError_t malloc_devi(T * & devi, int const n) {
-  return cudaMalloc((void**)&devi, sizeof(devi[0]) * n);
+void malloc_devi(T * & devi, int const n) {
+  HANDLE_ERROR(cudaMalloc((void**)&devi, sizeof(devi[0]) * n));
 }
 
 /** @brief Wrapper function for memcpy from host to device. 
@@ -44,8 +44,8 @@ cudaError_t malloc_devi(T * & devi, int const n) {
  * @param host Source memory on host.
  * @param n Number of elements of type T that are copied. */
 template<typename T>
-cudaError_t memcpyH2D(T * const devi, T const * const host, int const n) {
-  return cudaMemcpy(devi, host, sizeof(devi[0]) * n, cudaMemcpyHostToDevice);
+void memcpyH2D(T * const devi, T const * const host, int const n) {
+  HANDLE_ERROR(cudaMemcpy(devi, host, sizeof(devi[0]) * n, cudaMemcpyHostToDevice));
 }
 
 /** @brief Wrapper function for memcpy from device to host.
@@ -54,8 +54,8 @@ cudaError_t memcpyH2D(T * const devi, T const * const host, int const n) {
  * @param devi Source memory on device.
  * @param n Number of elements of type T that are copied. */
 template<typename T>
-cudaError_t memcpyD2H(T * const host, T const * const devi, int const n) {
-  return cudaMemcpy(host, devi, sizeof(host[0]) * n, cudaMemcpyDeviceToHost);
+void memcpyD2H(T * const host, T const * const devi, int const n) {
+  HANDLE_ERROR(cudaMemcpy(host, devi, sizeof(host[0]) * n, cudaMemcpyDeviceToHost));
 }
 
 /** @brief Wrapper function for memcpy from device to device.
@@ -64,8 +64,8 @@ cudaError_t memcpyD2H(T * const host, T const * const devi, int const n) {
  * @param devi Source memory on device.
  * @param n Number of elements of type T that are copied. */
 template<typename T>
-cudaError_t memcpyD2D(T * const devi1, T const * const devi0, int const n) {
-  return cudaMemcpy(devi1, devi0, sizeof(devi1[0]) * n, cudaMemcpyDeviceToDevice);
+void memcpyD2D(T * const devi1, T const * const devi0, int const n) {
+  HANDLE_ERROR(cudaMemcpy(devi1, devi0, sizeof(devi1[0]) * n, cudaMemcpyDeviceToDevice));
 }
 
 /** @brief Wrapper function for device memory allocation for a sparse vector.
@@ -75,11 +75,10 @@ cudaError_t memcpyD2D(T * const devi1, T const * const devi0, int const n) {
  * @param vctNnz Number of non-zeros in the vector. 
  * @return Error code of last operation in function body. */
 template<typename T>
-cudaError_t mallocSparseVct_devi(int * & vctId_devi, T * & vctVal_devi,
+void mallocSparseVct_devi(int * & vctId_devi, T * & vctVal_devi,
       int const vctNnz) {
-  cudaError_t err;
-  err  = malloc_devi<int>(vctId_devi,  vctNnz); if(err!=cudaSuccess) return err;
-  return malloc_devi<T>  (vctVal_devi, vctNnz);
+  malloc_devi<int>(vctId_devi,  vctNnz);
+  malloc_devi<T>  (vctVal_devi, vctNnz);
 }
 
 /** @brief Wrapper function for device memory allocation for a measurement
@@ -87,21 +86,20 @@ cudaError_t mallocSparseVct_devi(int * & vctId_devi, T * & vctVal_devi,
  * @param ml_devi Array of measurement list entries of length mlN. 
  * @param mlN Number of entries in the measurement list. 
  * @return Error code of last operation in function body. */
-cudaError_t mallocMeasList_devi(int * & ml_devi, int const mlN) {
-  return malloc_devi<int>(ml_devi,  mlN);
+void mallocMeasList_devi(int * & ml_devi, int const mlN) {
+  malloc_devi<int>(ml_devi,  mlN);
 }
 
 template<typename T>
-cudaError_t mallocSystemMatrix_devi(int * & mtxCnlId_devi,
+void mallocSystemMatrix_devi(int * & mtxCnlId_devi,
       int * & mtxCsrCnlPtr_devi, int * & mtxEcsrCnlPtr_devi,
       int * & mtxVxlId_devi, T * & mtxVal_devi, int const nRows,
       int const nMemRows, int const nCols) {
-  cudaError_t err;
-  err  = malloc_devi<int>(  mtxCnlId_devi,      (nMemRows*nCols)); if(err!=cudaSuccess) return err;
-  err  = malloc_devi<int>(  mtxCsrCnlPtr_devi,  (nRows+1));        if(err!=cudaSuccess) return err;
-  err  = malloc_devi<int>(  mtxEcsrCnlPtr_devi, (nMemRows+1));     if(err!=cudaSuccess) return err;
-  err  = malloc_devi<int>(  mtxVxlId_devi,      (nMemRows*nCols)); if(err!=cudaSuccess) return err;
-  return malloc_devi<val_t>(mtxVal_devi,        (nMemRows*nCols));
+  malloc_devi<int>(  mtxCnlId_devi,      (nMemRows*nCols));
+  malloc_devi<int>(  mtxCsrCnlPtr_devi,  (nRows+1));
+  malloc_devi<int>(  mtxEcsrCnlPtr_devi, (nMemRows+1));
+  malloc_devi<int>(  mtxVxlId_devi,      (nMemRows*nCols));
+  malloc_devi<val_t>(mtxVal_devi,        (nMemRows*nCols));
 }
 
 /** @brief Wrapper function for copying a sparse vector from host to device.
@@ -116,13 +114,12 @@ cudaError_t mallocSystemMatrix_devi(int * & mtxCnlId_devi,
  * Representation on host.
  * @param vctNnz Number of non-zeros in the vector. */
 template<typename T>
-cudaError_t cpySparseVctH2D(
+void cpySparseVctH2D(
       int * const       vctId_devi, T * const       vctVal_devi,
       int const * const vctId_host, T const * const vctVal_host,
       int const vctNnz) {
-  cudaError_t err;
-  err  = memcpyH2D<int>(vctId_devi,  vctId_host,  vctNnz); if(err!=cudaSuccess) return err;
-  return memcpyH2D<T>(  vctVal_devi, vctVal_host, vctNnz);
+  memcpyH2D<int>(vctId_devi,  vctId_host,  vctNnz);
+  memcpyH2D<T>(  vctVal_devi, vctVal_host, vctNnz);
 }
 
 /** @brief Wrapper function for copying a measurement list from host to device.
@@ -131,10 +128,10 @@ cudaError_t cpySparseVctH2D(
  * @param ml_host Array of measurement list entries of length mlN.
  * Representation on host.
  * @param mlN Number of entries in the measurement list. */
-cudaError_t cpyMeasListH2D(
+void cpyMeasListH2D(
       int * const       ml_devi, int const * const ml_host,
       int const mlN) {
-  return memcpyH2D<int>(ml_devi,  ml_host,  mlN);
+  memcpyH2D<int>(ml_devi,  ml_host,  mlN);
 }
 
 /** @brief System matrix calculation.
@@ -174,8 +171,8 @@ void systemMatrixCalculation(
 
   /* Copy to device */
   ListSizeType * nY_devi = NULL;
-  HANDLE_ERROR(malloc_devi<ListSizeType>(nY_devi, 1));
-  HANDLE_ERROR(memcpyH2D<ListSizeType>(nY_devi, nY_host, 1));
+  malloc_devi<ListSizeType>(nY_devi, 1);
+  memcpyH2D<ListSizeType>(nY_devi, nY_host, 1);
   HANDLE_ERROR(cudaDeviceSynchronize());
 #if MEASURE_TIME
   clock_t time2 = clock();
@@ -201,7 +198,7 @@ void systemMatrixCalculation(
 
   /* Copy nnz back to host */
   MemArrSizeType nnz_host[1];
-  HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
+  memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
   HANDLE_ERROR(cudaDeviceSynchronize());
 #if MEASURE_TIME
   clock_t time4 = clock();

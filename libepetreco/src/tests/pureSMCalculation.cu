@@ -56,8 +56,8 @@ int main(int argc, char** argv) {
   } while(false);
   
   int * yRowId_devi = NULL;
-  HANDLE_ERROR(mallocMeasList_devi(yRowId_devi, effM));
-  HANDLE_ERROR(cpyMeasListH2D(yRowId_devi, &(yRowId_host[0]), effM));
+  mallocMeasList_devi(yRowId_devi, effM);
+  cpyMeasListH2D(yRowId_devi, &(yRowId_host[0]), effM);
   
   
   /* STUFF FOR MV */
@@ -75,10 +75,10 @@ int main(int argc, char** argv) {
   int * aCnlId_devi = NULL; int * aCsrCnlPtr_devi = NULL;
   int * aEcsrCnlPtr_devi = NULL; int * aVxlId_devi = NULL;
   val_t * aVal_devi = NULL;
-  HANDLE_ERROR(mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
-        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE));
+  mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
+        aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE);
   MemArrSizeType * nnz_devi = NULL;
-  HANDLE_ERROR(malloc_devi<MemArrSizeType>(nnz_devi,          1));
+  malloc_devi<MemArrSizeType>(nnz_devi,          1);
   
   /* SM CALCULATION */
   ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
     ListSizeType ptr = chunkPtr(chunkId, LIMM);
     
     MemArrSizeType nnz_host[1] = {0};
-    HANDLE_ERROR(memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1));
+    memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1);
 
     /* Get system matrix */
     systemMatrixCalculation<val_t> (
@@ -115,14 +115,14 @@ int main(int argc, char** argv) {
           &(yRowId_devi[ptr]), &m,
           handle);
     HANDLE_ERROR(cudaDeviceSynchronize());
-    HANDLE_ERROR(memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1));
+    memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
     HANDLE_ERROR(cudaDeviceSynchronize());
 #if MEASURE_TIME
     chunkTimes[chunkId+1] = clock();
     printTimeDiff(chunkTimes[chunkId+1], chunkTimes[chunkId], "Time for latest chunk: ");
 #endif
 #if DEBUG
-    HANDLE_ERROR(memcpyD2H(nnz_host, nnz_devi, 1));
+    memcpyD2H(nnz_host, nnz_devi, 1);
     HANDLE_ERROR(cudaDeviceSynchronize());
     totalNnz += nnz_host[0];
     std::cout << "Finished chunk " << chunkId
