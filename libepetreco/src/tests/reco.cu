@@ -105,12 +105,13 @@ int main(int argc, char** argv) {
     xfile_good = xfile.is_open();
   } while(false);
   
-  val_t x_host[VGRIDSIZE];
+  val_t * x_host = NULL;
   if(xfile_good) {
     std::cout << "Will use density from file " << xfn << std::endl;
     readDensity_HDF5(x_host, xfn);
   } else {
     std::cout << "No valid density input file given. Will use homogenous density." << std::endl;
+    x_host = new val_t[VGRIDSIZE];
     for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 1.; }
   }
   

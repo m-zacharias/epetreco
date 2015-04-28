@@ -240,10 +240,11 @@ void systemMatrixCalculation(
  * @tparam Type of elements.
  * @param mem Array of length n.
  * @param n Length of the array. */
-int findNnz(val_t const * const mem, int const n) {
+template<typename T>
+int findNnz(T const * const mem, int const n) {
   int tmp(0);
   for(int i=0; i<n; i++) {
-    if(mem[i] != 0) tmp++;
+    if(mem[i] != T(0)) tmp++;
   }
   return tmp;
 }
@@ -301,8 +302,11 @@ void readMeasVct_HDF5(int * & vctId, T * & vctVal, int & vctNnz,
       std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
+  H5Reader::Value_t * readMem = new H5Reader::Value_t[fN];
+  reader.read(readMem);
   T * fMem = new T[fN];
-  reader.read(fMem);
+  for(int i=0; i<fN; i++) fMem[i] = T(readMem[i]);
+  delete[] readMem;
   vctNnz = findNnz(fMem, fN);
   vctId  = new int[vctNnz];
   vctVal = new T[  vctNnz];
@@ -322,11 +326,15 @@ void readMeasVct_HDF5(std::vector<int> & vctId, std::vector<T> & vctVal,
       int & vctNnz, std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
-  std::vector<T> fMem(fN, 0.);
-  reader.read(&fMem[0]);
-  vctNnz    = findNnz(&fMem[0], fN);
+  std::vector<H5Reader::Value_t> readMem(fN, 0.);
+  reader.read(&readMem[0]);
+  vctNnz    = findNnz(&readMem[0], fN);
   vctId.resize(vctNnz);
   vctVal.resize(vctNnz);
+  std::vector<T> fMem(fN, 0.);
+  for(int i=0; i<fN; i++) {
+    fMem[i] = T(readMem[i]);
+  }
   makeSparseVct(&vctId[0], &vctVal[0], &fMem[0], fN);
 }
 
@@ -341,8 +349,11 @@ template<typename T>
 void readMeasList_HDF5(int * & ml, int & mlN, std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
+  H5Reader::Value_t * readMem = new H5Reader::Value_t[fN];
+  reader.read(readMem);
   T * fMem = new T[fN];
-  reader.read(fMem);
+  for(int i=0; i<fN; i++) fMem[i] = T(readMem[i]);
+  delete[] readMem;
   mlN = findNnz(fMem, fN);
   ml  = new int[mlN];
   makeMeasList(ml, fMem, fN);
@@ -360,8 +371,10 @@ void readMeasList_HDF5(std::vector<int> & ml, int & mlN,
       std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
+  std::vector<H5Reader::Value_t> readMem(fN, 0.);
+  reader.read(&readMem[0]);
   std::vector<T> fMem(fN, 0.);
-  reader.read(&fMem[0]);
+  for(int i=0; i<fN; i++) fMem[i] = T(readMem[i]);
   mlN = findNnz(&fMem[0], fN);
   ml.resize(mlN);
   makeMeasList(&ml[0], &fMem[0], fN);
@@ -424,7 +437,14 @@ ChunkGridSizeType nChunks(MemArrSizeType const maxNnz,
 template<typename T>
 void readDensity_HDF5(T * dens, std::string const & ifn) {
   H5DensityReader reader(ifn);
-  reader.read(dens);
+  int fN = reader.sizeOfFile();
+  H5DensityReader::Value_t * readMem = new H5DensityReader::Value_t[fN];
+  reader.read(readMem);
+  dens = new T[fN];
+  for(int i=0; i<fN; i++) {
+    dens[i] = readMem[i];
+  }
+  delete[] readMem;
 }
 
 #if OLD_MEASURE_TIME
