@@ -17,18 +17,28 @@
 #include <sstream>
 #include <cstdlib>
 #include <fstream>
+#include <mpi.h>
 
 /* [512 * 1024 * 1024 / 4] (512 MiB of float or int); max # of elems in COO
  * matrix arrays on GPU */
-MemArrSizeType const LIMNNZ(134217728);
+MemArrSizeType const LIMBYTES(512*1024*1024);
+MemArrSizeType const LIMNNZ(LIMBYTES/MemArrSizeType(sizeof(val_t)));
 
 /* Max # of channels in COO matrix arrays */
 ListSizeType const LIMM(LIMNNZ/VGRIDSIZE);
 
 int main(int argc, char** argv) {
+  
 #if MEASURE_TIME
   clock_t time1 = clock();
 #endif /* MEASURE_TIME */
+
+  int mpi_rank;
+  int mpi_size;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  
   int const nargs(6);
   if(argc!=nargs+1) {
     std::cerr << "Error: Wrong number of arguments. Exspected: "
@@ -135,6 +145,7 @@ int main(int argc, char** argv) {
   
   /* CORRECTION */
   val_t c_host[VGRIDSIZE];
+  val_t cMpi[VGRIDSIZE];
   val_t * c_devi = NULL;
   malloc_devi(c_devi, VGRIDSIZE);
   
@@ -163,25 +174,28 @@ int main(int argc, char** argv) {
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE);
   MemArrSizeType * nnz_devi = NULL;
   malloc_devi<MemArrSizeType>(nnz_devi,          1);
+  
 #if MEASURE_TIME
   clock_t * itTimes = new clock_t[nIt+1];
   itTimes[0] = clock();
-  printTimeDiff(itTimes[0], time1, "Time before reco iterations: ");
+  if(mpi_rank == 0)
+    printTimeDiff(itTimes[0], time1, "Time before reco iterations: ");
 #endif /* MEASURE_TIME */
 
+  /* How many chunks are needed? */
+  ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>(maxNnz, MemArrSizeType(LIMM*VGRIDSIZE)));
+  
+  /* RECO ITERATIONS */
   for(int it=0; it<nIt; it++) {
+    
     /* Correction to zero */
     for(int i=0; i<VGRIDSIZE; i++) { c_host[i]=0; };
     memcpyH2D<val_t>(c_devi, c_host, VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* CHUNKWISE */
-    ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
-          (maxNnz, MemArrSizeType(LIMM*VGRIDSIZE))
-    );
-    for(ChunkGridSizeType chunkId=0;
-          chunkId<NChunks;
-          chunkId++) {
+    ChunkGridSizeType chunkId = ChunkGridSizeType(mpi_rank);
+    while(chunkId < NChunks) {
       ListSizeType m   = nInChunk(chunkId, effM, LIMM);
       ListSizeType ptr = chunkPtr(chunkId, LIMM);
 
@@ -215,38 +229,57 @@ int main(int argc, char** argv) {
             m, VGRIDSIZE, *nnz_host, &one, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
             eVal_devi, &one, c_devi);
       HANDLE_ERROR(cudaDeviceSynchronize());
-    }
+      
+      /* Go for next chunk */
+      chunkId += mpi_size;
+    } /* while(chunkId < NChunks) */
     
-    /* Improve guess */
-    dividesMultiplies<val_t>(xx_devi, x_devi, c_devi, s_devi, VGRIDSIZE);
+    /* Copy to host and reduce correction between prodcesses */
+    memcpyD2H(c_host, c_devi, VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
+    MPI_Reduce(c_host, cMpi, VGRIDSIZE, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
     
-    /* Copy */
-    memcpyD2D(x_devi, xx_devi, VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    
-    /* Normalize */
-    val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
-    scales<val_t>(x_devi, val_t(1./norm), VGRIDSIZE);
-    
-    /* Write to file */
-    memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    std::stringstream ss("");
-    ss << it;
-    writeDensity_HDF5(x_host, ss.str() + std::string("_") + on, grid);
+    /* Change and save density guess */
+    if(mpi_rank == 0) {
+      memcpyH2D(c_devi, cMpi, VGRIDSIZE);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+      
+      /* Improve guess */
+      dividesMultiplies<val_t>(xx_devi, x_devi, c_devi, s_devi, VGRIDSIZE);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+
+      /* Copy */
+      memcpyD2D(x_devi, xx_devi, VGRIDSIZE);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+
+      /* Normalize */
+      val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
+      scales<val_t>(x_devi, val_t(1./norm), VGRIDSIZE);
+
+      /* Write to file */
+      memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+      std::stringstream ss("");
+      ss << it;
+      writeDensity_HDF5(x_host, ss.str() + std::string("_") + on, grid);
+      
 #if MEASURE_TIME
-    itTimes[it+1] = clock();
-    printTimeDiff(itTimes[it+1], itTimes[it], "Time for latest reco iteration: ");
+      itTimes[it+1] = clock();
+      if(mpi_rank == 0)
+        printTimeDiff(itTimes[it+1], itTimes[it], "Time for latest reco iteration: ");
 #endif
-  }
+      
+    } /* if(mpi_rank == 0) */
+    
+  } /* for(int it=0; it<nIt; it++) */
+
 #if MEASURE_TIME
   clock_t time3 = clock();
-  printTimeDiff(time3, itTimes[0], "Time for reco iterations: ");
+  if(mpi_rank == 0)
+    printTimeDiff(time3, itTimes[0], "Time for reco iterations: ");
   delete[] itTimes;
 #endif /* MEASURE_TIME */
-  
-  
+    
   /* Cleanup */
   cudaFree(yRowId_devi);
   cudaFree(yVal_devi);
@@ -259,9 +292,13 @@ int main(int argc, char** argv) {
   cudaFree(aVxlId_devi);
   cudaFree(aVal_devi);
   cudaFree(nnz_devi);
+  
+  MPI_Finalize();
+  
 #if MEASURE_TIME
   clock_t time4 = clock();
-  printTimeDiff(time4, time3, "Time after reco iterations: ");
+  if(mpi_rank == 0)
+    printTimeDiff(time4, time3, "Time after reco iterations: ");
 #endif /* MEASURE_TIME */
   
   return 0;

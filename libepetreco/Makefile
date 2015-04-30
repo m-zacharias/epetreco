@@ -5,14 +5,14 @@ PLY = $(SRC)/Ply
 CPPC = g++
 override CPPCFLAGS += -Wall
 CPPO = -c
-INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
+INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include -I$(MPIROOT)/include
 LIB = -L$(HDF5_ROOT)/lib -L./ -lhdf5 -lhdf5_cpp -lepetreco
 
 CUC = nvcc
-override CUCFLAGS += -DMEASURE_TIME -DGRID64 -arch=sm_35 -Xcompiler -Wall
+override CUCFLAGS += -DGRID64 -DMEASURE_TIME -arch=sm_35 -Xcompiler -Wall
 #override CUCFLAGS += -DMEASURE_TIME -DGRID64 -arch=sm_35 -Xptxas=-v --source-in-ptx -Xcompiler -rdynamic -lineinfo --keep --keep-dir nvcc_tmp --use_fast_math
-CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include
-CUCLIB = -L$(CUDA_ROOT)/lib64 -L./ -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco
+CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include -I$(MPIROOT)/include
+CUCLIB = -L$(CUDA_ROOT)/lib64 -L./ -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco -L$(MPIROOT)/lib -lmpi -lmpi_cxx
 
 # ##############################################################################
 # ### PUT ALL DEFAULT TARGETS HERE
