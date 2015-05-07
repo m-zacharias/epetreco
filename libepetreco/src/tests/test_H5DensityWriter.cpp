@@ -5,6 +5,8 @@ class MyGrid
 {
   public:
     
+    typedef float CoordType;
+    
     MyGrid( float o0, float o1, float o2,
             float v0, float v1, float v2,
             int n0,   int n1,   int n2 )
@@ -14,19 +16,19 @@ class MyGrid
       _numberOfVoxels[0] = n0; _numberOfVoxels[1] = n1; _numberOfVoxels[2] = n2;
     }
 
-    void getOrigin( float * origin )
+    void getOrigin( float * origin ) const
     {
       for(int dim=0; dim<3; dim++)
         origin[dim] = _origin[dim];
     }
 
-    void getVoxelSize( float * voxelSize )
+    void getVoxelSize( float * voxelSize ) const
     {
       for(int dim=0; dim<3; dim++)
         voxelSize[dim] = _voxelSize[dim];
     }
 
-    void getNumberOfVoxels( int * numberOfVoxels )
+    void getNumberOfVoxels( int * numberOfVoxels ) const
     {
       for(int dim=0; dim<3; dim++)
         numberOfVoxels[dim] = _numberOfVoxels[dim];
