@@ -12,14 +12,12 @@
 #include "wrappers.hpp"
 #include "getSystemMatrixDeviceOnly.cu"
 #include "real_measurementsetup_defines.h"
-//#include "voxelgrid10_defines.h"
-//#include "voxelgrid20_defines.h"
-//#include "voxelgrid52_defines.h"
-#include "voxelgrid64_defines.h"
+#include "voxelgrid_defines.h"
 #include "CUDA_HandleError.hpp"
 #include "typedefs.hpp"
 #include "device_constant_memory.hpp"
 
+typedef int GridSizeType;
 
 
 int main(int argc, char** argv) {
@@ -48,45 +46,51 @@ int main(int argc, char** argv) {
   HANDLE_ERROR(cudaMemcpyToSymbol(grid_const, &grid, sizeof(grid)));
   
   
-  int mlSize_host[1];
+  ListSizeType mlSize_host[1];
   int * ml_host = NULL;
-  readMeasList_HDF5<float>(ml_host, mlSize_host, fn);
+  {
+    int tmp(0);
+    readMeasList_HDF5<float>(ml_host, tmp, fn);
+    mlSize_host[0] = ListSizeType(tmp);
+  }
   
-  int * mlSize_devi = NULL;
+  
+  ListSizeType * mlSize_devi = NULL;
   int * ml_devi = NULL;
-  HANDLE_ERROR(mallocMeasList_devi(ml_devi, mlSize_devi, mlSize_host[0]));
-  HANDLE_ERROR(cpyMeasListH2D(ml_devi, mlSize_devi, ml_host, mlSize_host));
+  mallocMeasList_devi(ml_devi, mlSize_host[0]);
+  cpyMeasListH2D(ml_devi, ml_host, mlSize_host[0]);
   
   
-  int const memSize = mlSize_host[0] * VGRIDSIZE;
+  MemArrSizeType const memSize = MemArrSizeType(mlSize_host[0]) * MemArrSizeType(VGRIDSIZE);
   int * cnlId_devi = NULL;
-  int * vxlId_devi = NULL;
+  GridSizeType * vxlId_devi = NULL;
   val_t * sme_devi = NULL;
-  int truckDest_host[1] = {0};
-  int * truckDest_devi = NULL;
-  HANDLE_ERROR(malloc_devi(cnlId_devi, memSize));
-  HANDLE_ERROR(malloc_devi(vxlId_devi, memSize));
-  HANDLE_ERROR(malloc_devi(sme_devi, memSize));
-  HANDLE_ERROR(malloc_devi(truckDest_devi, 1));
+  MemArrSizeType truckDest_host[1] = {0};
+  MemArrSizeType * truckDest_devi = NULL;
+  malloc_devi(cnlId_devi, memSize);
+  malloc_devi(vxlId_devi, memSize);
+  malloc_devi(sme_devi, memSize);
+  malloc_devi(truckDest_devi, 1);
   
-  HANDLE_ERROR(memcpyH2D(truckDest_devi, truckDest_host, 1));
+  memcpyH2D(truckDest_devi, truckDest_host, 1);
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   getSystemMatrix<
-        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida, Trafo0, Trafo1>
+        val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida,
+        Trafo0_inplace, Trafo1_inplace, ListSizeType, GridSizeType, MemArrSizeType>
         <<<NBLOCKS, TPB>>>
       ( sme_devi, vxlId_devi, cnlId_devi, ml_devi, mlSize_devi, truckDest_devi);
   HANDLE_ERROR(cudaDeviceSynchronize());
   
-  HANDLE_ERROR(memcpyD2H(truckDest_host, truckDest_devi, 1));
+  memcpyD2H(truckDest_host, truckDest_devi, 1);
   
   std::vector<val_t> sme_host(truckDest_host[0], 0.);
-  HANDLE_ERROR(memcpyD2H(&(*sme_host.begin()), sme_devi, truckDest_host[0]))
+  memcpyD2H(&(*sme_host.begin()), sme_devi, truckDest_host[0]);
   std::stable_sort(sme_host.begin(), sme_host.end());
   
   
   val_t sum(0);
-  for(int i=0; i<truckDest_host[0]; i++) { sum += sme_host[i]; }
+  for(MemArrSizeType i=0; i<truckDest_host[0]; i++) { sum += sme_host[i]; }
   
   std::ofstream out(on.c_str());
   if(!out) {
