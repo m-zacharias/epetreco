@@ -6,6 +6,8 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
+class cudaException: public std::exception{};
+
 /**
  * Wrapper for CUDA functions. On CUDA error prints error message and exits program.
  * @param err CUDA error object.
@@ -17,7 +19,7 @@ void HandleError( cudaError_t err, const char * file, int line )
   if(err != cudaSuccess)
     {
       std::cerr << file << "(" << line << "): error: " << cudaGetErrorString( err ) << std::endl;
-      exit( EXIT_FAILURE );
+      throw cudaException();
     }
 }
 
