@@ -50,15 +50,15 @@ int main(int argc, char** argv) {
   int * ml_host = NULL;
   {
     int tmp(0);
-    readMeasList_HDF5<float>(ml_host, tmp, fn);
+    readHDF5_MeasList<float>(ml_host, tmp, fn);
     mlSize_host[0] = ListSizeType(tmp);
   }
   
   
   ListSizeType * mlSize_devi = NULL;
   int * ml_devi = NULL;
-  mallocMeasList_devi(ml_devi, mlSize_host[0]);
-  cpyMeasListH2D(ml_devi, ml_host, mlSize_host[0]);
+  mallocD_MeasList(ml_devi, mlSize_host[0]);
+  cpyH2DAsync_MeasList(ml_devi, ml_host, mlSize_host[0]);
   
   
   MemArrSizeType const memSize = MemArrSizeType(mlSize_host[0]) * MemArrSizeType(VGRIDSIZE);
@@ -67,13 +67,12 @@ int main(int argc, char** argv) {
   val_t * sme_devi = NULL;
   MemArrSizeType truckDest_host[1] = {0};
   MemArrSizeType * truckDest_devi = NULL;
-  malloc_devi(cnlId_devi, memSize);
-  malloc_devi(vxlId_devi, memSize);
-  malloc_devi(sme_devi, memSize);
-  malloc_devi(truckDest_devi, 1);
+  mallocD(cnlId_devi, memSize);
+  mallocD(vxlId_devi, memSize);
+  mallocD(sme_devi, memSize);
+  mallocD(truckDest_devi, 1);
   
   memcpyH2D(truckDest_devi, truckDest_host, 1);
-  HANDLE_ERROR(cudaDeviceSynchronize());
   
   getSystemMatrix<
         val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida,

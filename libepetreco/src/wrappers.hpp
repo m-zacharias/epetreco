@@ -7,6 +7,7 @@
 #define	WRAPPERS_HPP
 
 #include "CUDA_HandleError.hpp"
+#include "cuda_wrappers.hpp"
 #include "measure_time.hpp"
 #include "voxelgrid_defines.h"
 #include "real_measurementsetup_defines.h"
@@ -28,45 +29,6 @@
 #undef MEASURE_TIME
 #endif
 
-/** @brief Wrapper function for device memory allocation.
- * @tparam T Type of memory.
- * @param devi Pointer to allocate memory for.
- * @param n Number of elements to allocate memory for. */
-template<typename T>
-void malloc_devi(T * & devi, int const n) {
-  HANDLE_ERROR(cudaMalloc((void**)&devi, sizeof(devi[0]) * n));
-}
-
-/** @brief Wrapper function for memcpy from host to device. 
- * @tparam T Type of memory.
- * @param devi Target memory on device.
- * @param host Source memory on host.
- * @param n Number of elements of type T that are copied. */
-template<typename T>
-void memcpyH2D(T * const devi, T const * const host, int const n) {
-  HANDLE_ERROR(cudaMemcpy(devi, host, sizeof(devi[0]) * n, cudaMemcpyHostToDevice));
-}
-
-/** @brief Wrapper function for memcpy from device to host.
- * @tparam T Type of memory.
- * @param host Target memory on host.
- * @param devi Source memory on device.
- * @param n Number of elements of type T that are copied. */
-template<typename T>
-void memcpyD2H(T * const host, T const * const devi, int const n) {
-  HANDLE_ERROR(cudaMemcpy(host, devi, sizeof(host[0]) * n, cudaMemcpyDeviceToHost));
-}
-
-/** @brief Wrapper function for memcpy from device to device.
- * @tparam T Type of memory.
- * @param host Target memory on host.
- * @param devi Source memory on device.
- * @param n Number of elements of type T that are copied. */
-template<typename T>
-void memcpyD2D(T * const devi1, T const * const devi0, int const n) {
-  HANDLE_ERROR(cudaMemcpy(devi1, devi0, sizeof(devi1[0]) * n, cudaMemcpyDeviceToDevice));
-}
-
 /** @brief Wrapper function for device memory allocation for a sparse vector.
  * @tparam T Type of elements.
  * @param vctId_devi Array of vector elements' indices of length vctNnz.
@@ -74,10 +36,10 @@ void memcpyD2D(T * const devi1, T const * const devi0, int const n) {
  * @param vctNnz Number of non-zeros in the vector. 
  * @return Error code of last operation in function body. */
 template<typename T>
-void mallocSparseVct_devi(int * & vctId_devi, T * & vctVal_devi,
+void mallocD_SparseVct(int * & vctId_devi, T * & vctVal_devi,
       int const vctNnz) {
-  malloc_devi<int>(vctId_devi,  vctNnz);
-  malloc_devi<T>  (vctVal_devi, vctNnz);
+  mallocD<int>(vctId_devi,  vctNnz);
+  mallocD<T>  (vctVal_devi, vctNnz);
 }
 
 /** @brief Wrapper function for device memory allocation for a measurement
@@ -85,23 +47,34 @@ void mallocSparseVct_devi(int * & vctId_devi, T * & vctVal_devi,
  * @param ml_devi Array of measurement list entries of length mlN. 
  * @param mlN Number of entries in the measurement list. 
  * @return Error code of last operation in function body. */
-void mallocMeasList_devi(int * & ml_devi, int const mlN) {
-  malloc_devi<int>(ml_devi,  mlN);
+void mallocD_MeasList(int * & ml_devi, int const mlN) {
+  mallocD<int>(ml_devi,  mlN);
 }
 
+/** @brief Wrapper function for device memory allocation for a system matrix.
+ * @tparam T Type of elements.
+ * @param mtxCnlId_devi Array of channel indices.
+ * @param mtxCsrCnlPtr_devi Array of row pointers.
+ * @param mtxEcsrCnlPtr_devi Array of effective row pointers.
+ * @param mtxVxlId_devi Array of voxel indices.
+ * @param mtxVal_devi Array of matrix elements.
+ * @param nRows Total number of rows in the system matrix.
+ * @param nMemRows Number of rows treated in the system matrix (chunk).
+ * @param nCols Number of columns in the system matrix. */
 template<typename T>
-void mallocSystemMatrix_devi(int * & mtxCnlId_devi,
+void mallocD_SystemMatrix(int * & mtxCnlId_devi,
       int * & mtxCsrCnlPtr_devi, int * & mtxEcsrCnlPtr_devi,
       int * & mtxVxlId_devi, T * & mtxVal_devi, int const nRows,
       int const nMemRows, int const nCols) {
-  malloc_devi<int>(  mtxCnlId_devi,      (nMemRows*nCols));
-  malloc_devi<int>(  mtxCsrCnlPtr_devi,  (nRows+1));
-  malloc_devi<int>(  mtxEcsrCnlPtr_devi, (nMemRows+1));
-  malloc_devi<int>(  mtxVxlId_devi,      (nMemRows*nCols));
-  malloc_devi<val_t>(mtxVal_devi,        (nMemRows*nCols));
+  mallocD<int>(  mtxCnlId_devi,      (nMemRows*nCols));
+  mallocD<int>(  mtxCsrCnlPtr_devi,  (nRows+1));
+  mallocD<int>(  mtxEcsrCnlPtr_devi, (nMemRows+1));
+  mallocD<int>(  mtxVxlId_devi,      (nMemRows*nCols));
+  mallocD<val_t>(mtxVal_devi,        (nMemRows*nCols));
 }
 
 /** @brief Wrapper function for copying a sparse vector from host to device.
+ * Function only returns after a device synchronization.
  * @tparam T Type of vector elements.
  * @param vctId_devi Array of vector elements' indices of length vctNnz.
  * Representation on device.
@@ -113,24 +86,61 @@ void mallocSystemMatrix_devi(int * & mtxCnlId_devi,
  * Representation on host.
  * @param vctNnz Number of non-zeros in the vector. */
 template<typename T>
-void cpySparseVctH2D(
+void cpyH2D_SparseVct(
       int * const       vctId_devi, T * const       vctVal_devi,
       int const * const vctId_host, T const * const vctVal_host,
       int const vctNnz) {
-  memcpyH2D<int>(vctId_devi,  vctId_host,  vctNnz);
-  memcpyH2D<T>(  vctVal_devi, vctVal_host, vctNnz);
+  memcpyH2DAsync<int>(vctId_devi,  vctId_host,  vctNnz);
+  memcpyH2DAsync<T>(  vctVal_devi, vctVal_host, vctNnz);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+}
+
+/** @brief Wrapper function for copying a sparse vector from host to device.
+ * Function returns without device synchronization.
+ * @tparam T Type of vector elements.
+ * @param vctId_devi Array of vector elements' indices of length vctNnz.
+ * Representation on device.
+ * @param vctVal_devi Array of vector elements' values of length vctNnz.
+ * Representation on device.
+ * @param vctId_host Array of vector elements' indices of length vctNnz.
+ * Representation on host.
+ * @param vctVal_host Array of vector elements' values of length vctNnz.
+ * Representation on host.
+ * @param vctNnz Number of non-zeros in the vector. */
+template<typename T>
+void cpyH2DAsync_SparseVct(
+      int * const       vctId_devi, T * const       vctVal_devi,
+      int const * const vctId_host, T const * const vctVal_host,
+      int const vctNnz) {
+  memcpyH2DAsync<int>(vctId_devi,  vctId_host,  vctNnz);
+  memcpyH2DAsync<T>(  vctVal_devi, vctVal_host, vctNnz);
 }
 
 /** @brief Wrapper function for copying a measurement list from host to device.
+ * Function only returns after a device synchronization.
  * @param ml_devi Array of measurement list entries of length mlN.
  * Representation on device.
  * @param ml_host Array of measurement list entries of length mlN.
  * Representation on host.
  * @param mlN Number of entries in the measurement list. */
-void cpyMeasListH2D(
+void cpyH2D_MeasList(
       int * const       ml_devi, int const * const ml_host,
       int const mlN) {
-  memcpyH2D<int>(ml_devi,  ml_host,  mlN);
+  memcpyH2DAsync<int>(ml_devi,  ml_host,  mlN);
+  HANDLE_ERROR(cudaDeviceSynchronize());
+}
+
+/** @brief Wrapper function for copying a measurement list from host to device.
+ * Function returns without device synchronization.
+ * @param ml_devi Array of measurement list entries of length mlN.
+ * Representation on device.
+ * @param ml_host Array of measurement list entries of length mlN.
+ * Representation on host.
+ * @param mlN Number of entries in the measurement list. */
+void cpyH2DAsync_MeasList(
+      int * const       ml_devi, int const * const ml_host,
+      int const mlN) {
+  memcpyH2DAsync<int>(ml_devi,  ml_host,  mlN);
 }
 
 /** @brief System matrix calculation.
@@ -170,9 +180,8 @@ void systemMatrixCalculation(
 
   /* Copy to device */
   ListSizeType * nY_devi = NULL;
-  malloc_devi<ListSizeType>(nY_devi, 1);
+  mallocD<ListSizeType>(nY_devi, 1);
   memcpyH2D<ListSizeType>(nY_devi, nY_host, 1);
-  HANDLE_ERROR(cudaDeviceSynchronize());
 #if MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "systemMatrixCalculation: Copy nY to device: ");
@@ -198,7 +207,6 @@ void systemMatrixCalculation(
   /* Copy nnz back to host */
   MemArrSizeType nnz_host[1];
   memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
-  HANDLE_ERROR(cudaDeviceSynchronize());
 #if MEASURE_TIME
   clock_t time4 = clock();
   printTimeDiff(time4, time3, "systemMatrixCalculation: Copy nnz to host: ");
@@ -298,7 +306,7 @@ void makeMeasList(int * const ml, T const * const vct, int const n) {
  * vector.
  * @param ifn Name of file to read from. */
 template<typename T>
-void readMeasVct_HDF5(int * & vctId, T * & vctVal, int & vctNnz,
+void readHDF5_MeasVct(int * & vctId, T * & vctVal, int & vctNnz,
       std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
@@ -322,7 +330,7 @@ void readMeasVct_HDF5(int * & vctId, T * & vctVal, int & vctNnz,
  * vector.
  * @param ifn Name of file to read from. */
 template<typename T>
-void readMeasVct_HDF5(std::vector<int> & vctId, std::vector<T> & vctVal,
+void readHDF5_MeasVct(std::vector<int> & vctId, std::vector<T> & vctVal,
       int & vctNnz, std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
@@ -346,7 +354,7 @@ void readMeasVct_HDF5(std::vector<int> & vctId, std::vector<T> & vctVal,
  * list.
  * @param ifn Name of file to read from. */
 template<typename T>
-void readMeasList_HDF5(int * & ml, int & mlN, std::string const & ifn) {
+void readHDF5_MeasList(int * & ml, int & mlN, std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
   H5Reader::Value_t * readMem = new H5Reader::Value_t[fN];
@@ -367,7 +375,7 @@ void readMeasList_HDF5(int * & ml, int & mlN, std::string const & ifn) {
  * list.
  * @param ifn Name of file to read from. */
 template<typename T>
-void readMeasList_HDF5(std::vector<int> & ml, int & mlN,
+void readHDF5_MeasList(std::vector<int> & ml, int & mlN,
       std::string const & ifn) {
   H5Reader reader(ifn);
   int fN = reader.sizeOfFile();
@@ -385,7 +393,7 @@ void readMeasList_HDF5(std::vector<int> & ml, int & mlN,
  * @param density Array of density data.
  * @param ofn Output filename. */
 template<typename T>
-void writeDensity_HDF5(T const * const density, std::string const ofn,
+void writeHDF5_Density(T const * const density, std::string const ofn,
       DefaultVoxelGrid<T> const & grid) {
   H5DensityWriter<GridAdapter<DefaultVoxelGrid<T>, T> > writer(ofn);
   GridAdapter<DefaultVoxelGrid<T>, T> ga(&grid);
@@ -434,8 +442,12 @@ ChunkGridSizeType nChunks(MemArrSizeType const maxNnz,
   return ChunkGridSizeType((maxNnz + maxNChunk - 1) / maxNChunk);
 }
 
+/** @brief Read a density from an hdf5 file.
+ * @tparam T Type of data array to read into.
+ * @param dens Array to read into.
+ * @param ifn Name of file to read from. */
 template<typename T>
-void readDensity_HDF5(T * dens, std::string const & ifn) {
+void readHDF5_Density(T * dens, std::string const & ifn) {
   H5DensityReader reader(ifn);
   int fN = reader.sizeOfFile();
   H5DensityReader::Value_t * readMem = new H5DensityReader::Value_t[fN];

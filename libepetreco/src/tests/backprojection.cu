@@ -5,6 +5,7 @@
 
 #define NBLOCKS 32
 
+#include "cuda_wrappers.hpp"
 #include "wrappers.hpp"
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
@@ -54,14 +55,14 @@ int main(int argc, char** argv) {
   
   do {
     int tmp_effM(0);
-    readMeasVct_HDF5(yRowId_host, yVal_host, tmp_effM, fn);
+    readHDF5_MeasVct(yRowId_host, yVal_host, tmp_effM, fn);
     effM = ListSizeType(tmp_effM);
   } while(false);
   
   int * yRowId_devi = NULL;
   val_t * yVal_devi = NULL;
-  mallocSparseVct_devi(yRowId_devi, yVal_devi, effM);
-  cpySparseVctH2D(yRowId_devi, yVal_devi, &yRowId_host[0], &yVal_host[0], effM);
+  mallocD_SparseVct(yRowId_devi, yVal_devi, effM);
+  cpyH2DAsync_SparseVct(yRowId_devi, yVal_devi, &yRowId_host[0], &yVal_host[0], effM);
 
   
   /* STUFF FOR MV */
@@ -78,9 +79,8 @@ int main(int argc, char** argv) {
   val_t x_host[VGRIDSIZE];
   for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 0.; }
   val_t * x_devi = NULL;
-  malloc_devi<val_t>(x_devi, VGRIDSIZE);
+  mallocD<val_t>(x_devi, VGRIDSIZE);
   memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE);
-  HANDLE_ERROR(cudaDeviceSynchronize());
   
   /* SYSTEM MATRIX */
   /* Row (channel) ids, row pointers, effective row pointers, column (voxel)
@@ -88,10 +88,10 @@ int main(int argc, char** argv) {
   int * aCnlId_devi = NULL; int * aCsrCnlPtr_devi = NULL;
   int * aEcsrCnlPtr_devi = NULL; int * aVxlId_devi = NULL;
   val_t * aVal_devi = NULL;
-  mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
+  mallocD_SystemMatrix<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE);
   MemArrSizeType * nnz_devi = NULL;
-  malloc_devi<MemArrSizeType>(nnz_devi,          1);
+  mallocD<MemArrSizeType>(nnz_devi,          1);
 #if MEASURE_TIME
   clock_t time2 = clock();
   printTimeDiff(time2, time1, "Time before BP: ");
@@ -119,8 +119,7 @@ int main(int argc, char** argv) {
           handle);
     HANDLE_ERROR(cudaDeviceSynchronize());
     memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-  
+    
     /* Backproject measurement on grid */
     CSRmv<val_t>()(handle, CUSPARSE_OPERATION_TRANSPOSE,
           m, VGRIDSIZE, *nnz_host, &alpha, A, aVal_devi, aEcsrCnlPtr_devi, aVxlId_devi,
@@ -144,7 +143,7 @@ int main(int argc, char** argv) {
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   /* Write to file */
-  writeDensity_HDF5(x_host, on, grid);
+  writeHDF5_Density(x_host, on, grid);
   
   /* Cleanup */
   cudaFree(yRowId_devi);
@@ -158,6 +157,7 @@ int main(int argc, char** argv) {
   cudaFree(aVxlId_devi);
   cudaFree(aVal_devi);
   cudaFree(nnz_devi);
+  
 #if MEASURE_TIME
   clock_t time4 = clock();
   printTimeDiff(time4, time3, "Time after BP: ");

@@ -5,6 +5,7 @@
 
 #define NBLOCKS 32
 
+#include "cuda_wrappers.hpp"
 #include "wrappers.hpp"
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
@@ -75,24 +76,24 @@ int main(int argc, char** argv) {
   /* Number of non-zeros, row indices, values. */
   ListSizeType effM; std::vector<int> yRowId_host; std::vector<val_t> yVal_host;
   
-  do {
+  {
     int tmp_effM(0);
-    readMeasVct_HDF5(yRowId_host, yVal_host, tmp_effM, fn);
+    readHDF5_MeasVct(yRowId_host, yVal_host, tmp_effM, fn);
     effM = ListSizeType(tmp_effM);
-  } while(false);
+  }
 
   int * yRowId_devi = NULL;
   val_t * yVal_devi = NULL;
-  mallocSparseVct_devi(yRowId_devi, yVal_devi, effM);
-  cpySparseVctH2D(yRowId_devi, yVal_devi, &yRowId_host[0], &yVal_host[0], effM);
+  mallocD_SparseVct(yRowId_devi, yVal_devi, effM);
+  cpyH2DAsync_SparseVct(yRowId_devi, yVal_devi, &yRowId_host[0], &yVal_host[0], effM);
   
   /* SIMULATED MEASUREMENT VECTOR */
   val_t * yTildeVal_devi = NULL;
-  malloc_devi(yTildeVal_devi, LIMM);
+  mallocD(yTildeVal_devi, LIMM);
   
   /* "ERROR" */
   val_t * eVal_devi = NULL; 
-  malloc_devi(eVal_devi, LIMM);
+  mallocD(eVal_devi, LIMM);
   
   
   
@@ -110,15 +111,15 @@ int main(int argc, char** argv) {
   
   /* DENSITY X */
   bool xfile_good(false);
-  do {
+  {
     std::ifstream xfile(xfn.c_str());
     xfile_good = xfile.is_open();
-  } while(false);
+  }
   
   val_t * x_host = NULL;
   if(xfile_good) {
     std::cout << "Will use density from file " << xfn << std::endl;
-    readDensity_HDF5(x_host, xfn);
+    readHDF5_Density(x_host, xfn);
   } else {
     std::cout << "No valid density input file given. Will use homogenous density." << std::endl;
     x_host = new val_t[VGRIDSIZE];
@@ -126,37 +127,39 @@ int main(int argc, char** argv) {
   }
   
   val_t * x_devi = NULL;
-  malloc_devi<val_t>(x_devi, VGRIDSIZE);
+  mallocD<val_t>(x_devi, VGRIDSIZE);
   memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE);
-  HANDLE_ERROR(cudaDeviceSynchronize());
   if(!xfile_good) {
-    do {
-      val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
-      HANDLE_ERROR(cudaDeviceSynchronize());
-      scales<val_t>(x_devi, (1./norm), VGRIDSIZE);
-      HANDLE_ERROR(cudaDeviceSynchronize());
-    } while(false);
+    val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
+    HANDLE_ERROR(cudaDeviceSynchronize());
+    scales<val_t>(x_devi, (1./norm), VGRIDSIZE);
+    HANDLE_ERROR(cudaDeviceSynchronize());
   }
   
   /* INTERMEDIATE DENSITY GUESS */
-//  val_t xx_host[VGRIDSIZE];
   val_t * xx_devi = NULL;
-  malloc_devi(xx_devi, VGRIDSIZE);
+  mallocD(xx_devi, VGRIDSIZE);
   
   /* CORRECTION */
   val_t c_host[VGRIDSIZE];
   val_t cMpi[VGRIDSIZE];
   val_t * c_devi = NULL;
-  malloc_devi(c_devi, VGRIDSIZE);
+  mallocD(c_devi, VGRIDSIZE);
   
   /* SENSITIVITY */
   val_t s_host[VGRIDSIZE];
-  readDensity_HDF5(s_host, sfn);
-//  for(int i=0; i<VGRIDSIZE; i++) { s_host[i]=1; }
-
+  std::cout << "Read from file " << sfn << std::endl;
+  if(mpi_rank == 0) {
+    readHDF5_Density(s_host, sfn);
+    {
+      val_t S(0.); for(int i=0; i<VGRIDSIZE; i++) S+=s_host[i];
+      std::cout << "S: " << S << std::endl;
+    }
+  }
+  MPI_Bcast(s_host, VGRIDSIZE, MPI_FLOAT, 0, MPI_COMM_WORLD);
   val_t * s_devi = NULL;
-  malloc_devi(s_devi, VGRIDSIZE);
-  memcpyH2D<val_t>(s_devi, s_host, VGRIDSIZE);
+  mallocD(s_devi, VGRIDSIZE);
+  memcpyH2DAsync<val_t>(s_devi, s_host, VGRIDSIZE);
   
   /* Normalize */
   val_t norm = sum<val_t>(s_devi, VGRIDSIZE);
@@ -170,10 +173,10 @@ int main(int argc, char** argv) {
   int * aCnlId_devi = NULL; int * aCsrCnlPtr_devi = NULL;
   int * aEcsrCnlPtr_devi = NULL; int * aVxlId_devi = NULL;
   val_t * aVal_devi = NULL;
-  mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
+  mallocD_SystemMatrix<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE);
   MemArrSizeType * nnz_devi = NULL;
-  malloc_devi<MemArrSizeType>(nnz_devi,          1);
+  mallocD<MemArrSizeType>(nnz_devi,          1);
   
 #if MEASURE_TIME
   clock_t * itTimes = new clock_t[nIt+1];
@@ -191,7 +194,6 @@ int main(int argc, char** argv) {
     /* Correction to zero */
     for(int i=0; i<VGRIDSIZE; i++) { c_host[i]=0; };
     memcpyH2D<val_t>(c_devi, c_host, VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
     
     /* CHUNKWISE */
     ChunkGridSizeType chunkId = ChunkGridSizeType(mpi_rank);
@@ -200,7 +202,7 @@ int main(int argc, char** argv) {
       ListSizeType ptr = chunkPtr(chunkId, LIMM);
 
       MemArrSizeType nnz_host[1] = {0};
-      memcpyH2D<MemArrSizeType>(nnz_devi, nnz_host, 1);
+      memcpyH2DAsync<MemArrSizeType>(nnz_devi, nnz_host, 1);
 
       /* Get system matrix */
       systemMatrixCalculation<val_t> (
@@ -211,7 +213,6 @@ int main(int argc, char** argv) {
             handle);
       HANDLE_ERROR(cudaDeviceSynchronize());
       memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
-      HANDLE_ERROR(cudaDeviceSynchronize());
 
       /* Simulate measurement */
       CSRmv<val_t>()(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
@@ -232,36 +233,43 @@ int main(int argc, char** argv) {
       
       /* Go for next chunk */
       chunkId += mpi_size;
+    
     } /* while(chunkId < NChunks) */
     
-    /* Copy to host and reduce correction between prodcesses */
+    /* Reduce correction between processes */
     memcpyD2H(c_host, c_devi, VGRIDSIZE);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    MPI_Reduce(c_host, cMpi, VGRIDSIZE, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(c_host, cMpi, VGRIDSIZE, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    memcpyH2D(c_devi, cMpi, VGRIDSIZE);
     
-    /* Change and save density guess */
+    /* Print stuff */
     if(mpi_rank == 0) {
-      memcpyH2D(c_devi, cMpi, VGRIDSIZE);
-      HANDLE_ERROR(cudaDeviceSynchronize());
       
-      /* Improve guess */
-      dividesMultiplies<val_t>(xx_devi, x_devi, c_devi, s_devi, VGRIDSIZE);
-      HANDLE_ERROR(cudaDeviceSynchronize());
+      std::cout << "Sum of c_devi: " << sum<val_t>(c_devi, VGRIDSIZE) << std::endl << std::flush;
+      std::cout << "Sum of s_devi: " << sum<val_t>(s_devi, VGRIDSIZE) << std::endl << std::flush;
+      std::cout << "Sum of x_devi: " << sum<val_t>(x_devi, VGRIDSIZE) << std::endl << std::flush;
+      std::cout << "Sum of xx_devi: " << sum<val_t>(xx_devi, VGRIDSIZE) << std::endl << std::flush;
+    
+    } /* if(mpi_rank == 0) */
+    
+    /* Improve guess */
+    dividesMultiplies<val_t>(xx_devi, x_devi, c_devi, s_devi, VGRIDSIZE);
+    HANDLE_ERROR(cudaDeviceSynchronize());
+    
+    /* Copy */
+    memcpyD2D(x_devi, xx_devi, VGRIDSIZE);
 
-      /* Copy */
-      memcpyD2D(x_devi, xx_devi, VGRIDSIZE);
-      HANDLE_ERROR(cudaDeviceSynchronize());
-
-      /* Normalize */
-      val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
-      scales<val_t>(x_devi, val_t(1./norm), VGRIDSIZE);
-
-      /* Write to file */
+    /* Normalize */
+    val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
+    scales<val_t>(x_devi, val_t(1./norm), VGRIDSIZE);
+    std::cout << "Norm: " << sum<val_t>(x_devi, VGRIDSIZE) << std::endl << std::flush;
+  
+    /* Write to file */
+    if(mpi_rank==0) {
+      
       memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE);
-      HANDLE_ERROR(cudaDeviceSynchronize());
       std::stringstream ss("");
       ss << it;
-      writeDensity_HDF5(x_host, ss.str() + std::string("_") + on, grid);
+      writeHDF5_Density(x_host, ss.str() + std::string("_") + on, grid);
       
 #if MEASURE_TIME
       itTimes[it+1] = clock();
@@ -270,7 +278,7 @@ int main(int argc, char** argv) {
 #endif
       
     } /* if(mpi_rank == 0) */
-    
+     
   } /* for(int it=0; it<nIt; it++) */
 
 #if MEASURE_TIME

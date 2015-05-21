@@ -5,6 +5,7 @@
 
 #define NBLOCKS 32
 
+#include "cuda_wrappers.hpp"
 #include "wrappers.hpp"
 #include "CUDA_HandleError.hpp"
 #include "CUSPARSE_HandleError.hpp"
@@ -51,13 +52,13 @@ int main(int argc, char** argv) {
   
   do {
     int tmp_effM(0);
-    readMeasList_HDF5<val_t>(yRowId_host, tmp_effM, fn);
+    readHDF5_MeasList<val_t>(yRowId_host, tmp_effM, fn);
     effM = ListSizeType(tmp_effM);
   } while(false);
   
   int * yRowId_devi = NULL;
-  mallocMeasList_devi(yRowId_devi, effM);
-  cpyMeasListH2D(yRowId_devi, &(yRowId_host[0]), effM);
+  mallocD_MeasList(yRowId_devi, effM);
+  cpyH2DAsync_MeasList(yRowId_devi, &(yRowId_host[0]), effM);
   
   
   /* STUFF FOR MV */
@@ -75,10 +76,10 @@ int main(int argc, char** argv) {
   int * aCnlId_devi = NULL; int * aCsrCnlPtr_devi = NULL;
   int * aEcsrCnlPtr_devi = NULL; int * aVxlId_devi = NULL;
   val_t * aVal_devi = NULL;
-  mallocSystemMatrix_devi<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
+  mallocD_SystemMatrix<val_t>(aCnlId_devi, aCsrCnlPtr_devi,
         aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi, NCHANNELS, LIMM, VGRIDSIZE);
   MemArrSizeType * nnz_devi = NULL;
-  malloc_devi<MemArrSizeType>(nnz_devi,          1);
+  mallocD<MemArrSizeType>(nnz_devi,          1);
   
   /* SM CALCULATION */
   ChunkGridSizeType NChunks(nChunks<ChunkGridSizeType, MemArrSizeType>
@@ -116,14 +117,11 @@ int main(int argc, char** argv) {
           handle);
     HANDLE_ERROR(cudaDeviceSynchronize());
     memcpyD2H<MemArrSizeType>(nnz_host, nnz_devi, 1);
-    HANDLE_ERROR(cudaDeviceSynchronize());
 #if MEASURE_TIME
     chunkTimes[chunkId+1] = clock();
     printTimeDiff(chunkTimes[chunkId+1], chunkTimes[chunkId], "Time for latest chunk: ");
 #endif
 #if DEBUG
-    memcpyD2H(nnz_host, nnz_devi, 1);
-    HANDLE_ERROR(cudaDeviceSynchronize());
     totalNnz += nnz_host[0];
     std::cout << "Finished chunk " << chunkId
               << " of " << NChunks
