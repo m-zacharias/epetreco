@@ -2,8 +2,6 @@
 #ifndef MEASEREMENTSETUP_HPP
 #define MEASEREMENTSETUP_HPP
 
-//#include "pi.h"
-
 template<typename T, typename ConcreteMeasurementSetup>
 class MeasurementSetup
 {
