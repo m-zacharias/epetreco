@@ -1,0 +1,156 @@
+CPLUS_INCLUDE_PATH= ; \
+  nvcc -arch=sm_20 -DWITH_CUDAMATRIX  -Xcompiler -Wall -I../ -I../../ -I/opt/pkg/filelib/hdf5/1.8.8/include -I../Ply/ -L/opt/pkg/filelib/hdf5/1.8.8/lib -lhdf5 -lhdf5_cpp -lcublas -L../../ -lepetreco test_chunksizes.cu -o test_chunksizes.out
+test_chunksizes.cu(216): warning: variable "zero" was declared but never referenced
+
+test_chunksizes.cu(216): warning: variable "zero" was declared but never referenced
+
+test_chunksizes.cu: In Funktion »int main(int, char**)«:
+test_chunksizes.cu:216:7: Warnung: Variable »zero« wird nicht verwendet [-Wunused-variable]
+/opt/pkg/devel/cuda/6.0.ea/bin/crt/link.stub:90:13: Warnung: »void __cudaRegisterLinkedBinary(const __fatBinC_Wrapper_t*, void (*)(void**), void*)« definiert, aber nicht verwendet [-Wunused-function]
+
+
+
+Chunksize: 3000
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset50.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    31
+no error
+
+real	1m22.292s
+user	1m19.553s
+sys	0m1.716s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset100.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    76
+no error
+
+real	1m39.275s
+user	1m36.902s
+sys	0m1.552s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset200.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    160
+no error
+
+real	1m39.621s
+user	1m37.154s
+sys	0m1.648s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset500.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    389
+no error
+
+real	1m25.263s
+user	1m22.701s
+sys	0m1.668s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset1000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    789
+no error
+
+real	1m21.318s
+user	1m18.877s
+sys	0m1.692s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset2000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    1554
+no error
+
+real	1m22.794s
+user	1m20.261s
+sys	0m1.720s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset5000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    3904
+no error
+
+real	2m3.671s
+user	2m0.640s
+sys	0m2.036s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset10000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    7809
+no error
+
+real	3m18.191s
+user	3m14.724s
+sys	0m2.348s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset20000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    15368
+no error
+
+real	4m47.431s
+user	4m43.126s
+sys	0m2.812s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102_subset50000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    38643
+no error
+
+real	12m38.242s
+user	12m30.451s
+sys	0m5.632s
+
+
+
+Testfile: /home/mz6084/svn/epetreco/trunk/libepetreco/src/beta/test_input/epet_POS102.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    3979698
+no error
+
+real	1156m12.853s
+user	1146m45.928s
+sys	6m57.910s
+
+
+

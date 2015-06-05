@@ -1,0 +1,115 @@
+/home/mz6084/own.modules_script loaded
+/home/mz6084/.profile loaded
+CPLUS_INCLUDE_PATH= ; \
+  nvcc -arch=sm_20 -DWITH_CUDAMATRIX  -Xcompiler -Wall -I../ -I../../ -I/opt/pkg/filelib/hdf5/1.8.8/include -I../Ply/ -L/opt/pkg/filelib/hdf5/1.8.8/lib -lhdf5 -lhdf5_cpp -lcublas -L../../ -lepetreco test_chunksizes.cu -o test_chunksizes.out
+
+
+
+Chunksize: 3000
+Testfile: ../beta/test_input/epet_POS102_subset50.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    31
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset100.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    76
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset200.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    160
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset500.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    389
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset1000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    789
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset2000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    1554
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset5000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    3879
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset10000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    7809
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset20000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    15368
+no error
+
+
+
+Testfile: ../beta/test_input/epet_POS102_subset50000.mess.h5
+Total number of channels:
+    5140980
+Total number of events (non-zero channel values): 
+    38547
+no error
+
+
+
+=== epilogue.user ===========
+Going to kill all MPI
+processes in bad state...
+=== epilogue.user end ======
+
+list of resource limits used: neednodes=1:ppn=8,nodes=1:ppn=8,walltime=05:00:00
+
+walltime divisor on first node: 1.0
+requested walltime=05:00:00
+used walltime=00:27:13
+
+-----------------------------
+job master node: kepler019
+-----------------------------
+--- nvidia-smi on nodes -----
+--- check .e for errors -----
+=== epilogue end ============

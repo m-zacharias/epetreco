@@ -1,0 +1,47 @@
+test_chunksizes.cu(216): warning: variable "zero" was declared but never referenced
+
+test_chunksizes.cu(216): warning: variable "zero" was declared but never referenced
+
+test_chunksizes.cu: In Funktion »int main(int, char**)«:
+test_chunksizes.cu:216:7: Warnung: Variable »zero« wird nicht verwendet [-Wunused-variable]
+/opt/pkg/devel/cuda/6.0.ea/bin/crt/link.stub:90:13: Warnung: »void __cudaRegisterLinkedBinary(const __fatBinC_Wrapper_t*, void (*)(void**), void*)« definiert, aber nicht verwendet [-Wunused-function]
+
+real	1m21.477s
+user	1m19.793s
+sys	0m1.288s
+
+real	1m21.266s
+user	1m19.537s
+sys	0m1.340s
+
+real	1m20.506s
+user	1m18.793s
+sys	0m1.324s
+
+real	1m19.620s
+user	1m17.917s
+sys	0m1.272s
+
+real	1m19.927s
+user	1m18.117s
+sys	0m1.416s
+
+real	1m21.473s
+user	1m19.437s
+sys	0m1.528s
+
+real	1m59.976s
+user	1m57.519s
+sys	0m1.864s
+
+real	2m43.460s
+user	2m40.118s
+sys	0m2.576s
+
+real	4m42.497s
+user	4m38.009s
+sys	0m3.328s
+
+real	9m33.979s
+user	9m25.171s
+sys	0m6.788s
