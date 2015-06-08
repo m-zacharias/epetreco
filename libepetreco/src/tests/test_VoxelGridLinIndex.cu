@@ -11,7 +11,7 @@
 #include <cassert>
 #include "VoxelGrid.hpp"
 #include "VoxelGridLinIndex.hpp"
-#include "voxelgrid52_defines.h"
+#include "voxelgrid_defines.h"
 
 /*
  * Simple C++ Test Suite

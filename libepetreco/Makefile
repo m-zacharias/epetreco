@@ -21,46 +21,30 @@ CUCLIB = -L$(CUDA_ROOT)/lib64 -L./ -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5
 # rule with the default rule - everything that is compiled by default will also
 # be cleaned up.
 EXECUTABLES := \
-      test_Siddon.out \
-      test_02_Siddon.out \
       test_PlyGeometry.out \
       test_PlyBox.out \
       test_PlyWriter.out \
       test_PlyGrid.out \
       test_PlyLine.out \
-      test_CudaTransform.out \
-      test_CudaTransform2.out \
-      test_CudaTransform3.out \
-      test_CudaTransform4.out \
-      test_CudaTransform5.out \
-      test_CudaTransform_DeviceOnly.out \
-      test_CudaDeviceOnlyMatrix.out \
-      test_CudaMatrix.out \
       test_H5Reader.out \
       test_H5DensityWriter.out \
-      test_ChordsCalc.out \
-      test_SMChunkGetter.out \
-      test_DevelChannel.out \
-      test_ChordsCalc_lowlevel_c.out \
       test_CudaSMLine.out \
       test_MeasurementSetupLinIndex.out \
       test_MeasurementSetupTrafo2CartCoord.out \
       test_getWorkqueue.out \
-      test_getWorkqueue-backprojection.out \
       test_getSystemMatrixFromWorkqueue.out \
       test_VoxelGridLinIndex.out \
-      example_condense_main.out \
-      example_partition.out \
-      test_getSystemMatrixDeviceOnly.out \
       test_cooSort.out \
       test_cusparseWrapper.out \
       test_mlemOperations.out \
       test_convertCsr2Ecsr.out \
       reco.out \
-      test_supplement_mv.out \
       backprojection.out \
       pureSMCalculation.out \
-      test_H5DensityReader.out
+      test_H5DensityReader.out \
+      example_condense_main.out \
+      test_getSystemMatrixDeviceOnly.out \
+      test_getWorkqueue-backprojection.out
 
 default : $(EXECUTABLES)
 

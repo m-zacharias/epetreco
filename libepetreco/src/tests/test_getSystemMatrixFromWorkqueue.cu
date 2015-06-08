@@ -17,10 +17,7 @@
 #include "H5DensityWriter.hpp"
 #include "GridAdapter.hpp"
 #include "real_measurementsetup_defines.h"
-//#include "voxelgrid10_defines.h"
-//#include "voxelgrid20_defines.h"
-//#include "voxelgrid52_defines.h"
-#include "voxelgrid64_defines.h"
+#include "voxelgrid_defines.h"
 #include <iostream>
 #include "CUDA_HandleError.hpp"
 

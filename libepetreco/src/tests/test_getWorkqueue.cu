@@ -13,8 +13,7 @@
 #include "MeasurementSetupTrafo2CartCoord.hpp"
 #include "H5File2DefaultMeasurementList.h"
 #include "real_measurementsetup_defines.h"
-#include "voxelgrid10_defines.h"
-//#include "voxelgrid52_defines.h"
+#include "voxelgrid_defines.h"
 #include <iostream>
 #include <cassert>
 

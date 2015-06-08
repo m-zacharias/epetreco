@@ -1,3 +1,4 @@
+/** @file test_convertCsr2Ecsr.cu */
 #include <iostream>
 #include "convertCsr2Ecsr.hpp"
 #include "CUDA_HandleError.hpp"

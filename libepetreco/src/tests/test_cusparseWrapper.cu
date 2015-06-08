@@ -1,5 +1,4 @@
-/* 
- * File:   test_cusparseWrapper.cu
+/** @file test_cusparseWrapper.cu
  * Author: malte
  *
  * Created on 3. Februar 2015, 13:55
