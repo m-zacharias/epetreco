@@ -13,6 +13,7 @@
 #include "typedefs.hpp"
 #include "csrmv.hpp"
 #include "mlemOperations.hpp"
+#include "RayGenerators.hpp"
 
 #include <cusparse.h>
 #include <sstream>
@@ -221,7 +222,8 @@ int main(int argc, char** argv) {
       memcpyH2DAsync<MemArrSizeType>(nnz_devi, nnz_host, 1);
 
       /* Get system matrix */
-      systemMatrixCalculation<val_t> (
+      systemMatrixCalculation<val_t, ListSizeType, int, MemArrSizeType,
+              RandRayGen<val_t, Trafo0_inplace, Trafo1_inplace> > (
             aEcsrCnlPtr_devi, aVxlId_devi, aVal_devi,
             nnz_devi,
             aCnlId_devi, aCsrCnlPtr_devi,

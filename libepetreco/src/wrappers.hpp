@@ -167,7 +167,8 @@ template<
       typename T
     , typename ListSizeType
     , typename GridSizeType
-    , typename MemArrSizeType >
+    , typename MemArrSizeType
+    , typename RayGen >
 void systemMatrixCalculation(
       int * const aEcsrCnlPtr_devi, GridSizeType * const aVxlId_devi,
       T * const aVal_devi, MemArrSizeType * const nnz_devi,
@@ -190,7 +191,8 @@ void systemMatrixCalculation(
   /* Run kernel */
   getSystemMatrix<
         val_t, VG, Idx, Idy, Idz, MS, Id0z, Id0y, Id1z, Id1y, Ida,
-        Trafo0_inplace, Trafo1_inplace, ListSizeType, GridSizeType, MemArrSizeType>
+        Trafo0_inplace, Trafo1_inplace, RayGen,
+        ListSizeType, GridSizeType, MemArrSizeType>
         <<<NBLOCKS, TPB>>>
       ( aVal_devi,
         aVxlId_devi,

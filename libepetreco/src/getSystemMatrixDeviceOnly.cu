@@ -133,43 +133,6 @@ T intersectionLength(
 }
 
 
-struct RandRayInit {
-  __host__ __device__
-  RandRayInit() {}
-  
-  __device__
-  void operator()(int const seed, int const setNr,
-        curandState_t * const state) const {
-      curand_init(seed, setNr, 0, state);
-  }
-};
-
-template<
-      typename T
-    , typename MSTrafo0_inplace
-    , typename MSTrafo1_inplace >
-struct RandRay {
-  __host__ __device__
-  RandRay() {}
-  
-  __device__
-  void operator()(T * __restrict__ const ray,
-        curandState_t * __restrict__ const state,
-        int const & id0z, int const & id0y, int const & id1z, int const & id1y,
-        int const & ida,
-        MSTrafo0_inplace const & trafo0,
-        MSTrafo1_inplace const & trafo1) const {
-    
-    /* Get randoms */
-    for(int i=0; i<6; i++) {
-      ray[i] = curand_uniform(state);
-    }
-    
-    /* Transform to cartesian coordinates */
-    trafo0(&ray[0], id0z, id0y, ida, &setup_const);
-    trafo1(&ray[3], id1z, id1y, ida, &setup_const);
-  }
-};
 
 /** @brief Calculate system matrix element.
  * @param cnl Linear id of the channel.
@@ -189,12 +152,13 @@ template<
     , typename MSIda  
     , typename MSTrafo0_inplace
     , typename MSTrafo1_inplace
+    , typename RayGen
     , typename GridSizeType >
 __device__
 T calcSme(
       int const cnl,
       GridSizeType const vxl,
-      curandState_t * const rndState) {
+      RayGen & rayGen) {
 
   /* Voxel coordinates */
   T vxlCoord[6];
@@ -220,7 +184,6 @@ T calcSme(
   /* Functors */
   MSTrafo0_inplace  trafo0;
   MSTrafo1_inplace  trafo1;
-  RandRay<T, MSTrafo0_inplace, MSTrafo1_inplace> randRay;
   
   /* Matrix element */
   T a(0.);
@@ -228,7 +191,7 @@ T calcSme(
   /* Add up intersection lengths */
   for(int idRay=0; idRay<nrays_const; idRay++) {
     T ray[6];
-    randRay(ray, rndState, id0z, id0y, id1z, id1y, ida, trafo0, trafo1);
+    rayGen(ray, id0z, id0y, id1z, id1y, ida, trafo0, trafo1);
     a += intersectionLength(vxlCoord, ray);
   }
 
@@ -352,6 +315,7 @@ template<
     , typename ConcreteMSida  
     , typename ConcreteMSTrafo0
     , typename ConcreteMSTrafo1
+    , typename ConcreteRayGen
     , typename ListSizeType
     , typename GridSizeType
     , typename MemArrSizeType
@@ -376,8 +340,7 @@ void getSystemMatrix(
   __shared__ MemArrSizeType truckDest_blck;
   
   /* Random init */
-  curandState_t rndState;
-  RandRayInit()(int(RANDOM_SEED), globalId, &rndState);
+  ConcreteRayGen rayGen(int(RANDOM_SEED), globalId);
   
   /* Master thread */
   if(threadIdx.x == 0) {
@@ -466,9 +429,10 @@ void getSystemMatrix(
                             , ConcreteMSid1y
                             , ConcreteMSida  
                             , ConcreteMSTrafo0
-                            , ConcreteMSTrafo1 >
+                            , ConcreteMSTrafo1
+                            , ConcreteRayGen >
                           ( truckCnlId_blck[threadIdx.x],
-                            truckVxlId_blck[threadIdx.x], &rndState);
+                            truckVxlId_blck[threadIdx.x], rayGen);
       
       sme_devi[  truckDest_blck+threadIdx.x]  = sme_thrd;
       cnlId_devi[truckDest_blck+threadIdx.x]  = truckCnlId_blck[threadIdx.x];
@@ -513,9 +477,10 @@ void getSystemMatrix(
                             , ConcreteMSid1y
                             , ConcreteMSida  
                             , ConcreteMSTrafo0
-                            , ConcreteMSTrafo1 >
+                            , ConcreteMSTrafo1
+                            , ConcreteRayGen >
                           (truckCnlId_blck[threadIdx.x],
-                           truckVxlId_blck[threadIdx.x], &rndState);
+                           truckVxlId_blck[threadIdx.x], rayGen);
       
       sme_devi[  truckDest_blck+threadIdx.x]  = sme_thrd;
       cnlId_devi[truckDest_blck+threadIdx.x]  = truckCnlId_blck[threadIdx.x];
