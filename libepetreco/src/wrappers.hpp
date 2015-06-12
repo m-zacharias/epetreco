@@ -447,16 +447,17 @@ ChunkGridSizeType nChunks(MemArrSizeType const maxNnz,
  * @param dens Array to read into.
  * @param ifn Name of file to read from. */
 template<typename T>
-void readHDF5_Density(T * dens, std::string const & ifn) {
+std::vector<T> readHDF5_Density(std::string const & ifn) {
   H5DensityReader reader(ifn);
   int fN = reader.sizeOfFile();
   H5DensityReader::Value_t * readMem = new H5DensityReader::Value_t[fN];
   reader.read(readMem);
-  dens = new T[fN];
+  std::vector<T> dens(fN, 0.);
   for(int i=0; i<fN; i++) {
-    dens[i] = readMem[i];
+    dens[i] = T(readMem[i]);
   }
   delete[] readMem;
+  return dens;
 }
 
 #if OLD_MEASURE_TIME

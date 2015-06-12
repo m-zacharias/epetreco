@@ -116,19 +116,18 @@ int main(int argc, char** argv) {
     xfile_good = xfile.is_open();
   }
   
-  val_t * x_host = NULL;
+  std::vector<val_t> x_host;
   if(xfile_good) {
     std::cout << "Will use density from file " << xfn << std::endl;
-    readHDF5_Density(x_host, xfn);
+    x_host = readHDF5_Density<val_t>(xfn);
   } else {
     std::cout << "No valid density input file given. Will use homogenous density." << std::endl;
-    x_host = new val_t[VGRIDSIZE];
-    for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 1.; }
+    x_host = std::vector<val_t>(VGRIDSIZE, 1.);
   }
   
   val_t * x_devi = NULL;
   mallocD<val_t>(x_devi, VGRIDSIZE);
-  memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE);
+  memcpyH2D<val_t>(x_devi, &x_host[0], VGRIDSIZE);
   if(!xfile_good) {
     val_t norm = sum<val_t>(x_devi, VGRIDSIZE);
     HANDLE_ERROR(cudaDeviceSynchronize());
@@ -141,25 +140,42 @@ int main(int argc, char** argv) {
   mallocD(xx_devi, VGRIDSIZE);
   
   /* CORRECTION */
-  val_t c_host[VGRIDSIZE];
-  val_t cMpi[VGRIDSIZE];
+  std::vector<val_t> c_host(VGRIDSIZE, 0.);
+  std::vector<val_t> cMpi(  VGRIDSIZE, 0.);
   val_t * c_devi = NULL;
   mallocD(c_devi, VGRIDSIZE);
   
   /* SENSITIVITY */
-  val_t s_host[VGRIDSIZE];
+  std::vector<val_t> s_host;
+  int read_is_good(1);
+  int sSize;
   std::cout << "Read from file " << sfn << std::endl;
   if(mpi_rank == 0) {
-    readHDF5_Density(s_host, sfn);
+    s_host = readHDF5_Density<val_t>(sfn);
+    if(s_host.size() == VGRIDSIZE) {
+      read_is_good = 0;
+    }
+    sSize = s_host.size();
     {
       val_t S(0.); for(int i=0; i<VGRIDSIZE; i++) S+=s_host[i];
       std::cout << "S: " << S << std::endl;
     }
   }
-  MPI_Bcast(s_host, VGRIDSIZE, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&read_is_good, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if(read_is_good != 0) {
+    MPI_Finalize();
+    std::cerr << "Error: Something about the sensitivity file (size?) is wrong"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  MPI_Bcast(&sSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if(mpi_rank != 0) {
+    s_host.resize(sSize);
+  }
+  MPI_Bcast(&s_host[0], VGRIDSIZE, MPI_FLOAT, 0, MPI_COMM_WORLD);
   val_t * s_devi = NULL;
   mallocD(s_devi, VGRIDSIZE);
-  memcpyH2DAsync<val_t>(s_devi, s_host, VGRIDSIZE);
+  memcpyH2DAsync<val_t>(s_devi, &s_host[0], VGRIDSIZE);
   
   /* Normalize */
   val_t norm = sum<val_t>(s_devi, VGRIDSIZE);
@@ -193,7 +209,7 @@ int main(int argc, char** argv) {
     
     /* Correction to zero */
     for(int i=0; i<VGRIDSIZE; i++) { c_host[i]=0; };
-    memcpyH2D<val_t>(c_devi, c_host, VGRIDSIZE);
+    memcpyH2D<val_t>(c_devi, &c_host[0], VGRIDSIZE);
     
     /* CHUNKWISE */
     ChunkGridSizeType chunkId = ChunkGridSizeType(mpi_rank);
@@ -237,9 +253,9 @@ int main(int argc, char** argv) {
     } /* while(chunkId < NChunks) */
     
     /* Reduce correction between processes */
-    memcpyD2H(c_host, c_devi, VGRIDSIZE);
-    MPI_Allreduce(c_host, cMpi, VGRIDSIZE, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-    memcpyH2D(c_devi, cMpi, VGRIDSIZE);
+    memcpyD2H(&c_host[0], c_devi, VGRIDSIZE);
+    MPI_Allreduce(&c_host[0], &cMpi[0], VGRIDSIZE, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    memcpyH2D(c_devi, &cMpi[0], VGRIDSIZE);
     
     /* Print stuff */
     if(mpi_rank == 0) {
@@ -266,10 +282,10 @@ int main(int argc, char** argv) {
     /* Write to file */
     if(mpi_rank==0) {
       
-      memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE);
+      memcpyD2H<val_t>(&x_host[0], x_devi, VGRIDSIZE);
       std::stringstream ss("");
       ss << it;
-      writeHDF5_Density(x_host, ss.str() + std::string("_") + on, grid);
+      writeHDF5_Density(&x_host[0], ss.str() + std::string("_") + on, grid);
       
 #if MEASURE_TIME
       itTimes[it+1] = clock();
@@ -300,7 +316,7 @@ int main(int argc, char** argv) {
   cudaFree(aVxlId_devi);
   cudaFree(aVal_devi);
   cudaFree(nnz_devi);
-  
+    
   MPI_Finalize();
   
 #if MEASURE_TIME

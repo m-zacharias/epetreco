@@ -53,11 +53,11 @@ int main(int argc, char** argv) {
   /* Number of non-zeros, row indices, values. */
   ListSizeType effM; std::vector<int> yRowId_host; std::vector<val_t> yVal_host;
   
-  do {
+  {
     int tmp_effM(0);
     readHDF5_MeasVct(yRowId_host, yVal_host, tmp_effM, fn);
     effM = ListSizeType(tmp_effM);
-  } while(false);
+  };
   
   int * yRowId_devi = NULL;
   val_t * yVal_devi = NULL;
@@ -76,11 +76,10 @@ int main(int argc, char** argv) {
   MemArrSizeType maxNnz(MemArrSizeType(effM) * MemArrSizeType(VGRIDSIZE));
     
   /* DENSITY X */
-  val_t x_host[VGRIDSIZE];
-  for(int i=0; i<VGRIDSIZE; i++) { x_host[i] = 0.; }
+  std::vector<val_t> x_host(VGRIDSIZE, 0.);
   val_t * x_devi = NULL;
   mallocD<val_t>(x_devi, VGRIDSIZE);
-  memcpyH2D<val_t>(x_devi, x_host, VGRIDSIZE);
+  memcpyH2D<val_t>(x_devi, &x_host[0], VGRIDSIZE);
   
   /* SYSTEM MATRIX */
   /* Row (channel) ids, row pointers, effective row pointers, column (voxel)
@@ -139,11 +138,11 @@ int main(int argc, char** argv) {
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   /* Copy back to host */
-  memcpyD2H<val_t>(x_host, x_devi, VGRIDSIZE);
+  memcpyD2H<val_t>(&x_host[0], x_devi, VGRIDSIZE);
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   /* Write to file */
-  writeHDF5_Density(x_host, on, grid);
+  writeHDF5_Density(&x_host[0], on, grid);
   
   /* Cleanup */
   cudaFree(yRowId_devi);
