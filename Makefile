@@ -73,7 +73,8 @@ libepetreco.a : \
 
 
 %.out : \
-        $(TESTS_SRC)/%.cu
+        $(TESTS_SRC)/%.cu \
+	libepetreco.a
 	CPLUS_INCLUDE_PATH= ; \
   $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
@@ -82,7 +83,8 @@ libepetreco.a : \
 	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
 
 %.out : \
-        $(SRC)/%.cu
+        $(SRC)/%.cu \
+	libepetreco.a
 	CPLUS_INCLUDE_PATH= ; \
   $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
 
