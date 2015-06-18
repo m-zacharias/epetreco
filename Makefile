@@ -51,12 +51,8 @@ default : $(EXECUTABLES)
 
 clean:
 	rm \
-      $(EXECUTABLES) \
-      ./libepetreco.a \
-      ./*.ply \
-      ./*.h5 2>/dev/null; \
-  cd ./src/external_library_examples/ && make clean 2>/dev/null
-
+        $(EXECUTABLES) \
+        ./libepetreco.a
 
 libepetreco.a : \
         PlyGeometry.o \
@@ -123,24 +119,3 @@ PlyWriter.o : \
       $(PLY)/PlyWriter.cpp\
       $(PLY)/PlyWriter.hpp
 	$(CPPC) $(CPPCFLAGS) $(INC) -c $< -o $@
-
-
-
-# build tests
-build-tests: .build-tests-post
-
-.build-tests-pre:
-# Add your pre 'build-tests' code here...
-
-.build-tests-post: .build-tests-impl
-# Add your post 'build-tests' code here...
-
-
-# run tests
-test: .test-post
-
-.test-pre:
-# Add your pre 'test' code here...
-
-.test-post: .test-impl
-# Add your post 'test' code here...
