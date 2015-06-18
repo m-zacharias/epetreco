@@ -1,5 +1,5 @@
 SRC = ./src
-TESTS_SRC = ./src/tests
+TESTS_SRC = $(SRC)/tests
 PLY = $(SRC)/Ply
 
 CPPC = g++
