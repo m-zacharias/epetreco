@@ -6,13 +6,15 @@ CPPC = g++
 override CPPCFLAGS += -Wall
 CPPO = -c
 INC = -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include -I$(MPIROOT)/include
-LIB = -L$(HDF5_ROOT)/lib -L./ -lhdf5 -lhdf5_cpp -lepetreco
+LIB = -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp
+
+EPETLIB = -L./ -lepetreco
 
 CUC = nvcc
 override CUCFLAGS += -DMEASURE_TIME -arch=sm_35 -Xcompiler -Wall
 #override CUCFLAGS += -DMEASURE_TIME -DGRID64 -arch=sm_35 -Xptxas=-v --source-in-ptx -Xcompiler -rdynamic -lineinfo --keep --keep-dir nvcc_tmp --use_fast_math
 CUCINC = -I$(CUDA_ROOT)/include -I$(PLY) -I$(SRC) -I$(HDF5_ROOT)/include -I$(MPIROOT)/include
-CUCLIB = -L$(CUDA_ROOT)/lib64 -L./ -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -lepetreco -L$(MPIROOT)/lib -lmpi -lmpi_cxx
+CUCLIB = -L$(CUDA_ROOT)/lib64 -lcublas -lcusparse -L$(HDF5_ROOT)/lib -lhdf5 -lhdf5_cpp -L$(MPIROOT)/lib -lmpi -lmpi_cxx
 
 # ##############################################################################
 # ### PUT ALL DEFAULT TARGETS HERE
@@ -40,11 +42,10 @@ EXECUTABLES := \
       test_convertCsr2Ecsr.out \
       reco.out \
       backprojection.out \
-      pureSMCalculation.out \
-      test_H5DensityReader.out \
-      example_condense_main.out \
-      test_getSystemMatrixDeviceOnly.out \
-      test_getWorkqueue-backprojection.out
+      pureSMCalculation.out
+#      test_getWorkqueue-backprojection.out \
+#      example_condense_main.out \
+#      test_getSystemMatrixDeviceOnly.out \
 
 default : $(EXECUTABLES)
 
@@ -73,48 +74,37 @@ libepetreco.a : \
 
 
 %.out : \
-        $(TESTS_SRC)/%.cu \
-	libepetreco.a
+      $(TESTS_SRC)/%.cu \
+      libepetreco.a
 	CPLUS_INCLUDE_PATH= ; \
-  $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
+        $(CUC) $(CUCFLAGS) $(CUCINC) $< $(CUCLIB) $(EPETLIB) -o $@
 
 %.out : \
-      $(TESTS_SRC)/%.cpp
-	$(CPPC) $(CPPCFLAGS) $(INC) $(LIB) $^ -o $@
+      $(TESTS_SRC)/%.cpp \
+      libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $< $(LIB) $(EPETLIB) -o $@
 
 %.out : \
-        $(SRC)/%.cu \
-	libepetreco.a
+      $(SRC)/%.cu \
+      libepetreco.a
 	CPLUS_INCLUDE_PATH= ; \
-  $(CUC) $(CUCFLAGS) $(CUCINC) $(CUCLIB) $^ -o $@
+        $(CUC) $(CUCFLAGS) $(CUCINC) $< $(CUCLIB) $(EPETLIB) -o $@
+
+%.out: \
+      $(SRC)/%.cpp \
+      libepetreco.a
+	$(CPPC) $(CPPCFLAGS) $(INC) $< $(LIB) $(EPETLIB) -o $@
 
 test_Ply%.out : \
       $(PLY)/test_Ply%.cpp \
       libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
-
-test_%_Siddon.out : \
-      $(TESTS_SRC)/test_%_Siddon.cpp \
-      $(SRC)/Siddon.hpp \
-      $(SRC)/Siddon_helper.hpp \
-      libepetreco.a
-	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
+	$(CPPC) $(CPPCFLAGS) $(INC) $< $(EPETLIB) -o $@
 
 test_%.out : \
       $(TESTS_SRC)/test_%.cpp \
       $(SRC)/%.hpp \
       libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ $(LIB) -o $@
-
-test_Siddon.out : \
-      $(TESTS_SRC)/test_Siddon.cpp\
-      $(SRC)/Siddon.hpp
-	$(CPPC) $(CPPFLAGS) $(INC) $^ -o $@
-
-bigtest.out : \
-      $(TESTS_SRC)/bigtest.cpp \
-      libepetreco.a
-	$(CPPC) $(CPPCFLAGS) $(INC) $^ -o $@
+	$(CPPC) $(CPPCFLAGS) $(INC) $< $(LIB) $(EPETLIB) -o $@
 
 
 
