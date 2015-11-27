@@ -5,7 +5,7 @@
  */
 
 #ifndef TYPEDEFS_VAL_TYPE_HPP
-#define	TYPEDEFS_VAL_TYPE_HPP
+#define TYPEDEFS_VAL_TYPE_HPP
 
 /**
  * @var typedef float val_t

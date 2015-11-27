@@ -1,12 +1,11 @@
-/* 
- * File:   typedefs_array_sizes.hpp
- * Author: malte
+/** @file typedefs_array_sizes.hpp */
+/* Author: malte
  *
  * Created on 26. November 2015, 11:57
  */
 
 #ifndef TYPEDEFS_ARRAY_SIZES_HPP
-#define	TYPEDEFS_ARRAY_SIZES_HPP
+#define TYPEDEFS_ARRAY_SIZES_HPP
 
 #include "stdint.h"
 

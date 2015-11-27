@@ -9,7 +9,7 @@
  */
 
 #ifndef TYPEDEFS_HPP
-#define	TYPEDEFS_HPP
+#define TYPEDEFS_HPP
 
 #include "typedefs_val_type.hpp"
 #include "typedefs_geometry.hpp"
