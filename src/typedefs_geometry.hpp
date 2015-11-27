@@ -14,6 +14,7 @@
 #include "MeasurementSetup.hpp"
 #include "MeasurementSetupLinIndex.hpp"
 #include "MeasurementSetupTrafo2CartCoord.hpp"
+#include "MeasurementList.hpp"
 
 /**
  * @var typedef DefaultVoxelGrid<val_t> VG
